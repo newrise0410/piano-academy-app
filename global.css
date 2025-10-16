@@ -1,0 +1,10 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* MaruBuri 폰트를 모든 Text에 기본 적용 */
+@layer base {
+  * {
+    font-family: 'MaruBuri-Regular';
+  }
+}
