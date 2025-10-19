@@ -1,7 +1,8 @@
 {
   "permissions": {
     "allow": [
-      "Bash(lsof -ti:8082)"
+      "Bash(lsof -ti:8082)",
+      "Bash(tree -L 3 /Users/sw/Documents/GitHub/piano-academy-app/src -I 'node_modules')"
     ],
     "deny": [],
     "ask": []
