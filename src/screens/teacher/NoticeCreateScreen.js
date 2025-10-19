@@ -4,12 +4,20 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import Text from '../../components/common/Text';
 import Card from '../../components/common/Card';
+import { TEMPLATE_COLORS } from '../../styles/colors';
+import { addNotice } from '../../data/mockNotices';
+import { mockStudents } from '../../data/mockStudents';
 
 export default function NoticeCreateScreen({ navigation }) {
   const [selectedTemplate, setSelectedTemplate] = useState(null);
   const [aiPrompt, setAiPrompt] = useState('');
   const [previewTitle, setPreviewTitle] = useState('');
   const [previewContent, setPreviewContent] = useState('');
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [currentStep, setCurrentStep] = useState('compose'); // 'compose' or 'selectRecipients'
+  const [selectedStudents, setSelectedStudents] = useState([]);
+  const [categoryFilter, setCategoryFilter] = useState('전체');
+  const [dayFilter, setDayFilter] = useState('전체');
 
   const fadeAnim = useRef(new Animated.Value(1)).current;
   const scaleAnim = useRef(new Animated.Value(1)).current;
@@ -19,7 +27,7 @@ export default function NoticeCreateScreen({ navigation }) {
       id: '1',
       title: '발표회 안내',
       emoji: '🎹',
-      color: '#E9D5FF',
+      color: TEMPLATE_COLORS.concert,
       prompt: '12월 25일 오후 2시에 학원 연주홀에서 발표회를 개최합니다.',
       generatedTitle: '[발표회 안내]',
       generatedContent: '안녕하세요, 학부모님 😊\n\n12월 25일(수) 오후 2시, 학원 연주홀에서 정기 발표회를 개최합니다.\n\n그동안 열심히 연습한 곡들을 보여드릴 수 있는 소중한 시간이니 많은 참석 부탁드립니다.',
@@ -28,7 +36,7 @@ export default function NoticeCreateScreen({ navigation }) {
       id: '2',
       title: '휴강 안내',
       emoji: '🏠',
-      color: '#FED7AA',
+      color: TEMPLATE_COLORS.closure,
       prompt: '10월 18일(금)은 원장님 개인 사정으로 휴강합니다.',
       generatedTitle: '[휴강 안내]',
       generatedContent: '안녕하세요, 학부모님 😊\n\n10월 18일(금)은 원장님 개인 사정으로 휴강하게 되었습니다.\n\n보강 일정은 추후 개별적으로 안내드리겠습니다. 양해 부탁드립니다.',
@@ -37,7 +45,7 @@ export default function NoticeCreateScreen({ navigation }) {
       id: '3',
       title: '수강료 안내',
       emoji: '💰',
-      color: '#DBEAFE',
+      color: TEMPLATE_COLORS.tuition,
       prompt: '10월 수강료는 10월 5일까지 납부해주세요.',
       generatedTitle: '[수강료 납부 안내]',
       generatedContent: '안녕하세요, 학부모님 😊\n\n10월 수강료 납부 안내드립니다.\n\n납부 기한: 10월 5일(목)까지\n입금 계좌: 국민은행 123-456-789012\n\n기한 내 납부 부탁드립니다.',
@@ -46,7 +54,7 @@ export default function NoticeCreateScreen({ navigation }) {
       id: '4',
       title: '직접 입력',
       emoji: '✏️',
-      color: '#FEE2E2',
+      color: TEMPLATE_COLORS.custom,
       prompt: '',
       generatedTitle: '',
       generatedContent: '',
@@ -95,25 +103,308 @@ export default function NoticeCreateScreen({ navigation }) {
     setPreviewContent(template.generatedContent);
   };
 
-  const handleAiGenerate = () => {
-    Alert.alert('AI 작성', 'AI가 알림장을 작성 중입니다...', [
-      { text: '확인' }
-    ]);
+  const handleAiGenerate = async () => {
+    if (!aiPrompt.trim()) {
+      Alert.alert('알림', '요청 내용을 입력해주세요.');
+      return;
+    }
+
+    setIsGenerating(true);
+
+    // AI 생성 시뮬레이션 (실제로는 OpenAI API 등을 호출)
+    setTimeout(() => {
+      // 간단한 AI 시뮬레이션: 프롬프트 기반으로 내용 생성
+      const generatedTitle = generateTitle(aiPrompt);
+      const generatedContent = generateContent(aiPrompt);
+
+      setPreviewTitle(generatedTitle);
+      setPreviewContent(generatedContent);
+      setIsGenerating(false);
+
+      Alert.alert('완료', 'AI가 알림장을 작성했습니다!');
+    }, 2000); // 2초 딜레이로 AI 생성 시뮬레이션
   };
 
-  const handleSave = () => {
+  // AI 제목 생성 함수 (목업)
+  const generateTitle = (prompt) => {
+    if (prompt.includes('발표회') || prompt.includes('공연')) {
+      return '[발표회 안내]';
+    } else if (prompt.includes('휴강') || prompt.includes('휴일')) {
+      return '[휴강 안내]';
+    } else if (prompt.includes('수강료') || prompt.includes('납부')) {
+      return '[수강료 납부 안내]';
+    } else {
+      return '[학원 안내]';
+    }
+  };
+
+  // AI 내용 생성 함수 (목업)
+  const generateContent = (prompt) => {
+    const greeting = '안녕하세요, 학부모님 😊\n\n';
+    const closing = '\n\n감사합니다.';
+
+    // 프롬프트에서 주요 정보 추출하여 내용 생성
+    const mainContent = prompt;
+
+    return greeting + mainContent + closing;
+  };
+
+  const handleNextStep = () => {
     if (!previewTitle.trim() || !previewContent.trim()) {
       Alert.alert('알림', '제목과 내용을 입력해주세요.');
       return;
     }
+    setCurrentStep('selectRecipients');
+  };
 
-    Alert.alert('성공', '알림장이 저장되었습니다.', [
-      { text: '확인', onPress: () => navigation.goBack() }
-    ]);
+  const handleStudentToggle = (studentId) => {
+    setSelectedStudents(prev => {
+      if (prev.includes(studentId)) {
+        return prev.filter(id => id !== studentId);
+      } else {
+        return [...prev, studentId];
+      }
+    });
+  };
+
+  const handleSelectAll = () => {
+    if (selectedStudents.length === mockStudents.length) {
+      setSelectedStudents([]);
+    } else {
+      setSelectedStudents(mockStudents.map(s => s.id));
+    }
+  };
+
+  const handleSend = () => {
+    if (selectedStudents.length === 0) {
+      Alert.alert('알림', '발송할 학생을 선택해주세요.');
+      return;
+    }
+
+    try {
+      // 현재 날짜/시간
+      const now = new Date();
+      const dateStr = `${now.getFullYear()}.${String(now.getMonth() + 1).padStart(2, '0')}.${String(now.getDate()).padStart(2, '0')}`;
+      const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+
+      // 알림장 저장
+      const newNotice = addNotice({
+        title: previewTitle,
+        content: previewContent,
+        date: dateStr,
+        time: timeStr,
+        recipients: selectedStudents.length,
+      });
+
+      Alert.alert('성공', `${selectedStudents.length}명의 학생에게 알림장이 발송되었습니다.`, [
+        { text: '확인', onPress: () => navigation.goBack() }
+      ]);
+    } catch (error) {
+      Alert.alert('오류', '알림장 발송에 실패했습니다.');
+      console.error('알림장 발송 오류:', error);
+    }
   };
 
   const isDirectInput = selectedTemplate === '4';
 
+  // 필터링된 학생 목록
+  const filteredStudents = mockStudents.filter(student => {
+    // 카테고리 필터
+    const matchesCategory = categoryFilter === '전체' || student.category === categoryFilter;
+
+    // 요일 필터
+    let matchesDay = true;
+    if (dayFilter !== '전체') {
+      const scheduleDays = student.schedule.split(' ')[0].split('/');
+      matchesDay = scheduleDays.includes(dayFilter);
+    }
+
+    return matchesCategory && matchesDay;
+  });
+
+  // 발송 대상 선택 화면
+  if (currentStep === 'selectRecipients') {
+    return (
+      <SafeAreaView className="flex-1 bg-gray-50">
+        {/* 헤더 */}
+        <View className="bg-primary px-5 py-4">
+          <View className="flex-row justify-between items-center">
+            <TouchableOpacity onPress={() => setCurrentStep('compose')}>
+              <Ionicons name="arrow-back" size={28} color="white" />
+            </TouchableOpacity>
+            <Text className="text-white text-xl font-bold">발송 대상 선택</Text>
+            <TouchableOpacity onPress={() => navigation.goBack()}>
+              <Ionicons name="close" size={28} color="white" />
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        <ScrollView className="flex-1 px-5 py-4">
+          {/* 필터 섹션 */}
+          <View className="bg-white rounded-2xl p-4 mb-4">
+            <Text className="text-base font-bold text-gray-800 mb-3">필터</Text>
+
+            {/* 카테고리 필터 */}
+            <View className="mb-3">
+              <Text className="text-sm font-semibold text-gray-700 mb-2">카테고리</Text>
+              <View className="flex-row flex-wrap">
+                {['전체', '초등', '고등', '성인'].map((category) => (
+                  <TouchableOpacity
+                    key={category}
+                    className={`rounded-full px-4 py-2 mr-2 mb-2 ${
+                      categoryFilter === category
+                        ? 'bg-primary'
+                        : 'bg-gray-100'
+                    }`}
+                    onPress={() => setCategoryFilter(category)}
+                    activeOpacity={0.7}
+                  >
+                    <Text
+                      className={`text-sm font-semibold ${
+                        categoryFilter === category
+                          ? 'text-white'
+                          : 'text-gray-700'
+                      }`}
+                    >
+                      {category}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+
+            {/* 요일 필터 */}
+            <View>
+              <Text className="text-sm font-semibold text-gray-700 mb-2">요일</Text>
+              <View className="flex-row flex-wrap">
+                {['전체', '월', '화', '수', '목', '금', '토', '일'].map((day) => (
+                  <TouchableOpacity
+                    key={day}
+                    className={`rounded-full px-4 py-2 mr-2 mb-2 ${
+                      dayFilter === day
+                        ? 'bg-primary'
+                        : 'bg-gray-100'
+                    }`}
+                    onPress={() => setDayFilter(day)}
+                    activeOpacity={0.7}
+                  >
+                    <Text
+                      className={`text-sm font-semibold ${
+                        dayFilter === day
+                          ? 'text-white'
+                          : 'text-gray-700'
+                      }`}
+                    >
+                      {day}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+          </View>
+
+          {/* 선택 정보 및 일괄 버튼 */}
+          <View className="bg-white rounded-2xl p-4 mb-4">
+            <View className="flex-row items-center justify-between mb-3">
+              <Text className="text-base font-bold text-gray-800">발송 대상</Text>
+              <Text className="text-sm text-primary font-bold">
+                {selectedStudents.length}/{filteredStudents.length}명 선택
+              </Text>
+            </View>
+
+            <View className="flex-row">
+              <TouchableOpacity
+                className="flex-1 bg-primary rounded-xl py-3 mr-2"
+                onPress={() => setSelectedStudents(filteredStudents.map(s => s.id))}
+                activeOpacity={0.7}
+              >
+                <View className="flex-row items-center justify-center">
+                  <Ionicons name="checkmark-done" size={18} color="white" />
+                  <Text className="text-white text-sm font-bold ml-1">모두 선택</Text>
+                </View>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                className="flex-1 bg-gray-500 rounded-xl py-3 ml-2"
+                onPress={() => setSelectedStudents([])}
+                activeOpacity={0.7}
+              >
+                <View className="flex-row items-center justify-center">
+                  <Ionicons name="close-circle" size={18} color="white" />
+                  <Text className="text-white text-sm font-bold ml-1">선택 해제</Text>
+                </View>
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          {/* 학생 목록 */}
+          <View className="bg-white rounded-2xl p-4 mb-4">
+            <Text className="text-base font-bold text-gray-800 mb-3">
+              학생 목록 ({filteredStudents.length}명)
+            </Text>
+            {filteredStudents.length > 0 ? (
+              filteredStudents.map((student, index) => (
+                <TouchableOpacity
+                  key={student.id}
+                  className={`flex-row items-center justify-between py-3 ${
+                    index < filteredStudents.length - 1 ? 'border-b border-gray-100' : ''
+                  }`}
+                  onPress={() => handleStudentToggle(student.id)}
+                  activeOpacity={0.7}
+                >
+                  <View className="flex-row items-center flex-1">
+                    <Ionicons
+                      name={selectedStudents.includes(student.id) ? "checkbox" : "square-outline"}
+                      size={22}
+                      color={selectedStudents.includes(student.id) ? "#8B5CF6" : "#9CA3AF"}
+                    />
+                    <View className="ml-3 flex-1">
+                      <View className="flex-row items-center mb-1">
+                        <Text className="text-base font-bold text-gray-800 mr-2">
+                          {student.name}
+                        </Text>
+                        <View className="bg-purple-100 rounded-full px-2 py-0.5">
+                          <Text className="text-xs font-bold text-primary">{student.level}</Text>
+                        </View>
+                      </View>
+                      <Text className="text-xs text-gray-600">{student.schedule}</Text>
+                    </View>
+                  </View>
+                </TouchableOpacity>
+              ))
+            ) : (
+              <View className="py-8 items-center">
+                <Ionicons name="search-outline" size={48} color="#D1D5DB" />
+                <Text className="text-gray-400 mt-3 text-center">
+                  해당 조건의 학생이 없습니다
+                </Text>
+              </View>
+            )}
+          </View>
+        </ScrollView>
+
+        {/* 하단 발송 버튼 */}
+        <View className="bg-white px-5 py-4 border-t border-gray-200">
+          <TouchableOpacity
+            className={`rounded-xl p-4 items-center ${
+              selectedStudents.length > 0 ? 'bg-primary' : 'bg-gray-300'
+            }`}
+            onPress={handleSend}
+            activeOpacity={0.8}
+            disabled={selectedStudents.length === 0}
+          >
+            <Text className="text-white text-base font-bold">
+              {selectedStudents.length > 0
+                ? `${selectedStudents.length}명에게 발송하기`
+                : '학생을 선택해주세요'}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  // 알림장 작성 화면
   return (
     <SafeAreaView className="flex-1 bg-gray-50">
       {/* 헤더 */}
@@ -198,9 +489,20 @@ export default function NoticeCreateScreen({ navigation }) {
                 className="bg-primary rounded-xl p-4 flex-row items-center justify-center"
                 onPress={handleAiGenerate}
                 activeOpacity={0.8}
+                disabled={isGenerating}
+                style={{ opacity: isGenerating ? 0.6 : 1 }}
               >
-                <Text className="text-white text-base font-bold mr-1">AI로 작성하기</Text>
-                <Text className="text-xl">✨</Text>
+                {isGenerating ? (
+                  <>
+                    <Text className="text-white text-base font-bold mr-2">AI 작성 중</Text>
+                    <Text className="text-xl">⏳</Text>
+                  </>
+                ) : (
+                  <>
+                    <Text className="text-white text-base font-bold mr-1">AI로 작성하기</Text>
+                    <Text className="text-xl">✨</Text>
+                  </>
+                )}
               </TouchableOpacity>
             </View>
           </Animated.View>
@@ -306,7 +608,7 @@ export default function NoticeCreateScreen({ navigation }) {
                 <TouchableOpacity
                   className="flex-1 bg-blue-500 rounded-xl p-4 items-center"
                   activeOpacity={0.8}
-                  onPress={handleSave}
+                  onPress={handleNextStep}
                 >
                   <Text className="text-white font-semibold">다음 →</Text>
                 </TouchableOpacity>

@@ -1,41 +1,28 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { View, ScrollView, TouchableOpacity, Animated } from 'react-native';
+import { View, ScrollView, TouchableOpacity, Animated, Modal, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import Text from '../../components/common/Text';
 import NoticeCreateScreen from './NoticeCreateScreen';
+import COLORS, { SHADOW_COLORS } from '../../styles/colors';
+import { getNotices, deleteNotice } from '../../data/mockNotices';
 
 export default function NoticeListScreen({ navigation }) {
   const [showCreateScreen, setShowCreateScreen] = useState(false);
+  const [showDetailModal, setShowDetailModal] = useState(false);
+  const [selectedNotice, setSelectedNotice] = useState(null);
+  const [notices, setNotices] = useState([]);
   const slideAnim = useRef(new Animated.Value(0)).current;
 
-  // 목업 데이터
-  const notices = [
-    {
-      id: '1',
-      title: '12월 발표회 안내',
-      content: '12월 25일 오후 2시, 학원 연주홀에서...',
-      date: '2025.10.15',
-      confirmed: 28,
-      total: 30,
-    },
-    {
-      id: '2',
-      title: '10월 셋째 주 휴강 안내',
-      content: '10월 18일(금)은 원장님 개인 사정으로...',
-      date: '2025.10.10',
-      confirmed: 30,
-      total: 30,
-    },
-    {
-      id: '3',
-      title: '수강료 납부 안내',
-      content: '10월 수강료는 10월 5일까지 납부해...',
-      date: '2025.10.01',
-      confirmed: 30,
-      total: 30,
-    },
-  ];
+  // 알림장 목록 로드
+  useEffect(() => {
+    loadNotices();
+  }, []);
+
+  const loadNotices = () => {
+    const noticeList = getNotices();
+    setNotices(noticeList);
+  };
 
   // 화면 전환 애니메이션
   useEffect(() => {
@@ -60,6 +47,40 @@ export default function NoticeListScreen({ navigation }) {
 
   const handleCloseCreate = () => {
     setShowCreateScreen(false);
+    // 알림장 목록 새로고침
+    loadNotices();
+  };
+
+  const handleOpenDetail = (notice) => {
+    setSelectedNotice(notice);
+    setShowDetailModal(true);
+  };
+
+  const handleCloseDetail = () => {
+    setShowDetailModal(false);
+    setSelectedNotice(null);
+    loadNotices();
+  };
+
+  const handleDeleteNotice = () => {
+    if (!selectedNotice) return;
+
+    Alert.alert(
+      '알림장 삭제',
+      '이 알림장을 삭제하시겠습니까?',
+      [
+        { text: '취소', style: 'cancel' },
+        {
+          text: '삭제',
+          style: 'destructive',
+          onPress: () => {
+            deleteNotice(selectedNotice.id);
+            Alert.alert('완료', '알림장이 삭제되었습니다.');
+            handleCloseDetail();
+          }
+        }
+      ]
+    );
   };
 
   const translateX = slideAnim.interpolate({
@@ -99,7 +120,7 @@ export default function NoticeListScreen({ navigation }) {
           <View className="px-5 mt-4">
             <TouchableOpacity
               className="bg-gradient-to-r from-primary to-purple-600 rounded-2xl p-5 flex-row items-center justify-center"
-              style={{ backgroundColor: '#8B5CF6' }}
+              style={{ backgroundColor: COLORS.primary[600] }}
               activeOpacity={0.8}
               onPress={handleOpenCreate}
             >
@@ -125,8 +146,9 @@ export default function NoticeListScreen({ navigation }) {
                 key={notice.id}
                 className="bg-white rounded-2xl p-4 mb-3 border border-gray-100"
                 activeOpacity={0.7}
+                onPress={() => handleOpenDetail(notice)}
                 style={{
-                  shadowColor: '#000',
+                  shadowColor: SHADOW_COLORS.black,
                   shadowOffset: { width: 0, height: 1 },
                   shadowOpacity: 0.05,
                   shadowRadius: 2,
@@ -192,6 +214,92 @@ export default function NoticeListScreen({ navigation }) {
           />
         </Animated.View>
       )}
+
+      {/* 상세 모달 */}
+      <Modal
+        visible={showDetailModal}
+        animationType="slide"
+        onRequestClose={handleCloseDetail}
+        presentationStyle="pageSheet"
+      >
+        <SafeAreaView className="flex-1 bg-primary" edges={['top']}>
+          <View className="flex-1 bg-gray-50">
+            {/* 헤더 */}
+            <View className="bg-primary px-5 py-4">
+              <View className="flex-row justify-between items-center">
+                <TouchableOpacity onPress={handleCloseDetail}>
+                  <Ionicons name="arrow-back" size={24} color="white" />
+                </TouchableOpacity>
+                <Text className="text-white text-lg font-bold">알림장 상세</Text>
+                <TouchableOpacity onPress={handleDeleteNotice}>
+                  <Ionicons name="trash-outline" size={24} color="white" />
+                </TouchableOpacity>
+              </View>
+            </View>
+
+          {selectedNotice && (
+            <ScrollView className="flex-1 px-5 py-4">
+              {/* 발송 정보 카드 */}
+              <View className="bg-white rounded-2xl p-5 mb-4 border border-gray-200">
+                <View className="flex-row items-center mb-3">
+                  <Ionicons name="paper-plane" size={20} color={COLORS.primary.DEFAULT} />
+                  <Text className="text-base font-bold text-gray-800 ml-2">발송 정보</Text>
+                </View>
+
+                <View className="flex-row justify-between mb-2">
+                  <Text className="text-sm text-gray-600">발송일시</Text>
+                  <Text className="text-sm font-semibold text-gray-800">
+                    {selectedNotice.date} {selectedNotice.time}
+                  </Text>
+                </View>
+
+                <View className="flex-row justify-between">
+                  <Text className="text-sm text-gray-600">확인 현황</Text>
+                  <Text className="text-sm font-semibold text-primary">
+                    {selectedNotice.confirmed}/{selectedNotice.total}명 확인
+                  </Text>
+                </View>
+              </View>
+
+              {/* 알림장 내용 카드 */}
+              <View className="bg-white rounded-2xl p-5 mb-4 border border-gray-200">
+                {/* 제목 */}
+                <Text className="text-xl font-bold text-gray-800 mb-4">
+                  {selectedNotice.title}
+                </Text>
+
+                {/* 내용 */}
+                <View className="bg-gray-50 rounded-xl p-4">
+                  <Text className="text-base text-gray-700 leading-6">
+                    {selectedNotice.content}
+                  </Text>
+                </View>
+              </View>
+
+              {/* 액션 버튼들 */}
+              <View className="mb-6">
+                <TouchableOpacity
+                  className="bg-primary rounded-2xl p-4 flex-row items-center justify-center mb-3"
+                  activeOpacity={0.8}
+                  onPress={() => Alert.alert('알림', '재발송 되었습니다.')}
+                >
+                  <Ionicons name="refresh" size={20} color="white" />
+                  <Text className="text-white text-base font-bold ml-2">미확인자에게 재발송</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  className="bg-white border border-gray-300 rounded-2xl p-4 flex-row items-center justify-center"
+                  activeOpacity={0.7}
+                  onPress={handleCloseDetail}
+                >
+                  <Text className="text-gray-700 text-base font-semibold">목록으로 돌아가기</Text>
+                </TouchableOpacity>
+              </View>
+            </ScrollView>
+          )}
+          </View>
+        </SafeAreaView>
+      </Modal>
     </View>
   );
 }

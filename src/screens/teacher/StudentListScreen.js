@@ -6,8 +6,9 @@ import Text from '../../components/common/Text';
 import StudentCard from '../../components/teacher/StudentCard';
 import StudentDetailScreen from './StudentDetailScreen';
 import { mockStudents } from '../../data/mockStudents';
+import { SHADOW_COLORS } from '../../styles/colors';
 
-export default function StudentListScreen() {
+export default function StudentListScreen({ navigation }) {
   const [selectedCategory, setSelectedCategory] = useState('전체');
   const [selectedLevel, setSelectedLevel] = useState('전체');
   const [searchQuery, setSearchQuery] = useState('');
@@ -82,8 +83,7 @@ export default function StudentListScreen() {
   };
 
   const handleAddStudent = () => {
-    // TODO: 학생 추가 화면으로 이동
-    console.log('Add student pressed');
+    navigation.navigate('StudentForm');
   };
 
   return (
@@ -98,7 +98,9 @@ export default function StudentListScreen() {
             <Ionicons name="book" size={24} color="white" />
             <Text className="text-white text-xl font-bold ml-2">피아노 학원 관리</Text>
           </View>
-          <Ionicons name="menu" size={28} color="white" />
+          <TouchableOpacity onPress={handleAddStudent} activeOpacity={0.7}>
+            <Ionicons name="add-circle" size={28} color="white" />
+          </TouchableOpacity>
         </View>
       </View>
 
@@ -209,7 +211,7 @@ export default function StudentListScreen() {
           activeOpacity={0.8}
           onPress={handleAddStudent}
           style={{
-            shadowColor: '#8B5CF6',
+            shadowColor: SHADOW_COLORS.primary,
             shadowOffset: { width: 0, height: 4 },
             shadowOpacity: 0.3,
             shadowRadius: 8,

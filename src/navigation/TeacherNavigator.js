@@ -1,16 +1,31 @@
 // src/navigation/TeacherNavigator.js
 import React from "react";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { Ionicons } from "@expo/vector-icons";
 
 // 화면 import
 import DashboardScreen from "../screens/teacher/DashboardScreen";
 import NoticeListScreen from "../screens/teacher/NoticeListScreen";
 import StudentListScreen from "../screens/teacher/StudentListScreen";
+import StudentFormScreen from "../screens/teacher/StudentFormScreen";
+import StudentDetailScreen from "../screens/teacher/StudentDetailScreen";
 import AttendanceScreen from "../screens/teacher/AttendanceScreen";
 import TuitionScreen from "../screens/teacher/TuitionScreen";
 
 const Tab = createBottomTabNavigator();
+const Stack = createNativeStackNavigator();
+
+// 학생 관리 Stack Navigator
+function StudentStack() {
+  return (
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="StudentList" component={StudentListScreen} />
+      <Stack.Screen name="StudentForm" component={StudentFormScreen} />
+      <Stack.Screen name="StudentDetail" component={StudentDetailScreen} />
+    </Stack.Navigator>
+  );
+}
 
 // 메인 탭 네비게이터
 export default function TeacherNavigator() {
@@ -65,7 +80,7 @@ export default function TeacherNavigator() {
       />
       <Tab.Screen
         name="StudentTab"
-        component={StudentListScreen}
+        component={StudentStack}
         options={{ tabBarLabel: "학생" }}
       />
       <Tab.Screen

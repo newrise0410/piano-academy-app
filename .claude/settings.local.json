@@ -1,27 +1,7 @@
 {
   "permissions": {
     "allow": [
-      "Bash(dir /b node_modulesnativewind)",
-      "Bash(npm uninstall:*)",
-      "Bash(npm install:*)",
-      "Bash(npx expo start:*)",
-      "Bash(netstat:*)",
-      "Bash(findstr:*)",
-      "Bash(taskkill:*)",
-      "Bash(npx expo-doctor)",
-      "Bash(npx expo install:*)",
-      "Bash(dir /b node_modules)",
-      "Bash(java -version:*)",
-      "Bash(echo:*)",
-      "Read(//c/Program Files/**)",
-      "Bash(\"/c/Program Files/Android/Android Studio/jbr/bin/java\" -version)",
-      "Bash(export JAVA_HOME=\"/c/Program Files/Android/Android Studio/jbr\")",
-      "Bash(export PATH=\"$JAVA_HOME/bin:$PATH\")",
-      "Bash(test:*)",
-      "Bash(cat:*)",
-      "Bash(tasklist:*)",
-      "Bash(cmd //c taskkill //PID 32656 //F)",
-      "Bash(cmd //c taskkill //PID 23096 //F)"
+      "Bash(lsof -ti:8082)"
     ],
     "deny": [],
     "ask": []

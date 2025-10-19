@@ -4,13 +4,8 @@ import React, { createContext, useState } from 'react';
 export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-  // 임시로 로그인 상태 true, 역할 'teacher'
-  // 나중에 실제 로그인 기능 추가
-  const [user, setUser] = useState({
-    id: '1',
-    name: '김원장',
-    role: 'teacher', // 'teacher' 또는 'parent'
-  });
+  // 로그인 안 된 상태로 시작 (로그인 화면 표시)
+  const [user, setUser] = useState(null);
 
   const login = (userData) => {
     setUser(userData);

@@ -49,13 +49,26 @@ export default function StudentCard({ student, onPress }) {
     return '#EF4444';
   };
 
-  // 수강권 잔여 회수 색상
-  const getTicketColor = (ticket) => {
-    const count = parseInt(ticket);
-    if (count >= 8) return '#10B981';
-    if (count >= 4) return '#3B82F6';
-    if (count >= 2) return '#F59E0B';
-    return '#EF4444';
+  // 수강권 표시 헬퍼
+  const getTicketDisplay = () => {
+    if (student.ticketType === 'count') {
+      return `${student.ticketCount}회`;
+    } else if (student.ticketType === 'period') {
+      return `${student.ticketPeriod.start}~${student.ticketPeriod.end}`;
+    }
+    return '-';
+  };
+
+  // 수강권 색상 (회차권일 때만)
+  const getTicketColor = () => {
+    if (student.ticketType === 'count') {
+      const count = student.ticketCount;
+      if (count >= 8) return '#10B981';
+      if (count >= 4) return '#3B82F6';
+      if (count >= 2) return '#F59E0B';
+      return '#EF4444';
+    }
+    return '#8B5CF6'; // 기간권은 보라색
   };
 
   return (
@@ -160,20 +173,20 @@ export default function StudentCard({ student, onPress }) {
               </Text>
             </View>
           )}
-          {student.ticket && (
-            <View className="flex-1 bg-green-50 rounded-lg p-2 ml-1">
-              <View className="flex-row items-center mb-0.5">
-                <Ionicons name="ticket" size={12} color={getTicketColor(student.ticket)} />
-                <Text className="text-xs text-gray-600 ml-1 font-semibold">권</Text>
-              </View>
-              <Text
-                className="text-xs font-bold"
-                style={{ color: getTicketColor(student.ticket) }}
-              >
-                {student.ticket}
+          <View className="flex-1 bg-green-50 rounded-lg p-2 ml-1">
+            <View className="flex-row items-center mb-0.5">
+              <Ionicons name={student.ticketType === 'period' ? 'calendar' : 'ticket'} size={12} color={getTicketColor()} />
+              <Text className="text-xs text-gray-600 ml-1 font-semibold">
+                {student.ticketType === 'period' ? '기간' : '권'}
               </Text>
             </View>
-          )}
+            <Text
+              className="text-xs font-bold"
+              style={{ color: getTicketColor() }}
+            >
+              {getTicketDisplay()}
+            </Text>
+          </View>
         </View>
       </View>
     </TouchableOpacity>
