@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { View, ScrollView, TouchableOpacity, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { Text, LevelBadge, Button } from '../../components/common';
+import { Text, LevelBadge, Button, ScreenHeader } from '../../components/common';
 import TEACHER_COLORS from '../../styles/teacher_colors';
 import { useStudentStore } from '../../store';
 
@@ -88,24 +88,13 @@ export default function TodayClassesScreen({ navigation }) {
   return (
     <SafeAreaView className="flex-1 bg-gray-50">
       {/* 헤더 */}
-      <View className="bg-white border-b border-gray-200 px-5 py-4">
-        <View className="flex-row items-center justify-between mb-3">
-          <View className="flex-row items-center">
-            <TouchableOpacity
-              onPress={() => navigation.goBack()}
-              className="mr-3"
-              activeOpacity={0.7}
-            >
-              <Ionicons name="arrow-back" size={24} color={TEACHER_COLORS.gray[800]} />
-            </TouchableOpacity>
-            <View>
-              <Text className="text-xl font-bold text-gray-800">오늘 수업</Text>
-              <Text className="text-sm text-gray-500 mt-0.5">{todayDate}</Text>
-            </View>
-          </View>
-        </View>
+      <ScreenHeader
+        title="오늘 수업"
+        subtitle={todayDate}
+      />
 
-        {/* 출석 통계 */}
+      {/* 출석 통계 */}
+      <View className="bg-white border-b border-gray-200 px-5 py-3">
         <View className="flex-row bg-gray-50 rounded-xl p-3">
           <View className="flex-1 items-center">
             <Text className="text-xs text-gray-500 mb-1">전체</Text>

@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { View, ScrollView, TouchableOpacity, RefreshControl, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { Text, LevelBadge, Button } from '../../components/common';
+import { Text, LevelBadge, Button, ScreenHeader } from '../../components/common';
 import TEACHER_COLORS from '../../styles/teacher_colors';
 import { useToastStore } from '../../store';
 import { formatDate } from '../../utils';
@@ -123,26 +123,13 @@ export default function MakeupClassesScreen({ navigation }) {
   return (
     <SafeAreaView className="flex-1 bg-gray-50">
       {/* 헤더 */}
-      <View className="bg-white border-b border-gray-200 px-5 py-4">
-        <View className="flex-row items-center justify-between mb-3">
-          <View className="flex-row items-center">
-            <TouchableOpacity
-              onPress={() => navigation.goBack()}
-              className="mr-3"
-              activeOpacity={0.7}
-            >
-              <Ionicons name="arrow-back" size={24} color={TEACHER_COLORS.gray[800]} />
-            </TouchableOpacity>
-            <View>
-              <Text className="text-xl font-bold text-gray-800">보강 예정</Text>
-              <Text className="text-sm text-gray-500 mt-0.5">
-                {stats.total}건의 보강
-              </Text>
-            </View>
-          </View>
-        </View>
+      <ScreenHeader
+        title="보강 예정"
+        subtitle={`${stats.total}건의 보강`}
+      />
 
-        {/* 통계 */}
+      {/* 통계 */}
+      <View className="bg-white border-b border-gray-200 px-5 py-3">
         <View className="bg-green-50 rounded-xl p-4 mb-3">
           <View className="flex-row items-center justify-between mb-2">
             <Text className="text-sm text-gray-700">일정 확정</Text>

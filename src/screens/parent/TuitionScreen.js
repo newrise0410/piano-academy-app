@@ -4,9 +4,7 @@ import { View, ScrollView, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import Text from '../../components/common/Text';
-import Card from '../../components/common/Card';
-import ProgressBar from '../../components/common/ProgressBar';
+import { Text, Card, ProgressBar, ScreenHeader } from '../../components/common';
 import { childData, paymentHistory, ticketPrices } from '../../data/mockParentData';
 import PARENT_COLORS, { PARENT_GRADIENTS, PARENT_SEMANTIC_COLORS, PARENT_OVERLAY_COLORS } from '../../styles/parent_colors';
 import { formatCurrency, getDaysRemaining, getTicketProgress } from '../../utils';
@@ -16,6 +14,7 @@ export default function TuitionScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-gray-50">
+      <ScreenHeader title="수강료 관리" />
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
         <View className="px-5 py-4">
           {/* 현재 수강권 */}

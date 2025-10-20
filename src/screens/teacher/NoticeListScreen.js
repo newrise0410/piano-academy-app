@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { View, ScrollView, TouchableOpacity, Animated, Modal, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import Text from '../../components/common/Text';
+import { Text, ScreenHeader } from '../../components/common';
 import NoticeCreateScreen from './NoticeCreateScreen';
 import TEACHER_COLORS, { TEACHER_SHADOW_COLORS } from '../../styles/teacher_colors';
 import { getNotices, deleteNotice } from '../../data/mockNotices';
@@ -104,17 +104,14 @@ export default function NoticeListScreen({ navigation }) {
       >
         <SafeAreaView className="flex-1 bg-gray-50">
           {/* 헤더 */}
-          <View className="bg-primary px-5 py-4">
-            <View className="flex-row justify-between items-center">
-              <View className="flex-row items-center">
-                <Ionicons name="book" size={24} color="white" />
-                <Text className="text-white text-xl font-bold ml-2">피아노 학원 관리</Text>
-              </View>
-              <Ionicons name="menu" size={28} color="white" />
-            </View>
-          </View>
-
-
+          <ScreenHeader
+            title="알림장"
+            rightButton={
+              <TouchableOpacity onPress={() => {}}>
+                <Ionicons name="search" size={24} color={TEACHER_COLORS.gray[800]} />
+              </TouchableOpacity>
+            }
+          />
 
           {/* 새 알림장 작성 버튼 */}
           <View className="px-5 mt-4">

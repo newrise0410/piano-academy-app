@@ -8,7 +8,8 @@ import {
   FormInput,
   Button,
   SectionCard,
-  SegmentedControl
+  SegmentedControl,
+  ScreenHeader
 } from '../../components/common';
 import TEACHER_COLORS from '../../styles/teacher_colors';
 import { useStudentStore } from '../../store';
@@ -138,17 +139,9 @@ export default function StudentFormScreen({ navigation, route }) {
   return (
     <SafeAreaView className="flex-1 bg-gray-50">
       {/* 헤더 */}
-      <View className="bg-primary px-5 py-4">
-        <View className="flex-row justify-between items-center">
-          <TouchableOpacity onPress={() => navigation.goBack()}>
-            <Ionicons name="arrow-back" size={28} color="white" />
-          </TouchableOpacity>
-          <Text className="text-white text-xl font-bold">
-            {isEdit ? '학생 정보 수정' : '새 학생 등록'}
-          </Text>
-          <View style={{ width: 28 }} />
-        </View>
-      </View>
+      <ScreenHeader
+        title={isEdit ? '학생 정보 수정' : '새 학생 등록'}
+      />
 
       <ScrollView className="flex-1 px-5 py-4">
         {/* 기본 정보 */}

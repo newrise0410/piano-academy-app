@@ -3,11 +3,9 @@ import React, { useState } from 'react';
 import { View, ScrollView, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import Text from '../../components/common/Text';
-import Card from '../../components/common/Card';
-import ProgressBar from '../../components/common/ProgressBar';
-import ListItem from '../../components/common/ListItem';
+import { Text, Card, ProgressBar, ListItem, ScreenHeader, StudentGrowthChart, AttendanceRateChart } from '../../components/common';
 import { childData, completedSongs, weeklyTasks } from '../../data/mockParentData';
+import { parentStudentProgress, parentAttendanceRate } from '../../data/mockChartData';
 import PARENT_COLORS, { PARENT_GRADIENTS, PARENT_SEMANTIC_COLORS, PARENT_OVERLAY_COLORS } from '../../styles/parent_colors';
 
 export default function ProgressScreen() {
@@ -21,6 +19,7 @@ export default function ProgressScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-gray-50">
+      <ScreenHeader title="진도 현황" />
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
         <View className="px-5 py-4">
           {/* 현재 교재 진도 */}
@@ -52,35 +51,27 @@ export default function ProgressScreen() {
 
           {/* 월별 진도 그래프 */}
           <Card className="mt-4">
-            <Text className="text-gray-800 font-bold text-lg mb-4">월별 진도 추이</Text>
+            <StudentGrowthChart data={parentStudentProgress} title="월별 진도 추이" />
 
-            <View className="flex-row items-end justify-around h-32 mb-4">
-              {childData.monthlyStats.map((stat, index) => (
-                <View key={index} className="flex-1 items-center mx-1">
-                  <View className="w-full items-center mb-2" style={{ height: 100 }}>
-                    <View className="w-full items-end justify-end" style={{ height: '100%' }}>
-                      <View
-                        className="w-full rounded-t-lg"
-                        style={{
-                          height: `${stat.progress}%`,
-                          backgroundColor: PARENT_COLORS.purple[600],
-                          minHeight: 4
-                        }}
-                      />
-                    </View>
-                  </View>
-                  <Text className="text-xs font-semibold" style={{ color: PARENT_COLORS.gray[600] }}>
-                    {stat.month}
-                  </Text>
-                </View>
-              ))}
-            </View>
-
-            <View className="items-center pt-3 border-t" style={{ borderColor: PARENT_COLORS.gray[200] }}>
+            <View className="items-center pt-4 border-t mt-4" style={{ borderColor: PARENT_COLORS.gray[200] }}>
               <View className="flex-row items-center px-3 py-1.5 rounded-full" style={{ backgroundColor: PARENT_COLORS.success[50] }}>
                 <Ionicons name="trending-up" size={16} color={PARENT_COLORS.success[600]} />
                 <Text className="text-sm font-semibold ml-1" style={{ color: PARENT_COLORS.success[600] }}>
                   꾸준히 성장 중이에요!
+                </Text>
+              </View>
+            </View>
+          </Card>
+
+          {/* 출석률 통계 */}
+          <Card className="mt-4">
+            <AttendanceRateChart data={parentAttendanceRate} title="월별 출석률" />
+
+            <View className="items-center pt-4 border-t mt-4" style={{ borderColor: PARENT_COLORS.gray[200] }}>
+              <View className="flex-row items-center px-3 py-1.5 rounded-full" style={{ backgroundColor: PARENT_COLORS.primary[50] }}>
+                <Ionicons name="checkmark-circle" size={16} color={PARENT_COLORS.primary.DEFAULT} />
+                <Text className="text-sm font-semibold ml-1" style={{ color: PARENT_COLORS.primary.DEFAULT }}>
+                  평균 출석률 95%
                 </Text>
               </View>
             </View>

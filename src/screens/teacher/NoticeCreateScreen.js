@@ -8,7 +8,8 @@ import {
   FormInput,
   FilterChip,
   Button,
-  LevelBadge
+  LevelBadge,
+  ScreenHeader
 } from '../../components/common';
 import TEACHER_COLORS, { TEACHER_TEMPLATE_COLORS } from '../../styles/teacher_colors';
 import { useNoticeStore, useStudentStore } from '../../store';
@@ -243,17 +244,15 @@ export default function NoticeCreateScreen({ navigation }) {
     return (
       <SafeAreaView className="flex-1 bg-gray-50">
         {/* 헤더 */}
-        <View className="bg-primary px-5 py-4">
-          <View className="flex-row justify-between items-center">
-            <TouchableOpacity onPress={() => setCurrentStep('compose')}>
-              <Ionicons name="arrow-back" size={28} color="white" />
-            </TouchableOpacity>
-            <Text className="text-white text-xl font-bold">발송 대상 선택</Text>
+        <ScreenHeader
+          title="발송 대상 선택"
+          onBackPress={() => setCurrentStep('compose')}
+          rightButton={
             <TouchableOpacity onPress={() => navigation.goBack()}>
-              <Ionicons name="close" size={28} color="white" />
+              <Ionicons name="close" size={24} color={TEACHER_COLORS.gray[800]} />
             </TouchableOpacity>
-          </View>
-        </View>
+          }
+        />
 
         <ScrollView className="flex-1 px-5 py-4">
           {/* 필터 섹션 */}
@@ -376,17 +375,14 @@ export default function NoticeCreateScreen({ navigation }) {
   return (
     <SafeAreaView className="flex-1 bg-gray-50">
       {/* 헤더 */}
-      <View className="bg-primary px-5 py-4">
-        <View className="flex-row justify-between items-center">
-          <View className="flex-row items-center">
-            <Ionicons name="book" size={24} color="white" />
-            <Text className="text-white text-xl font-bold ml-2">피아노 학원 관리</Text>
-          </View>
+      <ScreenHeader
+        title="알림장 작성"
+        rightButton={
           <TouchableOpacity onPress={() => navigation.goBack()}>
-            <Ionicons name="close" size={28} color="white" />
+            <Ionicons name="close" size={24} color={TEACHER_COLORS.gray[800]} />
           </TouchableOpacity>
-        </View>
-      </View>
+        }
+      />
 
       <ScrollView className="flex-1 px-5 py-4">
 

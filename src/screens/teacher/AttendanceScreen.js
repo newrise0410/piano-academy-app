@@ -1,17 +1,23 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { View, ScrollView, TouchableOpacity, Alert, Platform, Modal } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import Text from '../../components/common/Text';
-import { mockStudents } from '../../data/mockStudents';
+import { Text, ScreenHeader } from '../../components/common';
 import TEACHER_COLORS from '../../styles/teacher_colors';
 import { getMonthName, getDayOfWeek } from '../../utils';
+import { useStudentStore } from '../../store';
 
 export default function AttendanceScreen() {
+  const { students, fetchStudents } = useStudentStore();
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [collapsedGroups, setCollapsedGroups] = useState({}); // 접힌 그룹 관리
+
+  // 초기 데이터 로드
+  useEffect(() => {
+    fetchStudents();
+  }, [fetchStudents]);
 
   // 레벨별 색상 매핑 (StudentCard와 동일)
   const getLevelColors = (level) => {
@@ -47,7 +53,7 @@ export default function AttendanceScreen() {
     const selectedDay = getSelectedDayOfWeek();
 
     // 선택한 요일에 수업이 있는 학생만 필터링
-    return mockStudents
+    return students
       .filter(student => {
         const scheduleDays = student.schedule.split(' ')[0].split('/');
         return scheduleDays.includes(selectedDay);
@@ -59,7 +65,7 @@ export default function AttendanceScreen() {
         time: student.schedule, // 실제 스케줄 사용
         status: null, // 초기값은 모두 미체크
       }));
-  }, [selectedDate]);
+  }, [selectedDate, students]);
 
   const [attendanceData, setAttendanceData] = useState(initialAttendance);
 
@@ -152,7 +158,7 @@ export default function AttendanceScreen() {
       // 날짜가 변경되면 출석 데이터 리셋
       const newDay = getDayOfWeek(date);
 
-      const newAttendance = mockStudents
+      const newAttendance = students
         .filter(student => {
           const scheduleDays = student.schedule.split(' ')[0].split('/');
           return scheduleDays.includes(newDay);
@@ -172,24 +178,12 @@ export default function AttendanceScreen() {
   return (
     <SafeAreaView className="flex-1 bg-gray-50">
       {/* 헤더 */}
-      <View className="bg-primary px-5 py-4">
-        <View className="flex-row justify-between items-center">
-          <View className="flex-row items-center">
-            <Ionicons name="calendar" size={24} color="white" />
-            <Text className="text-white text-xl font-bold ml-2">피아노 학원 관리</Text>
-          </View>
-          <Ionicons name="menu" size={28} color="white" />
-        </View>
-      </View>
+      <ScreenHeader title="출석 체크" />
 
       <ScrollView className="flex-1">
-        {/* 출석 제크 화면 헤더 */}
-        <View className="px-5 mt-4 mb-3">
-          <Text className="text-base text-gray-600">출석 제크 화면</Text>
-        </View>
 
         {/* 날짜 선택 */}
-        <View className="px-5 mb-4">
+        <View className="px-5 mt-4 mb-4">
           <View className="bg-white rounded-2xl p-4 flex-row items-center justify-between">
             <View className="flex-row items-center">
               <Ionicons name="calendar-outline" size={20} color={TEACHER_COLORS.primary.DEFAULT} />

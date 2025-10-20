@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { View, ScrollView, TouchableOpacity, RefreshControl, Linking, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { Text, LevelBadge, UnpaidBadge, Button } from '../../components/common';
+import { Text, LevelBadge, UnpaidBadge, Button, ScreenHeader } from '../../components/common';
 import TEACHER_COLORS from '../../styles/teacher_colors';
 import { useStudentStore, useToastStore } from '../../store';
 import { formatCurrency } from '../../utils';
@@ -82,25 +82,13 @@ export default function UnpaidStudentsScreen({ navigation }) {
   return (
     <SafeAreaView className="flex-1 bg-gray-50">
       {/* 헤더 */}
-      <View className="bg-white border-b border-gray-200 px-5 py-4">
-        <View className="flex-row items-center justify-between mb-3">
-          <View className="flex-row items-center">
-            <TouchableOpacity
-              onPress={() => navigation.goBack()}
-              className="mr-3"
-              activeOpacity={0.7}
-            >
-              <Ionicons name="arrow-back" size={24} color={TEACHER_COLORS.gray[800]} />
-            </TouchableOpacity>
-            <View>
-              <Text className="text-xl font-bold text-gray-800">미납 학생</Text>
-              <Text className="text-sm text-gray-500 mt-0.5">
-                {unpaidStudents.length}명의 미납 학생
-              </Text>
-            </View>
-          </View>
-        </View>
+      <ScreenHeader
+        title="미납 학생"
+        subtitle={`${unpaidStudents.length}명의 미납 학생`}
+      />
 
+      {/* 통계 및 정렬 */}
+      <View className="bg-white border-b border-gray-200 px-5 py-3">
         {/* 통계 */}
         <View className="bg-red-50 rounded-xl p-4">
           <View className="flex-row items-center justify-between mb-2">

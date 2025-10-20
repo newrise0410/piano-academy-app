@@ -57,3 +57,23 @@ export { default as ErrorBoundary } from './ErrorBoundary';
 // Modals
 export { default as BottomSheet } from './BottomSheet';
 export { default as Drawer } from './Drawer';
+
+// Headers
+export { default as ScreenHeader } from './ScreenHeader';
+
+// Notifications
+export { default as NotificationBadge } from './NotificationBadge';
+export { default as NotificationModal } from './NotificationModal';
+
+// Charts
+export { default as MonthlyRevenueChart } from './MonthlyRevenueChart';
+export { default as AttendanceRateChart } from './AttendanceRateChart';
+export { default as StudentGrowthChart } from './StudentGrowthChart';
+export { default as PieChartComponent } from './PieChartComponent';
+
+// Gallery
+export { default as ImageGrid } from './ImageGrid';
+export { default as ImageViewerModal } from './ImageViewerModal';
+export { default as ImageUploadButton } from './ImageUploadButton';
+export { default as GalleryUploadModal } from './GalleryUploadModal';
+export { default as GalleryDetailModal } from './GalleryDetailModal';

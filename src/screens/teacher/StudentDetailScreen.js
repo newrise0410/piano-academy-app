@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, ScrollView, TouchableOpacity, Image } from 'react-native';
+import { View, ScrollView, TouchableOpacity, Image, Alert, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
@@ -10,7 +10,8 @@ import {
   StatusBadge,
   AttendanceStatusBadge,
   PaymentStatusBadge,
-  SectionCard
+  SectionCard,
+  ScreenHeader
 } from '../../components/common';
 import TEACHER_COLORS, { TEACHER_SHADOW_COLORS, TEACHER_OVERLAY_COLORS } from '../../styles/teacher_colors';
 import { useStudentStore } from '../../store';
@@ -501,59 +502,28 @@ export default function StudentDetailScreen({ route, navigation }) {
   return (
     <SafeAreaView className="flex-1 bg-gray-50">
       {/* 헤더 */}
-      <View className="bg-primary px-5 py-4">
-        <View className="flex-row items-center justify-between mb-3">
-          <TouchableOpacity
-            onPress={handleGoBack}
-            className="w-8 h-8 items-center justify-center"
-          >
-            <Ionicons name="arrow-back" size={24} color="white" />
-          </TouchableOpacity>
-          <Text className="text-white text-lg font-bold">학생 상세 정보</Text>
+      <ScreenHeader
+        title={student?.name || '학생 상세'}
+        subtitle={`${student?.level || '초급'} · ${student?.schedule || '월/수 16:00'}`}
+        rightButton={
           <View className="flex-row">
             <TouchableOpacity
               onPress={handleEdit}
-              className="w-8 h-8 items-center justify-center mr-2"
+              className="p-2 mr-1"
               activeOpacity={0.7}
             >
-              <Ionicons name="create-outline" size={24} color="white" />
+              <Ionicons name="create-outline" size={22} color={TEACHER_COLORS.primary.DEFAULT} />
             </TouchableOpacity>
             <TouchableOpacity
               onPress={handleDelete}
-              className="w-8 h-8 items-center justify-center"
+              className="p-2"
               activeOpacity={0.7}
             >
-              <Ionicons name="trash-outline" size={24} color="white" />
+              <Ionicons name="trash-outline" size={22} color={TEACHER_COLORS.red[500]} />
             </TouchableOpacity>
           </View>
-        </View>
-
-        {/* 학생 정보 카드 */}
-        <View className="bg-white/10 backdrop-blur rounded-2xl p-4">
-          <View className="flex-row items-center">
-            <View
-              className="w-12 h-12 rounded-xl items-center justify-center mr-3"
-              style={{ backgroundColor: TEACHER_OVERLAY_COLORS.whiteLight }}
-            >
-              <Ionicons name="person" size={24} color="white" />
-            </View>
-            <View className="flex-1">
-              <View className="flex-row items-center mb-1">
-                <Text className="text-white text-xl font-bold mr-2">{student?.name || '김민지'}</Text>
-                <View
-                  className="rounded-full px-2 py-0.5"
-                  style={{ backgroundColor: TEACHER_OVERLAY_COLORS.whiteLight }}
-                >
-                  <Text className="text-white text-xs font-bold">{student?.level || '초급'}</Text>
-                </View>
-              </View>
-              <Text className="text-white/80 text-sm">
-                매주 {student?.schedule?.split('/')[0] || '월/수'} {student?.schedule?.split(' ')[1] || '16:00'} | 010-1234-5678
-              </Text>
-            </View>
-          </View>
-        </View>
-      </View>
+        }
+      />
 
       {/* 탭 메뉴 */}
       <View className="bg-white border-b border-gray-200">

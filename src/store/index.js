@@ -7,3 +7,4 @@ export { useAttendanceStore } from './attendanceStore';
 export { usePaymentStore } from './paymentStore';
 export { useNoticeStore } from './noticeStore';
 export { useToastStore, toast } from './toastStore';
+export { default as useNotificationStore } from './notificationStore';

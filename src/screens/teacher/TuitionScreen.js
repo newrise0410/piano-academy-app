@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { View, ScrollView, TouchableOpacity, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
-import Text from '../../components/common/Text';
+import { Text, ScreenHeader } from '../../components/common';
 import { useStudentStore } from '../../store';
 import TEACHER_COLORS, { TEACHER_GRADIENTS, TEACHER_OVERLAY_COLORS } from '../../styles/teacher_colors';
 import { formatCurrency, formatTicketDisplay } from '../../utils';
@@ -81,12 +81,10 @@ export default function TuitionScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-gray-50">
-      <ScrollView className="flex-1">
-        {/* 타이틀 */}
-        <View className="px-5 pt-5 pb-3">
-          <Text className="text-lg text-gray-600">수강료 관리 화면</Text>
-        </View>
+      {/* 헤더 */}
+      <ScreenHeader title="수강료 관리" />
 
+      <ScrollView className="flex-1">
         {/* 이번 달 수강권 현황 - 그라디언트 배경 */}
         <View className="px-5 mb-4">
           <LinearGradient

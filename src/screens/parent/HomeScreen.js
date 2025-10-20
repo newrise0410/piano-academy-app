@@ -1,17 +1,27 @@
 // src/screens/parent/HomeScreen.js
-import React from 'react';
+import React, { useState } from 'react';
 import { View, ScrollView, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import Text from '../../components/common/Text';
-import Card from '../../components/common/Card';
-import StatBox from '../../components/common/StatBox';
-import ListItem from '../../components/common/ListItem';
+import {
+  Text,
+  Card,
+  StatBox,
+  ListItem,
+  NotificationBadge,
+  NotificationModal,
+} from '../../components/common';
 import { childData, recentActivities, todaySchedule } from '../../data/mockParentData';
 import PARENT_COLORS, { PARENT_GRADIENTS, PARENT_SEMANTIC_COLORS, PARENT_OVERLAY_COLORS } from '../../styles/parent_colors';
+import { useNotificationStore } from '../../store';
 
 export default function HomeScreen({ navigation }) {
+  const { getUnreadCount } = useNotificationStore();
+  const [notificationModalVisible, setNotificationModalVisible] = useState(false);
+
+  // 읽지 않은 알림 수
+  const unreadCount = getUnreadCount();
   return (
     <SafeAreaView className="flex-1 bg-gray-50">
       <ScrollView
@@ -24,9 +34,11 @@ export default function HomeScreen({ navigation }) {
             <Text className="text-white text-sm opacity-90">안녕하세요 👋</Text>
             <Text className="text-white text-xl font-bold mt-1">{childData.name} 학부모님</Text>
           </View>
-          <TouchableOpacity activeOpacity={0.7}>
-            <Ionicons name="notifications-outline" size={24} color="white" />
-          </TouchableOpacity>
+          <NotificationBadge
+            count={unreadCount}
+            onPress={() => setNotificationModalVisible(true)}
+            iconColor="white"
+          />
         </View>
 
         {/* 컨텐츠 */}
@@ -168,6 +180,12 @@ export default function HomeScreen({ navigation }) {
           </Card>
         </View>
       </ScrollView>
+
+      {/* 알림 모달 */}
+      <NotificationModal
+        visible={notificationModalVisible}
+        onClose={() => setNotificationModalVisible(false)}
+      />
     </SafeAreaView>
   );
 }

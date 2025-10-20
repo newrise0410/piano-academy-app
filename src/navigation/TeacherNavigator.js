@@ -15,6 +15,8 @@ import TuitionScreen from "../screens/teacher/TuitionScreen";
 import TodayClassesScreen from "../screens/teacher/TodayClassesScreen";
 import UnpaidStudentsScreen from "../screens/teacher/UnpaidStudentsScreen";
 import MakeupClassesScreen from "../screens/teacher/MakeupClassesScreen";
+import StatisticsScreen from "../screens/teacher/StatisticsScreen";
+import GalleryScreen from "../screens/teacher/GalleryScreen";
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -24,6 +26,8 @@ function DashboardStack() {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name="DashboardMain" component={DashboardScreen} />
+      <Stack.Screen name="StatisticsScreen" component={StatisticsScreen} />
+      <Stack.Screen name="GalleryScreen" component={GalleryScreen} />
       <Stack.Screen name="TodayClassesScreen" component={TodayClassesScreen} />
       <Stack.Screen name="UnpaidStudentsScreen" component={UnpaidStudentsScreen} />
       <Stack.Screen name="MakeupClassesScreen" component={MakeupClassesScreen} />

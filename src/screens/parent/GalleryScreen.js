@@ -1,37 +1,134 @@
 // src/screens/parent/GalleryScreen.js
-import React from 'react';
-import { View, ScrollView } from 'react-native';
+import React, { useState, useMemo } from 'react';
+import { View, ScrollView, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import Text from '../../components/common/Text';
-import Card from '../../components/common/Card';
+import { Text, Card, ScreenHeader, ImageGrid, GalleryDetailModal, FilterChip } from '../../components/common';
 import { galleryItems, timeline, achievements } from '../../data/mockParentData';
 import PARENT_COLORS, { PARENT_GRADIENTS, PARENT_SEMANTIC_COLORS, PARENT_OVERLAY_COLORS } from '../../styles/parent_colors';
 
 export default function GalleryScreen() {
+  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [selectedItem, setSelectedItem] = useState(null);
+  const [viewerVisible, setViewerVisible] = useState(false);
+
+  // 좋아요와 댓글 필드가 없는 아이템에 추가
+  const [items, setItems] = useState(
+    galleryItems.map(item => ({
+      ...item,
+      likes: item.likes || 0,
+      comments: item.comments || [],
+    }))
+  );
+
+  const categories = [
+    { value: 'all', label: '전체' },
+    { value: 'lesson', label: '수업' },
+    { value: 'practice', label: '연습' },
+    { value: 'event', label: '이벤트' },
+    { value: 'achievement', label: '성취' },
+  ];
+
+  const filteredItems = useMemo(() => {
+    if (selectedCategory === 'all') {
+      return items;
+    }
+    return items.filter(item => item.category === selectedCategory);
+  }, [selectedCategory, items]);
+
+  const handleItemPress = (item) => {
+    setSelectedItem(item);
+    setViewerVisible(true);
+  };
+
+  const handleLike = (itemId) => {
+    setItems(prev =>
+      prev.map(item =>
+        item.id === itemId ? { ...item, likes: item.likes + 1 } : item
+      )
+    );
+  };
+
+  const handleComment = (itemId, newComment) => {
+    setItems(prev =>
+      prev.map(item =>
+        item.id === itemId
+          ? { ...item, comments: [...item.comments, newComment] }
+          : item
+      )
+    );
+  };
+
+  const imageCount = filteredItems.filter(item => item.type === 'image').length;
+  const videoCount = filteredItems.filter(item => item.type === 'video').length;
+
   return (
     <SafeAreaView className="flex-1 bg-gray-50">
+      <ScreenHeader title="갤러리" />
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
         <View className="px-5 py-4">
-          {/* 최근 업로드 */}
-          <Card>
-            <Text className="text-gray-800 font-bold text-lg mb-4">최근 순간들</Text>
-            <View className="flex-row flex-wrap -mx-1">
-              {galleryItems.map((item) => (
-                <View key={item.id} className="w-1/3 p-1">
-                  <View
-                    className="aspect-square rounded-xl items-center justify-center"
-                    style={{ backgroundColor: PARENT_COLORS.gray[50] }}
-                  >
-                    {item.type === 'image' ? (
-                      <Text style={{ fontSize: 40 }}>{item.emoji}</Text>
-                    ) : (
-                      <Ionicons name="image-outline" size={32} color={PARENT_COLORS.gray[300]} />
-                    )}
-                  </View>
+          {/* 통계 */}
+          <View className="flex-row mb-4">
+            <View className="flex-1 mr-2">
+              <View className="bg-white rounded-xl p-4 items-center shadow-sm">
+                <View className="w-12 h-12 rounded-full items-center justify-center mb-2" style={{ backgroundColor: PARENT_COLORS.primary[50] }}>
+                  <Ionicons name="image" size={24} color={PARENT_COLORS.primary.DEFAULT} />
                 </View>
-              ))}
+                <Text className="text-2xl font-bold text-gray-800">{imageCount}</Text>
+                <Text className="text-xs mt-1" style={{ color: PARENT_COLORS.gray[500] }}>사진</Text>
+              </View>
             </View>
+            <View className="flex-1 ml-2">
+              <View className="bg-white rounded-xl p-4 items-center shadow-sm">
+                <View className="w-12 h-12 rounded-full items-center justify-center mb-2" style={{ backgroundColor: PARENT_COLORS.blue[50] }}>
+                  <Ionicons name="videocam" size={24} color={PARENT_COLORS.blue[600]} />
+                </View>
+                <Text className="text-2xl font-bold text-gray-800">{videoCount}</Text>
+                <Text className="text-xs mt-1" style={{ color: PARENT_COLORS.gray[500] }}>영상</Text>
+              </View>
+            </View>
+          </View>
+
+          {/* 카테고리 필터 */}
+          <View className="mb-4">
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} className="-mx-5 px-5">
+              <View className="flex-row">
+                {categories.map((category) => (
+                  <FilterChip
+                    key={category.value}
+                    label={category.label}
+                    selected={selectedCategory === category.value}
+                    onPress={() => setSelectedCategory(category.value)}
+                    className="mr-2"
+                  />
+                ))}
+              </View>
+            </ScrollView>
+          </View>
+
+          {/* 사진/영상 그리드 */}
+          <Card>
+            <View className="flex-row justify-between items-center mb-4">
+              <Text className="text-gray-800 font-bold text-lg">
+                {categories.find(c => c.value === selectedCategory)?.label || '전체'}
+              </Text>
+              <Text className="text-sm" style={{ color: PARENT_COLORS.gray[500] }}>
+                총 {filteredItems.length}개
+              </Text>
+            </View>
+
+            {filteredItems.length > 0 ? (
+              <ImageGrid
+                items={filteredItems}
+                onItemPress={handleItemPress}
+                columns={3}
+              />
+            ) : (
+              <View className="py-12 items-center">
+                <Ionicons name="image-outline" size={48} color={PARENT_COLORS.gray[300]} />
+                <Text className="text-gray-500 mt-3">아직 등록된 사진이 없어요</Text>
+              </View>
+            )}
           </Card>
 
           {/* 타임라인 */}
@@ -126,6 +223,15 @@ export default function GalleryScreen() {
           </Card>
         </View>
       </ScrollView>
+
+      {/* 이미지 상세 모달 */}
+      <GalleryDetailModal
+        visible={viewerVisible}
+        onClose={() => setViewerVisible(false)}
+        item={selectedItem}
+        onLike={handleLike}
+        onComment={handleComment}
+      />
     </SafeAreaView>
   );
 }

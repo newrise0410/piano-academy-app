@@ -5,11 +5,17 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import TEACHER_COLORS from '../../styles/teacher_colors';
 
-import Text from '../../components/common/Text';
-import Card from '../../components/common/Card';
-import Button from '../../components/common/Button';
-import StatBox from '../../components/common/StatBox';
-import ActivityItem from '../../components/common/ActivityItem';
+import {
+  Text,
+  Card,
+  Button,
+  StatBox,
+  ActivityItem,
+  NotificationBadge,
+  NotificationModal,
+  MonthlyRevenueChart,
+  AttendanceRateChart,
+} from '../../components/common';
 
 // 모달 컴포넌트
 import TodayClassesModal from '../../components/teacher/TodayClassesModal';
@@ -18,19 +24,24 @@ import MakeupClassesModal from '../../components/teacher/MakeupClassesModal';
 
 import useDashboard from '../../hooks/useDashboard';
 import useActivities from '../../hooks/useActivities';
-import { useStudentStore } from '../../store';
-import { useToastStore } from '../../store';
+import { useStudentStore, useToastStore, useNotificationStore } from '../../store';
+import { teacherMonthlyRevenue, teacherWeeklyAttendance } from '../../data/mockChartData';
 
 export default function DashboardScreen({ navigation }) {
   const { stats, loading: statsLoading, refresh: refreshStats } = useDashboard();
   const { activities, loading: activitiesLoading, refresh: refreshActivities } = useActivities();
   const { students, fetchStudents } = useStudentStore();
+  const { getUnreadCount } = useNotificationStore();
   const toast = useToastStore();
 
   // 모달 상태
   const [todayClassesModalVisible, setTodayClassesModalVisible] = useState(false);
   const [unpaidModalVisible, setUnpaidModalVisible] = useState(false);
   const [makeupModalVisible, setMakeupModalVisible] = useState(false);
+  const [notificationModalVisible, setNotificationModalVisible] = useState(false);
+
+  // 읽지 않은 알림 수
+  const unreadCount = getUnreadCount();
 
   // 초기 데이터 로드
   useEffect(() => {
@@ -145,7 +156,11 @@ export default function DashboardScreen({ navigation }) {
             <Text className="text-white text-sm opacity-90">안녕하세요 👋</Text>
             <Text className="text-white text-xl font-bold mt-1">김세욱 선생님</Text>
           </View>
-          <Ionicons name="notifications-outline" size={24} color={TEACHER_COLORS.white} />
+          <NotificationBadge
+            count={unreadCount}
+            onPress={() => setNotificationModalVisible(true)}
+            iconColor={TEACHER_COLORS.white}
+          />
         </View>
 
         {/* 컨텐츠 */}
@@ -194,21 +209,51 @@ export default function DashboardScreen({ navigation }) {
           {/* 빠른 작업 */}
           <Card className="mt-4">
             <Text className="text-lg font-bold text-gray-800 mb-4">빠른 작업</Text>
-            
-            <Button 
+
+            <Button
               title="알림장 작성하기"
               icon="notifications"
               variant="primary"
               onPress={() => navigation.navigate('NoticeTab')}
             />
 
-            <Button 
+            <Button
               title="오늘 출석 체크"
               icon="checkmark-circle"
               variant="secondary"
               onPress={() => navigation.navigate('Attendance')}
               className="mt-3"
             />
+
+            <Button
+              title="갤러리 관리"
+              icon="images"
+              variant="outline"
+              onPress={() => navigation.navigate('GalleryScreen')}
+              className="mt-3"
+            />
+          </Card>
+
+          {/* 통계 차트 */}
+          <Card className="mt-4">
+            <View className="flex-row justify-between items-center mb-4">
+              <Text className="text-lg font-bold text-gray-800">통계 분석</Text>
+              <TouchableOpacity
+                onPress={() => navigation.navigate('StatisticsScreen')}
+                className="flex-row items-center"
+              >
+                <Text className="text-sm font-medium mr-1" style={{ color: TEACHER_COLORS.primary.DEFAULT }}>
+                  전체보기
+                </Text>
+                <Ionicons name="chevron-forward" size={16} color={TEACHER_COLORS.primary.DEFAULT} />
+              </TouchableOpacity>
+            </View>
+
+            <MonthlyRevenueChart data={teacherMonthlyRevenue} title="최근 6개월 매출" />
+          </Card>
+
+          <Card className="mt-4">
+            <AttendanceRateChart data={teacherWeeklyAttendance} title="이번 달 출석률" />
           </Card>
 
           {/* 최근 활동 */}
@@ -261,6 +306,12 @@ export default function DashboardScreen({ navigation }) {
           setMakeupModalVisible(false);
           navigation.navigate('MakeupClassesScreen');
         }}
+      />
+
+      {/* 알림 모달 */}
+      <NotificationModal
+        visible={notificationModalVisible}
+        onClose={() => setNotificationModalVisible(false)}
       />
     </SafeAreaView>
   );

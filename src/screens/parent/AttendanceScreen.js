@@ -3,9 +3,7 @@ import React, { useState, useMemo } from 'react';
 import { View, ScrollView, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import Text from '../../components/common/Text';
-import Card from '../../components/common/Card';
-import StatBox from '../../components/common/StatBox';
+import { Text, Card, StatBox, ScreenHeader } from '../../components/common';
 import {
   childData,
   upcomingClasses,
@@ -32,6 +30,7 @@ export default function AttendanceScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-gray-50">
+      <ScreenHeader title="출석 현황" />
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
         <View className="px-5 py-4">
           {/* 출석 통계 */}

@@ -7,7 +7,8 @@ import {
   FilterChip,
   Button,
   NoStudents,
-  NoSearchResults
+  NoSearchResults,
+  ScreenHeader
 } from '../../components/common';
 import StudentCard from '../../components/teacher/StudentCard';
 import StudentDetailScreen from './StudentDetailScreen';
@@ -106,17 +107,14 @@ export default function StudentListScreen({ navigation }) {
       <Animated.View style={{ flex: 1, transform: [{ translateX }] }}>
     <SafeAreaView className="flex-1 bg-gray-50">
       {/* 헤더 */}
-      <View className="bg-primary px-5 py-4">
-        <View className="flex-row justify-between items-center">
-          <View className="flex-row items-center">
-            <Ionicons name="book" size={24} color="white" />
-            <Text className="text-white text-xl font-bold ml-2">피아노 학원 관리</Text>
-          </View>
+      <ScreenHeader
+        title="학생 목록"
+        rightButton={
           <TouchableOpacity onPress={handleAddStudent} activeOpacity={0.7}>
-            <Ionicons name="add-circle" size={28} color="white" />
+            <Ionicons name="add-circle" size={28} color={TEACHER_COLORS.primary.DEFAULT} />
           </TouchableOpacity>
-        </View>
-      </View>
+        }
+      />
 
       {/* 검색 영역 */}
       <View className="px-5 mt-4">
