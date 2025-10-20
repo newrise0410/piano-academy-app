@@ -1,27 +1,33 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { View, ScrollView, TouchableOpacity, Animated, Modal, Alert } from 'react-native';
+import { View, ScrollView, TouchableOpacity, Animated, Modal, Alert, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Text, ScreenHeader } from '../../components/common';
 import NoticeCreateScreen from './NoticeCreateScreen';
 import TEACHER_COLORS, { TEACHER_SHADOW_COLORS } from '../../styles/teacher_colors';
-import { getNotices, deleteNotice } from '../../data/mockNotices';
+import { useNoticeStore, useToastStore } from '../../store';
 
 export default function NoticeListScreen({ navigation }) {
   const [showCreateScreen, setShowCreateScreen] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedNotice, setSelectedNotice] = useState(null);
-  const [notices, setNotices] = useState([]);
   const slideAnim = useRef(new Animated.Value(0)).current;
+
+  const { notices, loading, fetchNotices, deleteNotice: removeNotice } = useNoticeStore();
+  const toast = useToastStore();
 
   // 알림장 목록 로드
   useEffect(() => {
     loadNotices();
   }, []);
 
-  const loadNotices = () => {
-    const noticeList = getNotices();
-    setNotices(noticeList);
+  const loadNotices = async () => {
+    try {
+      await fetchNotices(true); // 강제 새로고침
+    } catch (error) {
+      console.error('알림장 로드 실패:', error);
+      toast.error('알림장을 불러오는데 실패했습니다');
+    }
   };
 
   // 화면 전환 애니메이션
@@ -73,10 +79,15 @@ export default function NoticeListScreen({ navigation }) {
         {
           text: '삭제',
           style: 'destructive',
-          onPress: () => {
-            deleteNotice(selectedNotice.id);
-            Alert.alert('완료', '알림장이 삭제되었습니다.');
-            handleCloseDetail();
+          onPress: async () => {
+            try {
+              await removeNotice(selectedNotice.id);
+              toast.success('알림장이 삭제되었습니다');
+              handleCloseDetail();
+            } catch (error) {
+              console.error('알림장 삭제 실패:', error);
+              toast.error('알림장 삭제에 실패했습니다');
+            }
           }
         }
       ]
@@ -137,7 +148,12 @@ export default function NoticeListScreen({ navigation }) {
           </View>
 
           {/* 알림장 목록 */}
-          <ScrollView className="flex-1 px-5">
+          <ScrollView
+            className="flex-1 px-5"
+            refreshControl={
+              <RefreshControl refreshing={loading} onRefresh={loadNotices} />
+            }
+          >
             {notices.map((notice, index) => (
               <TouchableOpacity
                 key={notice.id}

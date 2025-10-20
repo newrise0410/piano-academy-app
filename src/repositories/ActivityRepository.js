@@ -1,7 +1,7 @@
 // src/repositories/ActivityRepository.js
 // 활동 기록 데이터 관리 Repository
 
-import { isMockMode, DEV_CONFIG } from '../config/dataConfig';
+import { isMockMode, isFirebaseMode, DEV_CONFIG } from '../config/dataConfig';
 import { apiClient } from '../services/api/client';
 import { ENDPOINTS } from '../services/api/endpoints';
 import {
@@ -10,6 +10,12 @@ import {
   getStudentActivities as getMockStudentActivities,
   getActivitiesByType as getMockActivitiesByType,
 } from '../data/mockActivities';
+import {
+  getActivities as getFirebaseActivities,
+  addActivity as addFirebaseActivity,
+  getActivitiesByDateRange as getFirebaseActivitiesByDateRange,
+} from '../services/firestoreService';
+import { getCurrentUser } from '../services/authService';
 
 const simulateNetworkDelay = () => {
   if (isMockMode() && DEV_CONFIG.mockNetworkDelay > 0) {
@@ -42,6 +48,18 @@ export const ActivityRepository = {
       return getMockActivities();
     }
 
+    if (isFirebaseMode()) {
+      const currentUser = getCurrentUser();
+      if (!currentUser) {
+        throw new Error('로그인이 필요합니다');
+      }
+      const result = await getFirebaseActivities(currentUser.uid);
+      if (!result.success) {
+        throw new Error(result.error);
+      }
+      return result.data;
+    }
+
     try {
       const response = await apiClient.get(ENDPOINTS.ACTIVITIES.LIST);
       return response.data;
@@ -65,6 +83,18 @@ export const ActivityRepository = {
       await simulateNetworkDelay();
       const activities = getMockActivities();
       return activities.slice(0, limit);
+    }
+
+    if (isFirebaseMode()) {
+      const currentUser = getCurrentUser();
+      if (!currentUser) {
+        throw new Error('로그인이 필요합니다');
+      }
+      const result = await getFirebaseActivities(currentUser.uid, { limit });
+      if (!result.success) {
+        throw new Error(result.error);
+      }
+      return result.data;
     }
 
     try {
@@ -93,6 +123,18 @@ export const ActivityRepository = {
       return getMockStudentActivities(studentId);
     }
 
+    if (isFirebaseMode()) {
+      const currentUser = getCurrentUser();
+      if (!currentUser) {
+        throw new Error('로그인이 필요합니다');
+      }
+      const result = await getFirebaseActivities(currentUser.uid, { studentId });
+      if (!result.success) {
+        throw new Error(result.error);
+      }
+      return result.data;
+    }
+
     try {
       const response = await apiClient.get(ENDPOINTS.ACTIVITIES.LIST, {
         params: { studentId },
@@ -119,6 +161,18 @@ export const ActivityRepository = {
       return getMockActivitiesByType(type);
     }
 
+    if (isFirebaseMode()) {
+      const currentUser = getCurrentUser();
+      if (!currentUser) {
+        throw new Error('로그인이 필요합니다');
+      }
+      const result = await getFirebaseActivities(currentUser.uid, { type });
+      if (!result.success) {
+        throw new Error(result.error);
+      }
+      return result.data;
+    }
+
     try {
       const response = await apiClient.get(ENDPOINTS.ACTIVITIES.BY_TYPE(type));
       return response.data;
@@ -141,6 +195,18 @@ export const ActivityRepository = {
     if (isMockMode()) {
       await simulateNetworkDelay();
       return addMockActivity(activityData);
+    }
+
+    if (isFirebaseMode()) {
+      const currentUser = getCurrentUser();
+      if (!currentUser) {
+        throw new Error('로그인이 필요합니다');
+      }
+      const result = await addFirebaseActivity(activityData, currentUser.uid);
+      if (!result.success) {
+        throw new Error(result.error);
+      }
+      return { ...activityData, id: result.id, timestamp: new Date().toISOString() };
     }
 
     try {
@@ -175,6 +241,18 @@ export const ActivityRepository = {
         const end = new Date(endDate);
         return activityDate >= start && activityDate <= end;
       });
+    }
+
+    if (isFirebaseMode()) {
+      const currentUser = getCurrentUser();
+      if (!currentUser) {
+        throw new Error('로그인이 필요합니다');
+      }
+      const result = await getFirebaseActivitiesByDateRange(currentUser.uid, startDate, endDate);
+      if (!result.success) {
+        throw new Error(result.error);
+      }
+      return result.data;
     }
 
     try {

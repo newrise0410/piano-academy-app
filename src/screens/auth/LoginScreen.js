@@ -1,27 +1,56 @@
 // src/screens/auth/LoginScreen.js
 import React, { useState } from 'react';
-import { View, ScrollView, TouchableOpacity } from 'react-native';
+import { View, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Text, FormInput, Button } from '../../components/common';
-import { useToastStore } from '../../store';
+import { useToastStore, useAuthStore } from '../../store';
 import AUTH_COLORS, { AUTH_GRADIENTS, AUTH_SHADOW_COLORS } from '../../styles/auth_colors';
+import { loginWithEmail } from '../../services/authService';
+import { isFirebaseMode } from '../../config/dataConfig';
 
 export default function LoginScreen({ navigation }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
+  const [loading, setLoading] = useState(false);
   const toast = useToastStore();
+  const { login } = useAuthStore();
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
     if (!email || !password) {
       toast.warning('이메일과 비밀번호를 입력해주세요');
       return;
     }
-    // TODO: 실제 로그인 로직 구현
-    toast.info('로그인 기능은 준비 중입니다');
+
+    // Firebase 모드인 경우 실제 로그인
+    if (isFirebaseMode()) {
+      setLoading(true);
+      try {
+        const result = await loginWithEmail(email, password);
+
+        if (result.success) {
+          // AuthStore에 사용자 정보 저장
+          login(result.user);
+          toast.success('로그인 성공!');
+
+          // 역할에 따라 화면 이동
+          // navigation.replace는 RootNavigator에서 자동으로 처리됨
+        } else {
+          toast.error(result.error || '로그인에 실패했습니다');
+        }
+      } catch (error) {
+        console.error('Login error:', error);
+        toast.error('로그인 중 오류가 발생했습니다');
+      } finally {
+        setLoading(false);
+      }
+    } else {
+      // Mock 모드는 기존 동작
+      toast.info('로그인 기능은 준비 중입니다');
+    }
   };
 
   const handleSocialLogin = (provider) => {
@@ -108,14 +137,18 @@ export default function LoginScreen({ navigation }) {
               elevation: 4,
             }}
           >
-            <TouchableOpacity onPress={handleLogin} activeOpacity={0.8}>
+            <TouchableOpacity onPress={handleLogin} activeOpacity={0.8} disabled={loading}>
               <LinearGradient
-                colors={AUTH_GRADIENTS.purpleToPink}
+                colors={loading ? ['#9CA3AF', '#9CA3AF'] : AUTH_GRADIENTS.purpleToPink}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 0 }}
                 className="rounded-xl py-4 items-center"
               >
-                <Text className="text-white text-lg font-bold">로그인</Text>
+                {loading ? (
+                  <ActivityIndicator color="white" />
+                ) : (
+                  <Text className="text-white text-lg font-bold">로그인</Text>
+                )}
               </LinearGradient>
             </TouchableOpacity>
           </View>

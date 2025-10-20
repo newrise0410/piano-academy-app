@@ -1,9 +1,15 @@
 // src/repositories/AttendanceRepository.js
 // 출석 데이터 관리 Repository
 
-import { isMockMode, DEV_CONFIG } from '../config/dataConfig';
+import { isMockMode, isFirebaseMode, DEV_CONFIG } from '../config/dataConfig';
 import { apiClient } from '../services/api/client';
 import { ENDPOINTS } from '../services/api/endpoints';
+import {
+  getAttendanceByDate,
+  saveAttendance,
+  updateAttendance,
+} from '../services/firestoreService';
+import { getCurrentUser } from '../services/authService';
 
 /**
  * 네트워크 딜레이 시뮬레이션 (Mock 모드에서만)
@@ -72,6 +78,16 @@ export const AttendanceRepository = {
       return [...mockAttendanceRecords];
     }
 
+    if (isFirebaseMode()) {
+      const currentUser = getCurrentUser();
+      if (!currentUser) {
+        throw new Error('로그인이 필요합니다');
+      }
+      // Firebase에서는 날짜별로 조회해야 하므로 전체 조회는 지원하지 않음
+      // 필요하다면 getByDate를 사용하세요
+      return [];
+    }
+
     try {
       const response = await apiClient.get(ENDPOINTS.ATTENDANCE?.LIST || '/attendance');
       return response.data;
@@ -94,6 +110,12 @@ export const AttendanceRepository = {
     if (isMockMode()) {
       await simulateNetworkDelay();
       return mockAttendanceRecords.filter(r => r.studentId === studentId);
+    }
+
+    if (isFirebaseMode()) {
+      // Firebase에서는 학생별 조회가 복잡하므로 getByDate를 사용하는 것을 권장
+      // 필요하다면 별도의 쿼리 추가 필요
+      return [];
     }
 
     try {
@@ -126,6 +148,18 @@ export const AttendanceRepository = {
       };
       mockAttendanceRecords.push(newRecord);
       return newRecord;
+    }
+
+    if (isFirebaseMode()) {
+      const currentUser = getCurrentUser();
+      if (!currentUser) {
+        throw new Error('로그인이 필요합니다');
+      }
+      const result = await saveAttendance(recordData, currentUser.uid);
+      if (!result.success) {
+        throw new Error(result.error);
+      }
+      return { ...recordData, id: result.id };
     }
 
     try {
@@ -163,6 +197,14 @@ export const AttendanceRepository = {
         updatedAt: new Date().toISOString()
       };
       return mockAttendanceRecords[index];
+    }
+
+    if (isFirebaseMode()) {
+      const result = await updateAttendance(id, updates);
+      if (!result.success) {
+        throw new Error(result.error);
+      }
+      return { id, ...updates };
     }
 
     try {
@@ -221,6 +263,18 @@ export const AttendanceRepository = {
     if (isMockMode()) {
       await simulateNetworkDelay();
       return mockAttendanceRecords.filter(r => r.date === date);
+    }
+
+    if (isFirebaseMode()) {
+      const currentUser = getCurrentUser();
+      if (!currentUser) {
+        throw new Error('로그인이 필요합니다');
+      }
+      const result = await getAttendanceByDate(currentUser.uid, date);
+      if (!result.success) {
+        throw new Error(result.error);
+      }
+      return result.data;
     }
 
     try {

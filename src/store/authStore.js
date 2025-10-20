@@ -1,5 +1,7 @@
 // src/store/authStore.js
 import { create } from 'zustand';
+import { logout as firebaseLogout, onAuthStateChange } from '../services/authService';
+import { isFirebaseMode } from '../config/dataConfig';
 
 /**
  * 인증 상태 관리 Store
@@ -8,13 +10,15 @@ import { create } from 'zustand';
  * - 로그인/로그아웃
  * - 사용자 정보 관리
  * - 역할 전환 (개발/테스트용)
+ * - Firebase Authentication 연동
  */
 export const useAuthStore = create((set, get) => ({
   // State
-  user: null, // { id, email, name, role: 'teacher' | 'parent' }
+  user: null, // { uid, email, name, role: 'teacher' | 'parent' }
   isAuthenticated: false,
-  loading: false,
+  loading: true, // 초기 로딩 상태
   error: null,
+  authInitialized: false, // Firebase 인증 초기화 여부
 
   // Actions
   /**
@@ -32,12 +36,53 @@ export const useAuthStore = create((set, get) => ({
   /**
    * 로그아웃
    */
-  logout: () => {
+  logout: async () => {
+    if (isFirebaseMode()) {
+      await firebaseLogout();
+    }
     set({
       user: null,
       isAuthenticated: false,
       error: null
     });
+  },
+
+  /**
+   * Firebase 인증 상태 초기화
+   * 앱 시작 시 호출하여 자동 로그인 처리
+   */
+  initializeAuth: () => {
+    if (!isFirebaseMode()) {
+      set({ loading: false, authInitialized: true });
+      return;
+    }
+
+    // Firebase 인증 상태 리스너 설정
+    const unsubscribe = onAuthStateChange((user) => {
+      if (user) {
+        set({
+          user: {
+            uid: user.uid,
+            email: user.email,
+            name: user.displayName || user.name,
+            role: user.role || 'teacher',
+            ...user,
+          },
+          isAuthenticated: true,
+          loading: false,
+          authInitialized: true,
+        });
+      } else {
+        set({
+          user: null,
+          isAuthenticated: false,
+          loading: false,
+          authInitialized: true,
+        });
+      }
+    });
+
+    return unsubscribe;
   },
 
   /**

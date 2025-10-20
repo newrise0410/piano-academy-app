@@ -24,14 +24,23 @@ import MakeupClassesModal from '../../components/teacher/MakeupClassesModal';
 
 import useDashboard from '../../hooks/useDashboard';
 import useActivities from '../../hooks/useActivities';
-import { useStudentStore, useToastStore, useNotificationStore } from '../../store';
-import { teacherMonthlyRevenue, teacherWeeklyAttendance } from '../../data/mockChartData';
+import {
+  useStudentStore,
+  useToastStore,
+  useNotificationStore,
+  usePaymentStore,
+  useAttendanceStore,
+  useAuthStore
+} from '../../store';
 
 export default function DashboardScreen({ navigation }) {
   const { stats, loading: statsLoading, refresh: refreshStats } = useDashboard();
   const { activities, loading: activitiesLoading, refresh: refreshActivities } = useActivities();
   const { students, fetchStudents } = useStudentStore();
-  const { getUnreadCount } = useNotificationStore();
+  const { getUnreadCount, subscribeNotifications, unsubscribeNotifications } = useNotificationStore();
+  const { payments, fetchAllPayments } = usePaymentStore();
+  const { records, fetchAllRecords } = useAttendanceStore();
+  const user = useAuthStore((state) => state.user);
   const toast = useToastStore();
 
   // 모달 상태
@@ -46,10 +55,30 @@ export default function DashboardScreen({ navigation }) {
   // 초기 데이터 로드
   useEffect(() => {
     fetchStudents();
-  }, [fetchStudents]);
+    fetchAllPayments();
+    fetchAllRecords();
+  }, []);
+
+  // Firebase 알림 구독
+  useEffect(() => {
+    if (user?.uid) {
+      subscribeNotifications(user.uid);
+    }
+
+    // Cleanup: 컴포넌트 unmount 시 구독 해제
+    return () => {
+      unsubscribeNotifications();
+    };
+  }, [user?.uid]);
 
   const onRefresh = async () => {
-    await Promise.all([refreshStats(), refreshActivities(), fetchStudents()]);
+    await Promise.all([
+      refreshStats(),
+      refreshActivities(),
+      fetchStudents(),
+      fetchAllPayments(),
+      fetchAllRecords()
+    ]);
   };
 
   const isLoading = statsLoading || activitiesLoading;
@@ -96,6 +125,79 @@ export default function DashboardScreen({ navigation }) {
       scheduledTime: null,
     },
   ], []);
+
+  // 월별 매출 차트 데이터 (최근 6개월)
+  const monthlyRevenueData = useMemo(() => {
+    const labels = [];
+    const values = [];
+    const now = new Date();
+
+    // 최근 6개월 생성
+    for (let i = 5; i >= 0; i--) {
+      const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const monthKey = date.toISOString().slice(0, 7); // YYYY-MM
+      const monthLabel = `${date.getMonth() + 1}월`;
+
+      labels.push(monthLabel);
+
+      // 해당 월의 결제 합계
+      if (payments && payments.length > 0) {
+        const monthPayments = payments.filter(p => {
+          const paymentMonth = p.date?.slice(0, 7);
+          return paymentMonth === monthKey && p.status === 'paid';
+        });
+        const total = monthPayments.reduce((sum, p) => sum + (p.amount || 0), 0);
+        values.push(total);
+      } else {
+        values.push(0);
+      }
+    }
+
+    return { labels, values };
+  }, [payments]);
+
+  // 주별 출석률 차트 데이터 (이번 달)
+  const weeklyAttendanceData = useMemo(() => {
+    const labels = [];
+    const values = [];
+    const now = new Date();
+    const currentMonth = now.toISOString().slice(0, 7); // YYYY-MM
+
+    // 이번 달 출석 기록만 필터
+    const monthRecords = records && records.length > 0
+      ? records.filter(r => r.date?.startsWith(currentMonth))
+      : [];
+
+    // 주차별로 그룹화 (간단하게 7일씩 나눔)
+    const startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+    const endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+
+    let weekNum = 1;
+    for (let d = new Date(startDate); d <= endDate; weekNum++) {
+      const weekEnd = new Date(d);
+      weekEnd.setDate(weekEnd.getDate() + 6);
+
+      labels.push(`${weekNum}주`);
+
+      if (monthRecords.length > 0) {
+        const weekRecords = monthRecords.filter(r => {
+          const recordDate = new Date(r.date);
+          return recordDate >= d && recordDate <= weekEnd;
+        });
+
+        const presentCount = weekRecords.filter(r => r.status === 'present' || r.status === 'makeup').length;
+        const rate = weekRecords.length > 0 ? (presentCount / weekRecords.length) * 100 : 0;
+        values.push(Math.round(rate));
+      } else {
+        values.push(0);
+      }
+
+      d.setDate(d.getDate() + 7);
+      if (labels.length >= 4) break; // 최대 4주
+    }
+
+    return { labels, values };
+  }, [records]);
 
   // 연락하기 핸들러
   const handleContact = (student) => {
@@ -257,11 +359,17 @@ export default function DashboardScreen({ navigation }) {
               </TouchableOpacity>
             </View>
 
-            <MonthlyRevenueChart data={teacherMonthlyRevenue} title="최근 6개월 매출" />
+            <MonthlyRevenueChart
+              data={monthlyRevenueData}
+              title="최근 6개월 매출"
+            />
           </Card>
 
           <Card className="mt-4">
-            <AttendanceRateChart data={teacherWeeklyAttendance} title="이번 달 출석률" />
+            <AttendanceRateChart
+              data={weeklyAttendanceData}
+              title="이번 달 출석률"
+            />
           </Card>
 
           {/* 최근 활동 */}

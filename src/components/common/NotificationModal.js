@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import Text from './Text';
 import TEACHER_COLORS from '../../styles/teacher_colors';
-import { useNotificationStore } from '../../store';
+import { useNotificationStore, useAuthStore } from '../../store';
 
 // 타입별 아이콘과 색상
 const getNotificationStyle = (type) => {
@@ -49,6 +49,7 @@ const formatTimestamp = (timestamp) => {
  */
 export default function NotificationModal({ visible, onClose }) {
   const { notifications, markAsRead, markAllAsRead, deleteNotification } = useNotificationStore();
+  const user = useAuthStore((state) => state.user);
 
   const handleNotificationPress = (notification) => {
     if (!notification.isRead) {
@@ -84,7 +85,7 @@ export default function NotificationModal({ visible, onClose }) {
               </View>
             </View>
             {unreadCount > 0 && (
-              <TouchableOpacity onPress={markAllAsRead}>
+              <TouchableOpacity onPress={() => markAllAsRead(user?.uid)}>
                 <Text className="text-sm font-semibold text-primary">모두 읽음</Text>
               </TouchableOpacity>
             )}

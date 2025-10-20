@@ -555,6 +555,284 @@ export const addCommentToGalleryItem = async (itemId, comment) => {
 
 /**
  * ==========================================
+ * 활동 로그 관리 (Activities Collection)
+ * ==========================================
+ */
+
+/**
+ * 활동 로그 목록 가져오기
+ * @param {string} teacherId - 선생님 ID
+ * @param {Object} options - 쿼리 옵션 (limit, type, studentId)
+ * @returns {Promise<Object>} 활동 목록
+ */
+export const getActivities = async (teacherId, options = {}) => {
+  try {
+    const activitiesRef = collection(db, 'activities');
+    let q = query(
+      activitiesRef,
+      where('teacherId', '==', teacherId),
+      orderBy('timestamp', 'desc')
+    );
+
+    if (options.type) {
+      q = query(q, where('type', '==', options.type));
+    }
+
+    if (options.studentId) {
+      q = query(q, where('studentId', '==', options.studentId));
+    }
+
+    if (options.limit) {
+      q = query(q, limit(options.limit));
+    }
+
+    const querySnapshot = await getDocs(q);
+    const activities = [];
+    querySnapshot.forEach((doc) => {
+      activities.push({
+        id: doc.id,
+        ...doc.data(),
+        timestamp: doc.data().timestamp?.toDate?.()?.toISOString() || doc.data().timestamp,
+      });
+    });
+
+    return { success: true, data: activities };
+  } catch (error) {
+    console.error('Get activities error:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+/**
+ * 활동 로그 추가
+ * @param {Object} activityData - 활동 정보
+ * @param {string} teacherId - 선생님 ID
+ * @returns {Promise<Object>} 추가 결과
+ */
+export const addActivity = async (activityData, teacherId) => {
+  try {
+    const activitiesRef = collection(db, 'activities');
+    const docRef = await addDoc(activitiesRef, {
+      ...activityData,
+      teacherId,
+      timestamp: serverTimestamp(),
+    });
+
+    return { success: true, id: docRef.id };
+  } catch (error) {
+    console.error('Add activity error:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+/**
+ * 날짜 범위로 활동 조회
+ * @param {string} teacherId - 선생님 ID
+ * @param {string} startDate - 시작 날짜 (ISO string)
+ * @param {string} endDate - 종료 날짜 (ISO string)
+ * @returns {Promise<Object>} 활동 목록
+ */
+export const getActivitiesByDateRange = async (teacherId, startDate, endDate) => {
+  try {
+    const activitiesRef = collection(db, 'activities');
+    const startTimestamp = Timestamp.fromDate(new Date(startDate));
+    const endTimestamp = Timestamp.fromDate(new Date(endDate));
+
+    const q = query(
+      activitiesRef,
+      where('teacherId', '==', teacherId),
+      where('timestamp', '>=', startTimestamp),
+      where('timestamp', '<=', endTimestamp),
+      orderBy('timestamp', 'desc')
+    );
+
+    const querySnapshot = await getDocs(q);
+    const activities = [];
+    querySnapshot.forEach((doc) => {
+      activities.push({
+        id: doc.id,
+        ...doc.data(),
+        timestamp: doc.data().timestamp?.toDate?.()?.toISOString() || doc.data().timestamp,
+      });
+    });
+
+    return { success: true, data: activities };
+  } catch (error) {
+    console.error('Get activities by date range error:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+/**
+ * ==========================================
+ * 알림 관리 (Notifications Collection)
+ * ==========================================
+ */
+
+/**
+ * 알림 목록 가져오기
+ * @param {string} teacherId - 선생님 ID
+ * @param {Object} options - 쿼리 옵션 (limit, isRead)
+ * @returns {Promise<Object>} 알림 목록
+ */
+export const getNotifications = async (teacherId, options = {}) => {
+  try {
+    const notificationsRef = collection(db, 'notifications');
+    let q = query(
+      notificationsRef,
+      where('teacherId', '==', teacherId),
+      orderBy('timestamp', 'desc')
+    );
+
+    if (options.isRead !== undefined) {
+      q = query(q, where('isRead', '==', options.isRead));
+    }
+
+    if (options.limit) {
+      q = query(q, limit(options.limit));
+    }
+
+    const querySnapshot = await getDocs(q);
+    const notifications = [];
+    querySnapshot.forEach((doc) => {
+      notifications.push({
+        id: doc.id,
+        ...doc.data(),
+        timestamp: doc.data().timestamp?.toDate?.()?.toISOString() || doc.data().timestamp,
+      });
+    });
+
+    return { success: true, data: notifications };
+  } catch (error) {
+    console.error('Get notifications error:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+/**
+ * 알림 추가
+ * @param {Object} notificationData - 알림 정보
+ * @param {string} teacherId - 선생님 ID
+ * @returns {Promise<Object>} 추가 결과
+ */
+export const addNotification = async (notificationData, teacherId) => {
+  try {
+    const notificationsRef = collection(db, 'notifications');
+    const docRef = await addDoc(notificationsRef, {
+      ...notificationData,
+      teacherId,
+      isRead: false,
+      timestamp: serverTimestamp(),
+    });
+
+    return { success: true, id: docRef.id };
+  } catch (error) {
+    console.error('Add notification error:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+/**
+ * 알림 읽음 처리
+ * @param {string} notificationId - 알림 ID
+ * @returns {Promise<Object>} 결과
+ */
+export const markNotificationAsRead = async (notificationId) => {
+  try {
+    const docRef = doc(db, 'notifications', notificationId);
+    await updateDoc(docRef, {
+      isRead: true,
+      readAt: serverTimestamp(),
+    });
+
+    return { success: true };
+  } catch (error) {
+    console.error('Mark notification as read error:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+/**
+ * 모든 알림 읽음 처리
+ * @param {string} teacherId - 선생님 ID
+ * @returns {Promise<Object>} 결과
+ */
+export const markAllNotificationsAsRead = async (teacherId) => {
+  try {
+    const notificationsRef = collection(db, 'notifications');
+    const q = query(
+      notificationsRef,
+      where('teacherId', '==', teacherId),
+      where('isRead', '==', false)
+    );
+
+    const querySnapshot = await getDocs(q);
+    const batch = writeBatch(db);
+
+    querySnapshot.forEach((docSnapshot) => {
+      batch.update(docSnapshot.ref, {
+        isRead: true,
+        readAt: serverTimestamp(),
+      });
+    });
+
+    await batch.commit();
+    return { success: true };
+  } catch (error) {
+    console.error('Mark all notifications as read error:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+/**
+ * 알림 삭제
+ * @param {string} notificationId - 알림 ID
+ * @returns {Promise<Object>} 결과
+ */
+export const deleteNotification = async (notificationId) => {
+  try {
+    const docRef = doc(db, 'notifications', notificationId);
+    await deleteDoc(docRef);
+
+    return { success: true };
+  } catch (error) {
+    console.error('Delete notification error:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+/**
+ * 알림 실시간 리스너
+ * @param {string} teacherId - 선생님 ID
+ * @param {Function} callback - 데이터 변경 시 호출될 콜백
+ * @returns {Function} unsubscribe 함수
+ */
+export const subscribeToNotifications = (teacherId, callback) => {
+  const notificationsRef = collection(db, 'notifications');
+  const q = query(
+    notificationsRef,
+    where('teacherId', '==', teacherId),
+    orderBy('timestamp', 'desc'),
+    limit(50) // 최근 50개만
+  );
+
+  return onSnapshot(q, (snapshot) => {
+    const notifications = [];
+    snapshot.forEach((doc) => {
+      notifications.push({
+        id: doc.id,
+        ...doc.data(),
+        timestamp: doc.data().timestamp?.toDate?.()?.toISOString() || doc.data().timestamp,
+      });
+    });
+    callback(notifications);
+  }, (error) => {
+    console.error('Notification subscription error:', error);
+  });
+};
+
+/**
+ * ==========================================
  * 실시간 리스너
  * ==========================================
  */

@@ -1,9 +1,15 @@
 // src/repositories/PaymentRepository.js
 // 결제 및 수강권 데이터 관리 Repository
 
-import { isMockMode, DEV_CONFIG } from '../config/dataConfig';
+import { isMockMode, isFirebaseMode, DEV_CONFIG } from '../config/dataConfig';
 import { apiClient } from '../services/api/client';
 import { ENDPOINTS } from '../services/api/endpoints';
+import {
+  getTuitionRecords,
+  saveTuitionRecord,
+  updateTuitionStatus,
+} from '../services/firestoreService';
+import { getCurrentUser } from '../services/authService';
 
 /**
  * 네트워크 딜레이 시뮬레이션 (Mock 모드에서만)
@@ -78,6 +84,20 @@ export const PaymentRepository = {
       return [...mockPayments];
     }
 
+    if (isFirebaseMode()) {
+      const currentUser = getCurrentUser();
+      if (!currentUser) {
+        throw new Error('로그인이 필요합니다');
+      }
+      // Firebase에서는 월별로 조회하므로 현재 월 데이터 반환
+      const currentMonth = new Date().toISOString().slice(0, 7); // YYYY-MM
+      const result = await getTuitionRecords(currentUser.uid, currentMonth);
+      if (!result.success) {
+        throw new Error(result.error);
+      }
+      return result.data;
+    }
+
     try {
       const response = await apiClient.get(ENDPOINTS.PAYMENTS?.LIST || '/payments');
       return response.data;
@@ -100,6 +120,20 @@ export const PaymentRepository = {
     if (isMockMode()) {
       await simulateNetworkDelay();
       return mockPayments.filter(p => p.studentId === studentId);
+    }
+
+    if (isFirebaseMode()) {
+      const currentUser = getCurrentUser();
+      if (!currentUser) {
+        throw new Error('로그인이 필요합니다');
+      }
+      // 현재 월의 모든 결제를 가져온 후 필터링
+      const currentMonth = new Date().toISOString().slice(0, 7);
+      const result = await getTuitionRecords(currentUser.uid, currentMonth);
+      if (!result.success) {
+        throw new Error(result.error);
+      }
+      return result.data.filter(p => p.studentId === studentId);
     }
 
     try {
@@ -133,6 +167,18 @@ export const PaymentRepository = {
       };
       mockPayments.unshift(newPayment); // 최신 결제가 먼저
       return newPayment;
+    }
+
+    if (isFirebaseMode()) {
+      const currentUser = getCurrentUser();
+      if (!currentUser) {
+        throw new Error('로그인이 필요합니다');
+      }
+      const result = await saveTuitionRecord(paymentData, currentUser.uid);
+      if (!result.success) {
+        throw new Error(result.error);
+      }
+      return { ...paymentData, id: result.id, status: 'paid' };
     }
 
     try {
@@ -172,6 +218,21 @@ export const PaymentRepository = {
       return mockPayments[index];
     }
 
+    if (isFirebaseMode()) {
+      // Firebase에서는 주로 결제 상태만 업데이트
+      if (updates.status || updates.isPaid !== undefined) {
+        const isPaid = updates.isPaid !== undefined ? updates.isPaid : updates.status === 'paid';
+        const paidDate = updates.paidDate || (isPaid ? new Date().toISOString() : null);
+        const result = await updateTuitionStatus(id, isPaid, paidDate);
+        if (!result.success) {
+          throw new Error(result.error);
+        }
+        return { id, ...updates };
+      }
+      // 다른 필드 업데이트는 지원하지 않음
+      throw new Error('Firebase 모드에서는 결제 상태만 수정할 수 있습니다');
+    }
+
     try {
       const response = await apiClient.put(
         ENDPOINTS.PAYMENTS?.UPDATE?.(id) || `/payments/${id}`,
@@ -204,6 +265,12 @@ export const PaymentRepository = {
       return { success: true };
     }
 
+    if (isFirebaseMode()) {
+      // Firebase에서는 결제 삭제 기능이 구현되어 있지 않음
+      // 필요시 firestoreService에 deleteTuitionRecord 함수 추가 필요
+      throw new Error('Firebase 모드에서는 결제 삭제가 지원되지 않습니다');
+    }
+
     try {
       await apiClient.delete(
         ENDPOINTS.PAYMENTS?.DELETE?.(id) || `/payments/${id}`
@@ -227,6 +294,20 @@ export const PaymentRepository = {
     if (isMockMode()) {
       await simulateNetworkDelay();
       return mockPayments.filter(p => p.status === 'unpaid');
+    }
+
+    if (isFirebaseMode()) {
+      const currentUser = getCurrentUser();
+      if (!currentUser) {
+        throw new Error('로그인이 필요합니다');
+      }
+      // 현재 월의 모든 결제를 가져온 후 미납만 필터링
+      const currentMonth = new Date().toISOString().slice(0, 7);
+      const result = await getTuitionRecords(currentUser.uid, currentMonth);
+      if (!result.success) {
+        throw new Error(result.error);
+      }
+      return result.data.filter(p => !p.isPaid);
     }
 
     try {
@@ -255,6 +336,27 @@ export const PaymentRepository = {
     if (isMockMode()) {
       await simulateNetworkDelay();
       return mockPayments.filter(p => {
+        const paymentDate = new Date(p.date);
+        const start = new Date(startDate);
+        const end = new Date(endDate);
+        return paymentDate >= start && paymentDate <= end;
+      });
+    }
+
+    if (isFirebaseMode()) {
+      const currentUser = getCurrentUser();
+      if (!currentUser) {
+        throw new Error('로그인이 필요합니다');
+      }
+      // Firebase에서는 월별로 조회하므로 해당 월의 데이터를 가져온 후 필터링
+      // 간단하게 startDate의 월을 사용
+      const month = startDate.slice(0, 7); // YYYY-MM
+      const result = await getTuitionRecords(currentUser.uid, month);
+      if (!result.success) {
+        throw new Error(result.error);
+      }
+      // 날짜 범위로 필터링
+      return result.data.filter(p => {
         const paymentDate = new Date(p.date);
         const start = new Date(startDate);
         const end = new Date(endDate);

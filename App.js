@@ -7,6 +7,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import AppNavigator from './src/navigation/AppNavigator';
 import ErrorBoundary from './src/components/common/ErrorBoundary';
 import ToastContainer from './src/components/common/ToastContainer';
+import { useAuthStore } from './src/store/authStore';
 import './global.css';
 
 // SplashScreen이 자동으로 숨겨지지 않도록 설정
@@ -14,6 +15,7 @@ SplashScreen.preventAutoHideAsync();
 
 export default function App() {
   const [fontsLoaded, setFontsLoaded] = useState(false);
+  const initializeAuth = useAuthStore((state) => state.initializeAuth);
 
   useEffect(() => {
     async function loadFonts() {
@@ -35,6 +37,16 @@ export default function App() {
 
     loadFonts();
   }, []);
+
+  // Firebase 인증 초기화
+  useEffect(() => {
+    const unsubscribe = initializeAuth();
+    return () => {
+      if (unsubscribe) {
+        unsubscribe();
+      }
+    };
+  }, [initializeAuth]);
 
   if (!fontsLoaded) {
     return null;

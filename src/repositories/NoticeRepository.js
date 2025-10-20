@@ -1,7 +1,7 @@
 // src/repositories/NoticeRepository.js
 // 알림장 데이터 관리 Repository
 
-import { isMockMode, DEV_CONFIG } from '../config/dataConfig';
+import { isMockMode, isFirebaseMode, DEV_CONFIG } from '../config/dataConfig';
 import { apiClient } from '../services/api/client';
 import { ENDPOINTS } from '../services/api/endpoints';
 import {
@@ -11,6 +11,13 @@ import {
   updateNotice as updateMockNotice,
   getNoticeById as getMockNoticeById,
 } from '../data/mockNotices';
+import {
+  getAllNotices,
+  createNotice,
+  updateNotice as updateFirebaseNotice,
+  deleteNotice as deleteFirebaseNotice,
+} from '../services/firestoreService';
+import { getCurrentUser } from '../services/authService';
 
 const simulateNetworkDelay = () => {
   if (isMockMode() && DEV_CONFIG.mockNetworkDelay > 0) {
@@ -41,6 +48,18 @@ export const NoticeRepository = {
     if (isMockMode()) {
       await simulateNetworkDelay();
       return getMockNotices();
+    }
+
+    if (isFirebaseMode()) {
+      const currentUser = getCurrentUser();
+      if (!currentUser) {
+        throw new Error('로그인이 필요합니다');
+      }
+      const result = await getAllNotices(currentUser.uid);
+      if (!result.success) {
+        throw new Error(result.error);
+      }
+      return result.data;
     }
 
     try {
@@ -95,6 +114,18 @@ export const NoticeRepository = {
       return addMockNotice(noticeData);
     }
 
+    if (isFirebaseMode()) {
+      const currentUser = getCurrentUser();
+      if (!currentUser) {
+        throw new Error('로그인이 필요합니다');
+      }
+      const result = await createNotice(noticeData, currentUser.uid);
+      if (!result.success) {
+        throw new Error(result.error);
+      }
+      return { ...noticeData, id: result.id };
+    }
+
     try {
       const response = await apiClient.post(
         ENDPOINTS.NOTICES.CREATE,
@@ -127,6 +158,14 @@ export const NoticeRepository = {
       return updated;
     }
 
+    if (isFirebaseMode()) {
+      const result = await updateFirebaseNotice(id, noticeData);
+      if (!result.success) {
+        throw new Error(result.error);
+      }
+      return { id, ...noticeData };
+    }
+
     try {
       const response = await apiClient.put(
         ENDPOINTS.NOTICES.UPDATE(id),
@@ -154,6 +193,14 @@ export const NoticeRepository = {
       const result = deleteMockNotice(id);
       if (!result) {
         throw new Error('알림장을 찾을 수 없습니다');
+      }
+      return { success: true };
+    }
+
+    if (isFirebaseMode()) {
+      const result = await deleteFirebaseNotice(id);
+      if (!result.success) {
+        throw new Error(result.error);
       }
       return { success: true };
     }
