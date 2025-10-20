@@ -6,6 +6,7 @@ import * as ImagePicker from 'expo-image-picker';
 import Text from '../../components/common/Text';
 import TEACHER_COLORS, { TEACHER_SHADOW_COLORS, TEACHER_OVERLAY_COLORS } from '../../styles/teacher_colors';
 import { StudentRepository } from '../../repositories';
+import { formatDate, formatCurrency } from '../../utils';
 
 export default function StudentDetailScreen({ route, navigation }) {
   const { student } = route?.params || {};
@@ -461,7 +462,7 @@ export default function StudentDetailScreen({ route, navigation }) {
                       </View>
                       <View className="items-end">
                         <Text className="text-base font-bold text-gray-800">
-                          {record.amount.toLocaleString()}원
+                          {formatCurrency(record.amount)}
                         </Text>
                         <Text className="text-xs text-gray-500 mt-1">{record.method}</Text>
                       </View>
@@ -475,7 +476,7 @@ export default function StudentDetailScreen({ route, navigation }) {
                 <View className="flex-row justify-between items-center">
                   <Text className="text-sm font-semibold text-gray-600">총 결제 금액</Text>
                   <Text className="text-lg font-bold text-primary">
-                    {paymentRecords.reduce((sum, record) => sum + record.amount, 0).toLocaleString()}원
+                    {formatCurrency(paymentRecords.reduce((sum, record) => sum + record.amount, 0))}
                   </Text>
                 </View>
               </View>

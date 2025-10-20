@@ -13,6 +13,7 @@ import {
   getAttendanceStatus
 } from '../../data/mockParentData';
 import PARENT_COLORS, { PARENT_GRADIENTS, PARENT_SEMANTIC_COLORS, PARENT_OVERLAY_COLORS } from '../../styles/parent_colors';
+import { getMonthName, isSameDate } from '../../utils';
 
 export default function AttendanceScreen() {
   const [currentDate, setCurrentDate] = useState(new Date(2025, 9, 16)); // 2025년 10월 16일
@@ -22,8 +23,6 @@ export default function AttendanceScreen() {
   const today = currentDate.getDate();
 
   const { days } = useMemo(() => getMonthCalendar(year, month), [year, month]);
-
-  const monthNames = ['1월', '2월', '3월', '4월', '5월', '6월', '7월', '8월', '9월', '10월', '11월', '12월'];
 
   const changeMonth = (delta) => {
     const newDate = new Date(currentDate);
@@ -78,7 +77,7 @@ export default function AttendanceScreen() {
               </TouchableOpacity>
 
               <Text className="text-gray-800 font-bold text-lg">
-                {year}년 {monthNames[month - 1]}
+                {year}년 {getMonthName(month)}
               </Text>
 
               <TouchableOpacity

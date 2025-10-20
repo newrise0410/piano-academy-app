@@ -6,6 +6,7 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import Text from '../../components/common/Text';
 import { mockStudents } from '../../data/mockStudents';
 import TEACHER_COLORS from '../../styles/teacher_colors';
+import { getMonthName, getDayOfWeek } from '../../utils';
 
 export default function AttendanceScreen() {
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -28,8 +29,7 @@ export default function AttendanceScreen() {
 
   // 선택한 날짜의 요일 구하기
   const getSelectedDayOfWeek = () => {
-    const weekDays = ['일', '월', '화', '수', '목', '금', '토'];
-    return weekDays[selectedDate.getDay()];
+    return getDayOfWeek(selectedDate);
   };
 
   // 날짜 포맷팅
@@ -37,8 +37,7 @@ export default function AttendanceScreen() {
     const year = date.getFullYear();
     const month = date.getMonth() + 1;
     const day = date.getDate();
-    const weekDays = ['일', '월', '화', '수', '목', '금', '토'];
-    const weekDay = weekDays[date.getDay()];
+    const weekDay = getDayOfWeek(date);
 
     return `${year}년 ${month}월 ${day}일 (${weekDay})`;
   };
@@ -151,10 +150,7 @@ export default function AttendanceScreen() {
     if (date) {
       setSelectedDate(date);
       // 날짜가 변경되면 출석 데이터 리셋
-      const selectedDay = date.toLocaleDateString('ko-KR', { weekday: 'short' }).replace('요일', '');
-      const weekDays = ['일', '월', '화', '수', '목', '금', '토'];
-      const dayIndex = date.getDay();
-      const newDay = weekDays[dayIndex];
+      const newDay = getDayOfWeek(date);
 
       const newAttendance = mockStudents
         .filter(student => {

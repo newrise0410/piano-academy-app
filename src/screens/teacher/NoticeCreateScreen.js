@@ -6,6 +6,7 @@ import Text from '../../components/common/Text';
 import Card from '../../components/common/Card';
 import TEACHER_COLORS, { TEACHER_TEMPLATE_COLORS } from '../../styles/teacher_colors';
 import { NoticeRepository, StudentRepository } from '../../repositories';
+import { formatDate } from '../../utils';
 
 export default function NoticeCreateScreen({ navigation }) {
   const [selectedTemplate, setSelectedTemplate] = useState(null);
@@ -207,7 +208,7 @@ export default function NoticeCreateScreen({ navigation }) {
     try {
       // 현재 날짜/시간
       const now = new Date();
-      const dateStr = `${now.getFullYear()}.${String(now.getMonth() + 1).padStart(2, '0')}.${String(now.getDate()).padStart(2, '0')}`;
+      const dateStr = formatDate(now);
       const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
 
       // 알림장 저장

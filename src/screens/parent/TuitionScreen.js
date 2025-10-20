@@ -9,6 +9,7 @@ import Card from '../../components/common/Card';
 import ProgressBar from '../../components/common/ProgressBar';
 import { childData, paymentHistory, ticketPrices } from '../../data/mockParentData';
 import PARENT_COLORS, { PARENT_GRADIENTS, PARENT_SEMANTIC_COLORS, PARENT_OVERLAY_COLORS } from '../../styles/parent_colors';
+import { formatCurrency, getDaysRemaining, getTicketProgress } from '../../utils';
 
 export default function TuitionScreen() {
   const activePayment = paymentHistory.find(p => p.status === 'active');
@@ -52,7 +53,7 @@ export default function TuitionScreen() {
                       </Text>
                     </View>
                     <ProgressBar
-                      progress={(activePayment.used / activePayment.total) * 100}
+                      progress={getTicketProgress(activePayment.used, activePayment.total)}
                       height={12}
                       backgroundColor={PARENT_COLORS.gray[200]}
                       progressColor={PARENT_COLORS.primary.DEFAULT}
@@ -73,7 +74,7 @@ export default function TuitionScreen() {
                     <View className="flex-row items-end justify-between mb-2">
                       <Text className="text-gray-500 text-sm">남은 기간</Text>
                       <Text className="text-3xl font-bold" style={{ color: PARENT_COLORS.primary.DEFAULT }}>
-                        D-{Math.max(0, Math.ceil((new Date(activePayment.endDate) - new Date()) / (1000 * 60 * 60 * 24)))}
+                        D-{Math.max(0, getDaysRemaining(activePayment.endDate))}
                       </Text>
                     </View>
                     <ProgressBar
@@ -152,7 +153,7 @@ export default function TuitionScreen() {
                     )}
                   </View>
                   <View className="items-end">
-                    <Text className="text-gray-800 font-bold">{payment.amount.toLocaleString()}원</Text>
+                    <Text className="text-gray-800 font-bold">{formatCurrency(payment.amount)}</Text>
                     <Text className="text-xs font-semibold" style={{ color: PARENT_COLORS.gray[500] }}>
                       {payment.method}
                     </Text>
@@ -163,7 +164,7 @@ export default function TuitionScreen() {
                 {payment.status === 'active' && payment.ticketType === 'count' && (
                   <View>
                     <ProgressBar
-                      progress={(payment.used / payment.total) * 100}
+                      progress={getTicketProgress(payment.used, payment.total)}
                       height={8}
                       backgroundColor={PARENT_COLORS.gray[200]}
                       progressColor={PARENT_COLORS.primary.DEFAULT}
@@ -223,13 +224,13 @@ export default function TuitionScreen() {
                   </View>
                   <Text className="text-xs" style={{ color: PARENT_COLORS.gray[600] }}>
                     {ticket.ticketType === 'count'
-                      ? `1회당 ${ticket.pricePerClass.toLocaleString()}원 · ${ticket.description}`
+                      ? `1회당 ${formatCurrency(ticket.pricePerClass)} · ${ticket.description}`
                       : ticket.description
                     }
                   </Text>
                 </View>
                 <Text className="text-lg font-bold ml-2" style={{ color: ticket.highlighted ? PARENT_COLORS.primary.DEFAULT : PARENT_COLORS.gray[700] }}>
-                  {ticket.price.toLocaleString()}원
+                  {formatCurrency(ticket.price)}
                 </Text>
               </View>
             ))}

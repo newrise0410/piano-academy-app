@@ -5,6 +5,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Text from '../../components/common/Text';
 import { mockStudents } from '../../data/mockStudents';
 import TEACHER_COLORS, { TEACHER_GRADIENTS, TEACHER_OVERLAY_COLORS } from '../../styles/teacher_colors';
+import { formatCurrency, formatTicketDisplay } from '../../utils';
 
 export default function TuitionScreen() {
   const [editingPrice, setEditingPrice] = useState(null);
@@ -16,16 +17,6 @@ export default function TuitionScreen() {
     period3: '550,000', // 3개월
     period6: '1,000,000', // 6개월
   });
-
-  // 수강권 표시 헬퍼 함수
-  const getTicketDisplay = (student) => {
-    if (student.ticketType === 'count') {
-      return `${student.ticketCount}회 남음`;
-    } else if (student.ticketType === 'period') {
-      return `${student.ticketPeriod.start} ~ ${student.ticketPeriod.end}`;
-    }
-    return '-';
-  };
 
   // 실제 데이터 기반 통계 계산
   const stats = useMemo(() => {
@@ -50,7 +41,7 @@ export default function TuitionScreen() {
         name: s.name,
         deadline: '미결제',
         level: s.level,
-        ticket: getTicketDisplay(s),
+        ticket: formatTicketDisplay(s),
       }));
   }, []);
 
@@ -61,7 +52,7 @@ export default function TuitionScreen() {
       .map(s => ({
         id: s.id,
         name: s.name,
-        sessions: getTicketDisplay(s),
+        sessions: formatTicketDisplay(s),
         level: s.level,
       }));
   }, []);
@@ -297,7 +288,7 @@ export default function TuitionScreen() {
             </View>
 
             <Text className="text-4xl font-bold text-primary mb-2">
-              {monthlyRevenue.total.toLocaleString()}원
+              {formatCurrency(monthlyRevenue.total)}
             </Text>
             <Text className="text-sm text-gray-600">
               {monthlyRevenue.students}건 (4회권 기준)
