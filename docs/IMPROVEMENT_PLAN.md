@@ -924,3 +924,26 @@ jobs:
 **최종 업데이트**: 2025-10-20
 **버전**: 2.0.0
 **프로젝트 진행률**: ~75% 완료
+
+
+// Import the functions you need from the SDKs you need
+import { initializeApp } from "firebase/app";
+import { getAnalytics } from "firebase/analytics";
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
+
+// Your web app's Firebase configuration
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+const firebaseConfig = {
+  apiKey: "AIzaSyAxB3l2xl9vEXb2yNEQLCK34205hrstJQI",
+  authDomain: "piano-academy-app-9050a.firebaseapp.com",
+  projectId: "piano-academy-app-9050a",
+  storageBucket: "piano-academy-app-9050a.firebasestorage.app",
+  messagingSenderId: "618021355093",
+  appId: "1:618021355093:web:78e58cbdb4c746c0911edc",
+  measurementId: "G-N2PEGSLSPC"
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app);

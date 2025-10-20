@@ -14,7 +14,8 @@
       "Bash(xargs kill:*)",
       "Bash(netstat:*)",
       "Bash(findstr:*)",
-      "Bash(timeout 15 bash:*)"
+      "Bash(timeout 15 bash:*)",
+      "Bash(npm uninstall:*)"
     ],
     "deny": [],
     "ask": []

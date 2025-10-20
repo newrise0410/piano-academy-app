@@ -1,7 +1,7 @@
 // src/repositories/StudentRepository.js
 // 학생 데이터 관리 Repository
 
-import { isMockMode, DEV_CONFIG } from '../config/dataConfig';
+import { isMockMode, isFirebaseMode, DEV_CONFIG } from '../config/dataConfig';
 import { apiClient } from '../services/api/client';
 import { ENDPOINTS } from '../services/api/endpoints';
 import {
@@ -11,6 +11,14 @@ import {
   deleteStudent as deleteMockStudent,
   getStudentById as getMockStudentById,
 } from '../data/mockStudents';
+import {
+  getAllStudents,
+  getStudentById as getFirebaseStudentById,
+  addStudent as addFirebaseStudent,
+  updateStudent as updateFirebaseStudent,
+  deleteStudent as deleteFirebaseStudent,
+} from '../services/firestoreService';
+import { getCurrentUser } from '../services/authService';
 
 /**
  * 네트워크 딜레이 시뮬레이션 (Mock 모드에서만)
@@ -49,6 +57,18 @@ export const StudentRepository = {
       return getMockStudents();
     }
 
+    if (isFirebaseMode()) {
+      const currentUser = getCurrentUser();
+      if (!currentUser) {
+        throw new Error('로그인이 필요합니다');
+      }
+      const result = await getAllStudents(currentUser.uid);
+      if (!result.success) {
+        throw new Error(result.error);
+      }
+      return result.data;
+    }
+
     try {
       const response = await apiClient.get(ENDPOINTS.STUDENTS.LIST);
       return response.data;
@@ -77,6 +97,14 @@ export const StudentRepository = {
       return student;
     }
 
+    if (isFirebaseMode()) {
+      const result = await getFirebaseStudentById(id);
+      if (!result.success) {
+        throw new Error(result.error);
+      }
+      return result.data;
+    }
+
     try {
       const response = await apiClient.get(ENDPOINTS.STUDENTS.DETAIL(id));
       return response.data;
@@ -99,6 +127,18 @@ export const StudentRepository = {
     if (isMockMode()) {
       await simulateNetworkDelay();
       return addMockStudent(studentData);
+    }
+
+    if (isFirebaseMode()) {
+      const currentUser = getCurrentUser();
+      if (!currentUser) {
+        throw new Error('로그인이 필요합니다');
+      }
+      const result = await addFirebaseStudent(studentData, currentUser.uid);
+      if (!result.success) {
+        throw new Error(result.error);
+      }
+      return { ...studentData, id: result.id };
     }
 
     try {
@@ -133,6 +173,14 @@ export const StudentRepository = {
       return updated;
     }
 
+    if (isFirebaseMode()) {
+      const result = await updateFirebaseStudent(id, studentData);
+      if (!result.success) {
+        throw new Error(result.error);
+      }
+      return { id, ...studentData };
+    }
+
     try {
       const response = await apiClient.put(
         ENDPOINTS.STUDENTS.UPDATE(id),
@@ -162,6 +210,14 @@ export const StudentRepository = {
         throw new Error('학생을 찾을 수 없습니다');
       }
       return { success: true, deleted };
+    }
+
+    if (isFirebaseMode()) {
+      const result = await deleteFirebaseStudent(id);
+      if (!result.success) {
+        throw new Error(result.error);
+      }
+      return { success: true };
     }
 
     try {

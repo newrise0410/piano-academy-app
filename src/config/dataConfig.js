@@ -5,12 +5,15 @@
  * 데이터 소스 모드 설정
  *
  * - 'mock': Mock 데이터 사용 (개발 중)
- * - 'api': 실제 API 사용 (프로덕션)
+ * - 'api': REST API 사용 (외부 서버)
+ * - 'firebase': Firebase 사용 (Firebase 백엔드)
  *
  * 개발 중에는 'mock' 모드로 설정하여 빠른 개발이 가능하며,
- * API 서버가 준비되면 이 값을 'api'로 변경하기만 하면 됩니다.
+ * Firebase가 설정되면 이 값을 'firebase'로 변경하기만 하면 됩니다.
+ *
+ * 환경변수를 통해 설정 가능: EXPO_PUBLIC_DATA_MODE
  */
-export const DATA_SOURCE_MODE = 'mock'; // 'mock' or 'api'
+export const DATA_SOURCE_MODE = process.env.EXPO_PUBLIC_DATA_MODE || 'mock'; // 'mock', 'api', or 'firebase'
 
 /**
  * Mock 모드인지 확인
@@ -21,6 +24,11 @@ export const isMockMode = () => DATA_SOURCE_MODE === 'mock';
  * API 모드인지 확인
  */
 export const isApiMode = () => DATA_SOURCE_MODE === 'api';
+
+/**
+ * Firebase 모드인지 확인
+ */
+export const isFirebaseMode = () => DATA_SOURCE_MODE === 'firebase';
 
 /**
  * 개발자 모드 설정
@@ -41,5 +49,6 @@ export default {
   DATA_SOURCE_MODE,
   isMockMode,
   isApiMode,
+  isFirebaseMode,
   DEV_CONFIG,
 };

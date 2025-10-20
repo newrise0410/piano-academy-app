@@ -232,6 +232,14 @@ export default function DashboardScreen({ navigation }) {
               onPress={() => navigation.navigate('GalleryScreen')}
               className="mt-3"
             />
+
+            <Button
+              title="🔥 Firebase 테스트"
+              icon="flask"
+              variant="outline"
+              onPress={() => navigation.navigate('FirebaseTestScreen')}
+              className="mt-3"
+            />
           </Card>
 
           {/* 통계 차트 */}

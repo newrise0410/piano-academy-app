@@ -1,6 +1,6 @@
 // src/store/studentStore.js
 import { create } from 'zustand';
-import { StudentRepository } from '../repositories/StudentRepository';
+import { StudentRepository } from '../repositories/studentRepository';
 
 /**
  * 학생 데이터 관리 Store
