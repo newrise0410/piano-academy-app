@@ -1,14 +1,26 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { View, ScrollView, TextInput, TouchableOpacity, Alert, Animated, Easing, ActivityIndicator } from 'react-native';
+import { View, ScrollView, TouchableOpacity, Animated, Easing } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import Text from '../../components/common/Text';
-import Card from '../../components/common/Card';
+import {
+  Text,
+  Card,
+  FormInput,
+  FilterChip,
+  Button,
+  LevelBadge
+} from '../../components/common';
 import TEACHER_COLORS, { TEACHER_TEMPLATE_COLORS } from '../../styles/teacher_colors';
-import { NoticeRepository, StudentRepository } from '../../repositories';
+import { useNoticeStore, useStudentStore } from '../../store';
+import { useToastStore } from '../../store';
 import { formatDate } from '../../utils';
 
 export default function NoticeCreateScreen({ navigation }) {
+  // Zustand Stores
+  const { createNotice, loading: noticeLoading } = useNoticeStore();
+  const { students, fetchStudents } = useStudentStore();
+  const toast = useToastStore();
+
   const [selectedTemplate, setSelectedTemplate] = useState(null);
   const [aiPrompt, setAiPrompt] = useState('');
   const [previewTitle, setPreviewTitle] = useState('');
@@ -19,30 +31,13 @@ export default function NoticeCreateScreen({ navigation }) {
   const [categoryFilter, setCategoryFilter] = useState('전체');
   const [dayFilter, setDayFilter] = useState('전체');
 
-  const [students, setStudents] = useState([]);
-  const [isLoadingStudents, setIsLoadingStudents] = useState(false);
-  const [isSending, setIsSending] = useState(false);
-
   const fadeAnim = useRef(new Animated.Value(1)).current;
   const scaleAnim = useRef(new Animated.Value(1)).current;
 
   // 학생 목록 로드
   useEffect(() => {
-    loadStudents();
-  }, []);
-
-  const loadStudents = async () => {
-    setIsLoadingStudents(true);
-    try {
-      const data = await StudentRepository.getAll();
-      setStudents(data);
-    } catch (error) {
-      console.error('학생 목록 로드 실패:', error);
-      Alert.alert('오류', '학생 목록을 불러오지 못했습니다.');
-    } finally {
-      setIsLoadingStudents(false);
-    }
-  };
+    fetchStudents();
+  }, [fetchStudents]);
 
   const templates = [
     {
@@ -127,7 +122,7 @@ export default function NoticeCreateScreen({ navigation }) {
 
   const handleAiGenerate = async () => {
     if (!aiPrompt.trim()) {
-      Alert.alert('알림', '요청 내용을 입력해주세요.');
+      toast.warning('요청 내용을 입력해주세요');
       return;
     }
 
@@ -143,7 +138,7 @@ export default function NoticeCreateScreen({ navigation }) {
       setPreviewContent(generatedContent);
       setIsGenerating(false);
 
-      Alert.alert('완료', 'AI가 알림장을 작성했습니다!');
+      toast.success('AI가 알림장을 작성했습니다!');
     }, 2000); // 2초 딜레이로 AI 생성 시뮬레이션
   };
 
@@ -173,7 +168,7 @@ export default function NoticeCreateScreen({ navigation }) {
 
   const handleNextStep = () => {
     if (!previewTitle.trim() || !previewContent.trim()) {
-      Alert.alert('알림', '제목과 내용을 입력해주세요.');
+      toast.warning('제목과 내용을 입력해주세요');
       return;
     }
     setCurrentStep('selectRecipients');
@@ -199,11 +194,9 @@ export default function NoticeCreateScreen({ navigation }) {
 
   const handleSend = async () => {
     if (selectedStudents.length === 0) {
-      Alert.alert('알림', '발송할 학생을 선택해주세요.');
+      toast.warning('발송할 학생을 선택해주세요');
       return;
     }
-
-    setIsSending(true);
 
     try {
       // 현재 날짜/시간
@@ -211,8 +204,8 @@ export default function NoticeCreateScreen({ navigation }) {
       const dateStr = formatDate(now);
       const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
 
-      // 알림장 저장
-      await NoticeRepository.create({
+      // 알림장 저장 (Zustand Store 사용)
+      await createNotice({
         title: previewTitle,
         content: previewContent,
         date: dateStr,
@@ -220,14 +213,11 @@ export default function NoticeCreateScreen({ navigation }) {
         recipients: selectedStudents.length,
       });
 
-      Alert.alert('성공', `${selectedStudents.length}명의 학생에게 알림장이 발송되었습니다.`, [
-        { text: '확인', onPress: () => navigation.goBack() }
-      ]);
+      toast.success(`${selectedStudents.length}명의 학생에게 알림장이 발송되었습니다`);
+      navigation.goBack();
     } catch (error) {
-      Alert.alert('오류', `알림장 발송에 실패했습니다.\n${error.message}`);
+      toast.error('알림장 발송에 실패했습니다');
       console.error('알림장 발송 오류:', error);
-    } finally {
-      setIsSending(false);
     }
   };
 
@@ -273,59 +263,23 @@ export default function NoticeCreateScreen({ navigation }) {
             {/* 카테고리 필터 */}
             <View className="mb-3">
               <Text className="text-sm font-semibold text-gray-700 mb-2">카테고리</Text>
-              <View className="flex-row flex-wrap">
-                {['전체', '초등', '고등', '성인'].map((category) => (
-                  <TouchableOpacity
-                    key={category}
-                    className={`rounded-full px-4 py-2 mr-2 mb-2 ${
-                      categoryFilter === category
-                        ? 'bg-primary'
-                        : 'bg-gray-100'
-                    }`}
-                    onPress={() => setCategoryFilter(category)}
-                    activeOpacity={0.7}
-                  >
-                    <Text
-                      className={`text-sm font-semibold ${
-                        categoryFilter === category
-                          ? 'text-white'
-                          : 'text-gray-700'
-                      }`}
-                    >
-                      {category}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
+              <FilterChip
+                options={['전체', '초등', '고등', '성인'].map(cat => ({ value: cat, label: cat }))}
+                value={categoryFilter}
+                onChange={setCategoryFilter}
+                layout="wrapped"
+              />
             </View>
 
             {/* 요일 필터 */}
             <View>
               <Text className="text-sm font-semibold text-gray-700 mb-2">요일</Text>
-              <View className="flex-row flex-wrap">
-                {['전체', '월', '화', '수', '목', '금', '토', '일'].map((day) => (
-                  <TouchableOpacity
-                    key={day}
-                    className={`rounded-full px-4 py-2 mr-2 mb-2 ${
-                      dayFilter === day
-                        ? 'bg-primary'
-                        : 'bg-gray-100'
-                    }`}
-                    onPress={() => setDayFilter(day)}
-                    activeOpacity={0.7}
-                  >
-                    <Text
-                      className={`text-sm font-semibold ${
-                        dayFilter === day
-                          ? 'text-white'
-                          : 'text-gray-700'
-                      }`}
-                    >
-                      {day}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
+              <FilterChip
+                options={['전체', '월', '화', '수', '목', '금', '토', '일'].map(day => ({ value: day, label: day }))}
+                value={dayFilter}
+                onChange={setDayFilter}
+                layout="wrapped"
+              />
             </View>
           </View>
 
@@ -338,28 +292,23 @@ export default function NoticeCreateScreen({ navigation }) {
               </Text>
             </View>
 
-            <View className="flex-row">
-              <TouchableOpacity
-                className="flex-1 bg-primary rounded-xl py-3 mr-2"
+            <View className="flex-row gap-2">
+              <Button
+                title="모두 선택"
+                icon="checkmark-done"
                 onPress={() => setSelectedStudents(filteredStudents.map(s => s.id))}
-                activeOpacity={0.7}
-              >
-                <View className="flex-row items-center justify-center">
-                  <Ionicons name="checkmark-done" size={18} color="white" />
-                  <Text className="text-white text-sm font-bold ml-1">모두 선택</Text>
-                </View>
-              </TouchableOpacity>
+                size="small"
+                style={{ flex: 1 }}
+              />
 
-              <TouchableOpacity
-                className="flex-1 bg-gray-500 rounded-xl py-3 ml-2"
+              <Button
+                title="선택 해제"
+                icon="close-circle"
+                variant="secondary"
                 onPress={() => setSelectedStudents([])}
-                activeOpacity={0.7}
-              >
-                <View className="flex-row items-center justify-center">
-                  <Ionicons name="close-circle" size={18} color="white" />
-                  <Text className="text-white text-sm font-bold ml-1">선택 해제</Text>
-                </View>
-              </TouchableOpacity>
+                size="small"
+                style={{ flex: 1 }}
+              />
             </View>
           </View>
 
@@ -389,9 +338,7 @@ export default function NoticeCreateScreen({ navigation }) {
                         <Text className="text-base font-bold text-gray-800 mr-2">
                           {student.name}
                         </Text>
-                        <View className="rounded-full px-2 py-0.5" style={{ backgroundColor: TEACHER_COLORS.purple[100] }}>
-                          <Text className="text-xs font-bold text-primary">{student.level}</Text>
-                        </View>
+                        <LevelBadge level={student.level} />
                       </View>
                       <Text className="text-xs text-gray-600">{student.schedule}</Text>
                     </View>
@@ -411,30 +358,15 @@ export default function NoticeCreateScreen({ navigation }) {
 
         {/* 하단 발송 버튼 */}
         <View className="bg-white px-5 py-4 border-t border-gray-200">
-          <TouchableOpacity
-            className={`rounded-xl p-4 items-center ${
-              selectedStudents.length > 0 && !isSending ? 'bg-primary' : 'bg-gray-300'
-            }`}
+          <Button
+            title={selectedStudents.length > 0
+              ? `${selectedStudents.length}명에게 발송하기`
+              : '학생을 선택해주세요'}
             onPress={handleSend}
-            activeOpacity={0.8}
-            disabled={selectedStudents.length === 0 || isSending}
-            style={{ opacity: isSending ? 0.7 : 1 }}
-          >
-            {isSending ? (
-              <View className="flex-row items-center">
-                <ActivityIndicator color="white" size="small" />
-                <Text className="text-white text-base font-bold ml-2">
-                  발송 중...
-                </Text>
-              </View>
-            ) : (
-              <Text className="text-white text-base font-bold">
-                {selectedStudents.length > 0
-                  ? `${selectedStudents.length}명에게 발송하기`
-                  : '학생을 선택해주세요'}
-              </Text>
-            )}
-          </TouchableOpacity>
+            loading={noticeLoading}
+            disabled={selectedStudents.length === 0 || noticeLoading}
+            fullWidth
+          />
         </View>
       </SafeAreaView>
     );
@@ -509,37 +441,23 @@ export default function NoticeCreateScreen({ navigation }) {
               </View>
 
               {/* AI 입력 영역 */}
-              <TextInput
-                className="bg-white rounded-xl p-4 text-sm border border-gray-200 mb-3"
+              <FormInput
                 placeholder="예: 12월 25일 오후 2시에 학원 연주홀에서 발표회를 합니다. 학부모님들께 안내문을 작성해주세요."
                 value={aiPrompt}
                 onChangeText={setAiPrompt}
-                multiline
+                type="multiline"
                 numberOfLines={4}
-                textAlignVertical="top"
-                style={{ fontFamily: 'MaruBuri-Regular', minHeight: 100 }}
+                style={{ marginBottom: 12 }}
               />
 
               {/* AI로 작성하기 버튼 */}
-              <TouchableOpacity
-                className="bg-primary rounded-xl p-4 flex-row items-center justify-center"
+              <Button
+                title={isGenerating ? "AI 작성 중 ⏳" : "AI로 작성하기 ✨"}
                 onPress={handleAiGenerate}
-                activeOpacity={0.8}
+                loading={isGenerating}
                 disabled={isGenerating}
-                style={{ opacity: isGenerating ? 0.6 : 1 }}
-              >
-                {isGenerating ? (
-                  <>
-                    <Text className="text-white text-base font-bold mr-2">AI 작성 중</Text>
-                    <Text className="text-xl">⏳</Text>
-                  </>
-                ) : (
-                  <>
-                    <Text className="text-white text-base font-bold mr-1">AI로 작성하기</Text>
-                    <Text className="text-xl">✨</Text>
-                  </>
-                )}
-              </TouchableOpacity>
+                fullWidth
+              />
             </View>
           </Animated.View>
         )}
@@ -570,31 +488,24 @@ export default function NoticeCreateScreen({ navigation }) {
             {isDirectInput ? (
               <>
                 {/* 제목 */}
-                <View className="mb-4">
-                  <Text className="text-sm font-semibold text-gray-700 mb-2">제목</Text>
-                  <TextInput
-                    className="bg-gray-50 rounded-xl p-4 text-base border border-gray-200"
-                    placeholder="제목을 입력하세요"
-                    value={previewTitle}
-                    onChangeText={setPreviewTitle}
-                    style={{ fontFamily: 'MaruBuri-Regular' }}
-                  />
-                </View>
+                <FormInput
+                  label="제목"
+                  placeholder="제목을 입력하세요"
+                  value={previewTitle}
+                  onChangeText={setPreviewTitle}
+                  style={{ marginBottom: 16 }}
+                />
 
                 {/* 내용 */}
-                <View className="mb-4">
-                  <Text className="text-sm font-semibold text-gray-700 mb-2">내용</Text>
-                  <TextInput
-                    className="bg-gray-50 rounded-xl p-4 text-base border border-gray-200"
-                    placeholder="내용을 입력하세요"
-                    value={previewContent}
-                    onChangeText={setPreviewContent}
-                    multiline
-                    numberOfLines={10}
-                    textAlignVertical="top"
-                    style={{ fontFamily: 'MaruBuri-Regular', minHeight: 200 }}
-                  />
-                </View>
+                <FormInput
+                  label="내용"
+                  placeholder="내용을 입력하세요"
+                  value={previewContent}
+                  onChangeText={setPreviewContent}
+                  type="multiline"
+                  numberOfLines={10}
+                  style={{ marginBottom: 16 }}
+                />
               </>
             ) : (
               <>
@@ -628,27 +539,24 @@ export default function NoticeCreateScreen({ navigation }) {
 
             {/* 액션 버튼 */}
             {selectedTemplate && (
-              <View className="flex-row">
-                <TouchableOpacity
-                  className="flex-1 border border-gray-300 rounded-xl p-4 items-center mr-2"
-                  activeOpacity={0.7}
+              <View className="flex-row gap-2">
+                <Button
+                  title="다시 작성"
+                  variant="outline"
                   onPress={() => {
                     setSelectedTemplate(null);
                     setAiPrompt('');
                     setPreviewTitle('');
                     setPreviewContent('');
                   }}
-                >
-                  <Text className="text-gray-700 font-semibold">다시 작성</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  className="flex-1 rounded-xl p-4 items-center"
-                  style={{ backgroundColor: TEACHER_COLORS.blue[500] }}
-                  activeOpacity={0.8}
+                  style={{ flex: 1 }}
+                />
+                <Button
+                  title="다음 →"
+                  variant="success"
                   onPress={handleNextStep}
-                >
-                  <Text className="text-white font-semibold">다음 →</Text>
-                </TouchableOpacity>
+                  style={{ flex: 1 }}
+                />
               </View>
             )}
           </View>

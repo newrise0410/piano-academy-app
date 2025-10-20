@@ -12,9 +12,25 @@ import StudentFormScreen from "../screens/teacher/StudentFormScreen";
 import StudentDetailScreen from "../screens/teacher/StudentDetailScreen";
 import AttendanceScreen from "../screens/teacher/AttendanceScreen";
 import TuitionScreen from "../screens/teacher/TuitionScreen";
+import TodayClassesScreen from "../screens/teacher/TodayClassesScreen";
+import UnpaidStudentsScreen from "../screens/teacher/UnpaidStudentsScreen";
+import MakeupClassesScreen from "../screens/teacher/MakeupClassesScreen";
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
+
+// 대시보드 Stack Navigator
+function DashboardStack() {
+  return (
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="DashboardMain" component={DashboardScreen} />
+      <Stack.Screen name="TodayClassesScreen" component={TodayClassesScreen} />
+      <Stack.Screen name="UnpaidStudentsScreen" component={UnpaidStudentsScreen} />
+      <Stack.Screen name="MakeupClassesScreen" component={MakeupClassesScreen} />
+      <Stack.Screen name="StudentDetail" component={StudentDetailScreen} />
+    </Stack.Navigator>
+  );
+}
 
 // 학생 관리 Stack Navigator
 function StudentStack() {
@@ -70,7 +86,7 @@ export default function TeacherNavigator() {
     >
       <Tab.Screen
         name="Dashboard"
-        component={DashboardScreen}
+        component={DashboardStack}
         options={{ tabBarLabel: "대시보드" }}
       />
       <Tab.Screen

@@ -5,6 +5,8 @@ export { StudentRepository } from './StudentRepository';
 export { NoticeRepository } from './NoticeRepository';
 export { ActivityRepository } from './ActivityRepository';
 export { ParentDataRepository } from './ParentDataRepository';
+export { AttendanceRepository } from './AttendanceRepository';
+export { PaymentRepository } from './PaymentRepository';
 
 /**
  * 사용 예시:

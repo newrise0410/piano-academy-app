@@ -1,13 +1,21 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { View, ScrollView, TouchableOpacity, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import Text from '../../components/common/Text';
-import { mockStudents } from '../../data/mockStudents';
+import { useStudentStore } from '../../store';
 import TEACHER_COLORS, { TEACHER_GRADIENTS, TEACHER_OVERLAY_COLORS } from '../../styles/teacher_colors';
 import { formatCurrency, formatTicketDisplay } from '../../utils';
 
 export default function TuitionScreen() {
+  // Zustand Store
+  const { students, fetchStudents } = useStudentStore();
+
+  // Fetch students on mount
+  useEffect(() => {
+    fetchStudents();
+  }, [fetchStudents]);
+
   const [editingPrice, setEditingPrice] = useState(null);
   const [prices, setPrices] = useState({
     count4: '150,000',
@@ -20,21 +28,21 @@ export default function TuitionScreen() {
 
   // 실제 데이터 기반 통계 계산
   const stats = useMemo(() => {
-    const unpaidCount = mockStudents.filter(s => s.unpaid).length;
-    const oneSessionCount = mockStudents.filter(s => s.ticketType === 'count' && s.ticketCount === 1).length;
-    const twoSessionCount = mockStudents.filter(s => s.ticketType === 'count' && s.ticketCount === 2).length;
-    const normalCount = mockStudents.length - unpaidCount - oneSessionCount - twoSessionCount;
+    const unpaidCount = students.filter(s => s.unpaid).length;
+    const oneSessionCount = students.filter(s => s.ticketType === 'count' && s.ticketCount === 1).length;
+    const twoSessionCount = students.filter(s => s.ticketType === 'count' && s.ticketCount === 2).length;
+    const normalCount = students.length - unpaidCount - oneSessionCount - twoSessionCount;
 
     return {
       paid: normalCount,
       lastWeek: twoSessionCount,
       unpaid: unpaidCount,
     };
-  }, []);
+  }, [students]);
 
   // 미납자 목록 (실제 데이터)
   const unpaidStudents = useMemo(() => {
-    return mockStudents
+    return students
       .filter(s => s.unpaid)
       .map(s => ({
         id: s.id,
@@ -43,11 +51,11 @@ export default function TuitionScreen() {
         level: s.level,
         ticket: formatTicketDisplay(s),
       }));
-  }, []);
+  }, [students]);
 
   // 잔여 1회 학생 (실제 데이터)
   const oneSessionLeft = useMemo(() => {
-    return mockStudents
+    return students
       .filter(s => s.ticketType === 'count' && s.ticketCount === 1)
       .map(s => ({
         id: s.id,
@@ -55,12 +63,12 @@ export default function TuitionScreen() {
         sessions: formatTicketDisplay(s),
         level: s.level,
       }));
-  }, []);
+  }, [students]);
 
   // 월별 수입 계산 (실제 데이터 기반)
   const monthlyRevenue = useMemo(() => {
     // 4회권 기준으로 계산 (미납자 제외)
-    const paidStudents = mockStudents.filter(s => !s.unpaid);
+    const paidStudents = students.filter(s => !s.unpaid);
     const pricePerStudent = 150000; // 4회권 기준
     const total = paidStudents.length * pricePerStudent;
 
@@ -69,7 +77,7 @@ export default function TuitionScreen() {
       students: paidStudents.length,
       sessions: 4,
     };
-  }, []);
+  }, [students]);
 
   return (
     <SafeAreaView className="flex-1 bg-gray-50">

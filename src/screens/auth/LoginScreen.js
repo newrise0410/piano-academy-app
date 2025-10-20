@@ -1,29 +1,31 @@
 // src/screens/auth/LoginScreen.js
 import React, { useState } from 'react';
-import { View, ScrollView, TouchableOpacity, TextInput, Alert } from 'react-native';
+import { View, ScrollView, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import Text from '../../components/common/Text';
-import AUTH_COLORS, { AUTH_GRADIENTS, AUTH_SEMANTIC_COLORS, AUTH_INPUT_COLORS, AUTH_OVERLAY_COLORS, AUTH_SHADOW_COLORS } from '../../styles/auth_colors';
+import { Text, FormInput, Button } from '../../components/common';
+import { useToastStore } from '../../store';
+import AUTH_COLORS, { AUTH_GRADIENTS, AUTH_SHADOW_COLORS } from '../../styles/auth_colors';
 
 export default function LoginScreen({ navigation }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
+  const toast = useToastStore();
 
   const handleLogin = () => {
     if (!email || !password) {
-      Alert.alert('알림', '이메일과 비밀번호를 입력해주세요.');
+      toast.warning('이메일과 비밀번호를 입력해주세요');
       return;
     }
     // TODO: 실제 로그인 로직 구현
-    Alert.alert('로그인', '로그인 기능은 준비 중입니다.');
+    toast.info('로그인 기능은 준비 중입니다');
   };
 
   const handleSocialLogin = (provider) => {
-    Alert.alert('소셜 로그인', `${provider} 로그인 기능은 준비 중입니다.`);
+    toast.info(`${provider} 로그인 기능은 준비 중입니다`);
   };
 
   return (
@@ -50,60 +52,26 @@ export default function LoginScreen({ navigation }) {
         {/* 컨텐츠 */}
         <View className="px-6 py-6 space-y-6">
           {/* 이메일 입력 */}
-          <View>
-            <Text className="text-sm font-semibold text-gray-700 mb-2">이메일</Text>
-            <View className="relative">
-              <Ionicons
-                name="mail-outline"
-                size={20}
-                color={AUTH_COLORS.gray[400]}
-                style={{ position: 'absolute', left: 12, top: 12, zIndex: 1 }}
-              />
-              <TextInput
-                className="w-full border-2 border-gray-200 rounded-xl pl-11 pr-4 py-3 text-sm bg-white"
-                placeholder="example@email.com"
-                placeholderTextColor={AUTH_COLORS.gray[400]}
-                value={email}
-                onChangeText={setEmail}
-                keyboardType="email-address"
-                autoCapitalize="none"
-                style={{ fontFamily: 'MaruBuri-Regular' }}
-              />
-            </View>
-          </View>
+          <FormInput
+            label="이메일"
+            placeholder="example@email.com"
+            value={email}
+            onChangeText={setEmail}
+            type="email"
+            iconName="mail-outline"
+          />
 
           {/* 비밀번호 입력 */}
-          <View>
-            <Text className="text-sm font-semibold text-gray-700 mb-2">비밀번호</Text>
-            <View className="relative">
-              <Ionicons
-                name="lock-closed-outline"
-                size={20}
-                color={AUTH_COLORS.gray[400]}
-                style={{ position: 'absolute', left: 12, top: 12, zIndex: 1 }}
-              />
-              <TextInput
-                className="w-full border-2 border-gray-200 rounded-xl pl-11 pr-11 py-3 text-sm bg-white"
-                placeholder="••••••••"
-                placeholderTextColor={AUTH_COLORS.gray[400]}
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry={!showPassword}
-                style={{ fontFamily: 'MaruBuri-Regular' }}
-              />
-              <TouchableOpacity
-                onPress={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-3"
-                activeOpacity={0.7}
-              >
-                <Ionicons
-                  name={showPassword ? 'eye-off-outline' : 'eye-outline'}
-                  size={20}
-                  color={AUTH_COLORS.gray[400]}
-                />
-              </TouchableOpacity>
-            </View>
-          </View>
+          <FormInput
+            label="비밀번호"
+            placeholder="••••••••"
+            value={password}
+            onChangeText={setPassword}
+            type="password"
+            iconName="lock-closed-outline"
+            rightIconName={showPassword ? 'eye-off-outline' : 'eye-outline'}
+            onRightIconPress={() => setShowPassword(!showPassword)}
+          />
 
           {/* 옵션 */}
           <View className="flex-row items-center justify-between">
@@ -131,9 +99,7 @@ export default function LoginScreen({ navigation }) {
           </View>
 
           {/* 로그인 버튼 */}
-          <TouchableOpacity
-            onPress={handleLogin}
-            activeOpacity={0.8}
+          <View
             style={{
               shadowColor: AUTH_SHADOW_COLORS.primary,
               shadowOffset: { width: 0, height: 4 },
@@ -142,15 +108,17 @@ export default function LoginScreen({ navigation }) {
               elevation: 4,
             }}
           >
-            <LinearGradient
-              colors={AUTH_GRADIENTS.purpleToPink}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
-              className="rounded-xl py-4 items-center"
-            >
-              <Text className="text-white text-lg font-bold">로그인</Text>
-            </LinearGradient>
-          </TouchableOpacity>
+            <TouchableOpacity onPress={handleLogin} activeOpacity={0.8}>
+              <LinearGradient
+                colors={AUTH_GRADIENTS.purpleToPink}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                className="rounded-xl py-4 items-center"
+              >
+                <Text className="text-white text-lg font-bold">로그인</Text>
+              </LinearGradient>
+            </TouchableOpacity>
+          </View>
 
           {/* 구분선 */}
           <View className="relative">

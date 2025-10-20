@@ -4,8 +4,9 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import * as Font from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
-import { AuthProvider } from './src/context/AuthContext';
 import AppNavigator from './src/navigation/AppNavigator';
+import ErrorBoundary from './src/components/common/ErrorBoundary';
+import ToastContainer from './src/components/common/ToastContainer';
 import './global.css';
 
 // SplashScreen이 자동으로 숨겨지지 않도록 설정
@@ -40,11 +41,12 @@ export default function App() {
   }
 
   return (
-    <SafeAreaProvider>
-      <AuthProvider>
+    <ErrorBoundary>
+      <SafeAreaProvider>
         <StatusBar style="auto" />
         <AppNavigator />
-      </AuthProvider>
-    </SafeAreaProvider>
+        <ToastContainer />
+      </SafeAreaProvider>
+    </ErrorBoundary>
   );
 }

@@ -1,7 +1,7 @@
 // src/navigation/AppNavigator.js
-import React, { useContext } from 'react';
+import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
-import { AuthContext } from '../context/AuthContext';
+import { useAuthStore } from '../store/authStore';
 
 import AuthNavigator from './AuthNavigator';
 import TeacherNavigator from './TeacherNavigator';
@@ -9,7 +9,7 @@ import ParentNavigator from './ParentNavigator';
 
 export default function AppNavigator() {
   // 로그인 상태 확인
-  const { user } = useContext(AuthContext);
+  const user = useAuthStore((state) => state.user);
 
   const getNavigator = () => {
     // 로그인 안 됨 → 로그인 화면

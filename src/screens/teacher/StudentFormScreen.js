@@ -1,15 +1,26 @@
-import React, { useState, useEffect } from 'react';
-import { View, ScrollView, TextInput, TouchableOpacity, Alert, ActivityIndicator, Modal, Platform } from 'react-native';
+import React, { useState } from 'react';
+import { View, ScrollView, TouchableOpacity, Alert, Modal, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import Text from '../../components/common/Text';
+import {
+  Text,
+  FormInput,
+  Button,
+  SectionCard,
+  SegmentedControl
+} from '../../components/common';
 import TEACHER_COLORS from '../../styles/teacher_colors';
-import { StudentRepository } from '../../repositories';
+import { useStudentStore } from '../../store';
+import { useToastStore } from '../../store';
 
 export default function StudentFormScreen({ navigation, route }) {
   const student = route?.params?.student;
   const isEdit = !!student;
+
+  // Zustand Stores
+  const { addStudent, updateStudent, loading } = useStudentStore();
+  const toast = useToastStore();
 
   // 기존 schedule을 파싱 (예: "월/수 16:00" -> selectedDays: ['월', '수'], selectedTime: '16:00')
   const parseSchedule = (schedule) => {
@@ -41,7 +52,6 @@ export default function StudentFormScreen({ navigation, route }) {
   const [selectedDays, setSelectedDays] = useState(parsed.days);
   const [selectedTime, setSelectedTime] = useState(parsed.time);
   const [showTimePicker, setShowTimePicker] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
 
   const categories = ['초등', '고등', '성인'];
   const levels = ['초급', '중급', '고급'];
@@ -84,25 +94,23 @@ export default function StudentFormScreen({ navigation, route }) {
   const handleSave = async () => {
     // 필수 입력 검증
     if (!formData.name.trim()) {
-      Alert.alert('알림', '학생 이름을 입력해주세요.');
+      toast.warning('학생 이름을 입력해주세요');
       return;
     }
     if (selectedDays.length === 0) {
-      Alert.alert('알림', '수업 요일을 선택해주세요.');
+      toast.warning('수업 요일을 선택해주세요');
       return;
     }
 
     // 수강권 검증
     if (formData.ticketType === 'count' && (!formData.ticketCount || formData.ticketCount < 0)) {
-      Alert.alert('알림', '수강권 횟수를 입력해주세요.');
+      toast.warning('수강권 횟수를 입력해주세요');
       return;
     }
     if (formData.ticketType === 'period' && (!formData.ticketPeriodStart || !formData.ticketPeriodEnd)) {
-      Alert.alert('알림', '수강 기간을 입력해주세요.');
+      toast.warning('수강 기간을 입력해주세요');
       return;
     }
-
-    setIsSaving(true);
 
     try {
       const studentData = {
@@ -114,21 +122,16 @@ export default function StudentFormScreen({ navigation, route }) {
       };
 
       if (isEdit) {
-        await StudentRepository.update(student.id, studentData);
-        Alert.alert('성공', '학생 정보가 수정되었습니다.', [
-          { text: '확인', onPress: () => navigation.goBack() }
-        ]);
+        await updateStudent(student.id, studentData);
+        toast.success('학생 정보가 수정되었습니다');
       } else {
-        await StudentRepository.create(studentData);
-        Alert.alert('성공', '새 학생이 등록되었습니다.', [
-          { text: '확인', onPress: () => navigation.goBack() }
-        ]);
+        await addStudent(studentData);
+        toast.success('새 학생이 등록되었습니다');
       }
+      navigation.goBack();
     } catch (error) {
-      Alert.alert('오류', `저장에 실패했습니다.\n${error.message}`);
+      toast.error('저장에 실패했습니다');
       console.error('학생 저장 오류:', error);
-    } finally {
-      setIsSaving(false);
     }
   };
 
@@ -149,103 +152,56 @@ export default function StudentFormScreen({ navigation, route }) {
 
       <ScrollView className="flex-1 px-5 py-4">
         {/* 기본 정보 */}
-        <View className="bg-white rounded-2xl p-4 mb-4">
-          <Text className="text-base font-bold text-gray-800 mb-4">기본 정보</Text>
-
+        <SectionCard title="기본 정보" iconName="person-outline" style={{ marginBottom: 16 }}>
           {/* 이름 */}
-          <View className="mb-4">
-            <Text className="text-sm font-semibold text-gray-700 mb-2">이름 *</Text>
-            <TextInput
-              className="bg-gray-50 rounded-xl p-4 text-base border border-gray-200"
-              placeholder="학생 이름"
-              value={formData.name}
-              onChangeText={(text) => setFormData({ ...formData, name: text })}
-              style={{ fontFamily: 'MaruBuri-Regular' }}
-            />
-          </View>
+          <FormInput
+            label="이름"
+            placeholder="학생 이름"
+            value={formData.name}
+            onChangeText={(text) => setFormData({ ...formData, name: text })}
+            required
+            style={{ marginBottom: 16 }}
+          />
 
           {/* 나이 */}
-          <View className="mb-4">
-            <Text className="text-sm font-semibold text-gray-700 mb-2">나이</Text>
-            <TextInput
-              className="bg-gray-50 rounded-xl p-4 text-base border border-gray-200"
-              placeholder="예: 10"
-              value={formData.age}
-              onChangeText={(text) => setFormData({ ...formData, age: text })}
-              keyboardType="numeric"
-              style={{ fontFamily: 'MaruBuri-Regular' }}
-            />
-          </View>
+          <FormInput
+            label="나이"
+            placeholder="예: 10"
+            value={formData.age}
+            onChangeText={(text) => setFormData({ ...formData, age: text })}
+            type="numeric"
+            style={{ marginBottom: 16 }}
+          />
 
           {/* 학생 연락처 */}
-          <View className="mb-4">
-            <Text className="text-sm font-semibold text-gray-700 mb-2">학생 연락처</Text>
-            <TextInput
-              className="bg-gray-50 rounded-xl p-4 text-base border border-gray-200"
-              placeholder="010-0000-0000"
-              value={formData.phone}
-              onChangeText={(text) => setFormData({ ...formData, phone: text })}
-              keyboardType="phone-pad"
-              style={{ fontFamily: 'MaruBuri-Regular' }}
-            />
-          </View>
+          <FormInput
+            label="학생 연락처"
+            placeholder="010-0000-0000"
+            value={formData.phone}
+            onChangeText={(text) => setFormData({ ...formData, phone: text })}
+            type="phone"
+            iconName="call-outline"
+            style={{ marginBottom: 16 }}
+          />
 
           {/* 카테고리 */}
           <View className="mb-4">
             <Text className="text-sm font-semibold text-gray-700 mb-2">카테고리 *</Text>
-            <View className="flex-row">
-              {categories.map((category) => (
-                <TouchableOpacity
-                  key={category}
-                  className={`flex-1 rounded-xl py-3 mr-2 ${
-                    formData.category === category
-                      ? 'bg-primary'
-                      : 'bg-gray-100'
-                  }`}
-                  onPress={() => setFormData({ ...formData, category })}
-                  activeOpacity={0.7}
-                >
-                  <Text
-                    className={`text-center text-sm font-bold ${
-                      formData.category === category
-                        ? 'text-white'
-                        : 'text-gray-700'
-                    }`}
-                  >
-                    {category}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
+            <SegmentedControl
+              options={categories.map(cat => ({ value: cat, label: cat }))}
+              value={formData.category}
+              onChange={(value) => setFormData({ ...formData, category: value })}
+            />
           </View>
 
           {/* 레벨 */}
           <View className="mb-4">
             <Text className="text-sm font-semibold text-gray-700 mb-2">레벨 *</Text>
-            <View className="flex-row">
-              {levels.map((level) => (
-                <TouchableOpacity
-                  key={level}
-                  className={`flex-1 rounded-xl py-3 mr-2 ${
-                    formData.level === level
-                      ? 'bg-primary'
-                      : 'bg-gray-100'
-                  }`}
-                  onPress={() => setFormData({ ...formData, level })}
-                  activeOpacity={0.7}
-                >
-                  <Text
-                    className={`text-center text-sm font-bold ${
-                      formData.level === level
-                        ? 'text-white'
-                        : 'text-gray-700'
-                    }`}
-                  >
-                    {level}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
+            <SegmentedControl
+              options={levels.map(level => ({ value: level, label: level }))}
+              value={formData.level}
+              onChange={(value) => setFormData({ ...formData, level: value })}
+            />
           </View>
 
           {/* 수업 일정 */}
@@ -298,115 +254,81 @@ export default function StudentFormScreen({ navigation, route }) {
           </View>
 
           {/* 교재 */}
-          <View>
-            <Text className="text-sm font-semibold text-gray-700 mb-2">교재</Text>
-            <TextInput
-              className="bg-gray-50 rounded-xl p-4 text-base border border-gray-200"
-              placeholder="예: 바이엘 45p"
-              value={formData.book}
-              onChangeText={(text) => setFormData({ ...formData, book: text })}
-              style={{ fontFamily: 'MaruBuri-Regular' }}
-            />
-          </View>
-        </View>
+          <FormInput
+            label="교재"
+            placeholder="예: 바이엘 45p"
+            value={formData.book}
+            onChangeText={(text) => setFormData({ ...formData, book: text })}
+            iconName="book-outline"
+          />
+        </SectionCard>
 
         {/* 학부모 정보 */}
-        <View className="bg-white rounded-2xl p-4 mb-4">
-          <Text className="text-base font-bold text-gray-800 mb-4">학부모 정보</Text>
-
+        <SectionCard title="학부모 정보" iconName="people-outline" style={{ marginBottom: 16 }}>
           {/* 학부모 이름 */}
-          <View className="mb-4">
-            <Text className="text-sm font-semibold text-gray-700 mb-2">학부모 이름</Text>
-            <TextInput
-              className="bg-gray-50 rounded-xl p-4 text-base border border-gray-200"
-              placeholder="예: 김영희"
-              value={formData.parentName}
-              onChangeText={(text) => setFormData({ ...formData, parentName: text })}
-              style={{ fontFamily: 'MaruBuri-Regular' }}
-            />
-          </View>
+          <FormInput
+            label="학부모 이름"
+            placeholder="예: 김영희"
+            value={formData.parentName}
+            onChangeText={(text) => setFormData({ ...formData, parentName: text })}
+            iconName="person-outline"
+            style={{ marginBottom: 16 }}
+          />
 
           {/* 학부모 연락처 */}
-          <View>
-            <Text className="text-sm font-semibold text-gray-700 mb-2">학부모 연락처</Text>
-            <TextInput
-              className="bg-gray-50 rounded-xl p-4 text-base border border-gray-200"
-              placeholder="010-0000-0000"
-              value={formData.parentPhone}
-              onChangeText={(text) => setFormData({ ...formData, parentPhone: text })}
-              keyboardType="phone-pad"
-              style={{ fontFamily: 'MaruBuri-Regular' }}
-            />
-          </View>
-        </View>
+          <FormInput
+            label="학부모 연락처"
+            placeholder="010-0000-0000"
+            value={formData.parentPhone}
+            onChangeText={(text) => setFormData({ ...formData, parentPhone: text })}
+            type="phone"
+            iconName="call-outline"
+          />
+        </SectionCard>
 
         {/* 수강권 정보 */}
-        <View className="bg-white rounded-2xl p-4 mb-4">
-          <Text className="text-base font-bold text-gray-800 mb-4">수강권 정보</Text>
-
+        <SectionCard title="수강권 정보" iconName="ticket-outline" style={{ marginBottom: 16 }}>
           {/* 수강권 타입 */}
           <View className="mb-4">
             <Text className="text-sm font-semibold text-gray-700 mb-2">수강권 타입 *</Text>
-            <View className="flex-row">
-              {ticketTypes.map((type) => (
-                <TouchableOpacity
-                  key={type.value}
-                  className={`flex-1 rounded-xl py-3 mr-2 ${
-                    formData.ticketType === type.value
-                      ? 'bg-primary'
-                      : 'bg-gray-100'
-                  }`}
-                  onPress={() => setFormData({ ...formData, ticketType: type.value })}
-                  activeOpacity={0.7}
-                >
-                  <Text
-                    className={`text-center text-sm font-bold ${
-                      formData.ticketType === type.value
-                        ? 'text-white'
-                        : 'text-gray-700'
-                    }`}
-                  >
-                    {type.label}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
+            <SegmentedControl
+              options={ticketTypes}
+              value={formData.ticketType}
+              onChange={(value) => setFormData({ ...formData, ticketType: value })}
+            />
           </View>
 
           {/* 회차권일 때 */}
           {formData.ticketType === 'count' && (
-            <View className="mb-4">
-              <Text className="text-sm font-semibold text-gray-700 mb-2">남은 횟수 *</Text>
-              <TextInput
-                className="bg-gray-50 rounded-xl p-4 text-base border border-gray-200"
-                placeholder="예: 8"
-                value={String(formData.ticketCount)}
-                onChangeText={(text) => setFormData({ ...formData, ticketCount: parseInt(text) || 0 })}
-                keyboardType="numeric"
-                style={{ fontFamily: 'MaruBuri-Regular' }}
-              />
-            </View>
+            <FormInput
+              label="남은 횟수"
+              placeholder="예: 8"
+              value={String(formData.ticketCount)}
+              onChangeText={(text) => setFormData({ ...formData, ticketCount: parseInt(text) || 0 })}
+              type="numeric"
+              iconName="ticket-outline"
+              required
+              style={{ marginBottom: 16 }}
+            />
           )}
 
           {/* 기간 정액권일 때 */}
           {formData.ticketType === 'period' && (
             <View className="mb-4">
               <Text className="text-sm font-semibold text-gray-700 mb-2">수강 기간 *</Text>
-              <View className="flex-row items-center">
-                <TextInput
-                  className="flex-1 bg-gray-50 rounded-xl p-4 text-base border border-gray-200 mr-2"
+              <View className="flex-row items-center gap-2">
+                <FormInput
                   placeholder="2025.01"
                   value={formData.ticketPeriodStart}
                   onChangeText={(text) => setFormData({ ...formData, ticketPeriodStart: text })}
-                  style={{ fontFamily: 'MaruBuri-Regular' }}
+                  style={{ flex: 1 }}
                 />
                 <Text className="text-gray-600">~</Text>
-                <TextInput
-                  className="flex-1 bg-gray-50 rounded-xl p-4 text-base border border-gray-200 ml-2"
+                <FormInput
                   placeholder="2025.03"
                   value={formData.ticketPeriodEnd}
                   onChangeText={(text) => setFormData({ ...formData, ticketPeriodEnd: text })}
-                  style={{ fontFamily: 'MaruBuri-Regular' }}
+                  style={{ flex: 1 }}
                 />
               </View>
               <Text className="text-xs text-gray-500 mt-1">
@@ -418,60 +340,28 @@ export default function StudentFormScreen({ navigation, route }) {
           {/* 미납 여부 */}
           <View>
             <Text className="text-sm font-semibold text-gray-700 mb-2">수강료 납부 상태</Text>
-            <View className="flex-row">
-              <TouchableOpacity
-                className="flex-1 rounded-xl py-3 mr-2"
-                style={{ backgroundColor: !formData.unpaid ? TEACHER_COLORS.green[500] : TEACHER_COLORS.gray[100] }}
-                onPress={() => setFormData({ ...formData, unpaid: false })}
-                activeOpacity={0.7}
-              >
-                <Text
-                  className="text-center text-sm font-bold"
-                  style={{ color: !formData.unpaid ? TEACHER_COLORS.white : TEACHER_COLORS.gray[700] }}
-                >
-                  납부 완료
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                className="flex-1 rounded-xl py-3 ml-2"
-                style={{ backgroundColor: formData.unpaid ? TEACHER_COLORS.red[500] : TEACHER_COLORS.gray[100] }}
-                onPress={() => setFormData({ ...formData, unpaid: true })}
-                activeOpacity={0.7}
-              >
-                <Text
-                  className="text-center text-sm font-bold"
-                  style={{ color: formData.unpaid ? TEACHER_COLORS.white : TEACHER_COLORS.gray[700] }}
-                >
-                  미납
-                </Text>
-              </TouchableOpacity>
-            </View>
+            <SegmentedControl
+              options={[
+                { value: false, label: '납부 완료' },
+                { value: true, label: '미납' }
+              ]}
+              value={formData.unpaid}
+              onChange={(value) => setFormData({ ...formData, unpaid: value })}
+              activeColor={formData.unpaid ? 'bg-red-500' : 'bg-green-500'}
+            />
           </View>
-        </View>
+        </SectionCard>
       </ScrollView>
 
       {/* 하단 저장 버튼 */}
       <View className="bg-white px-5 py-4 border-t border-gray-200">
-        <TouchableOpacity
-          className="bg-primary rounded-xl p-4 items-center"
+        <Button
+          title={isEdit ? '수정 완료' : '등록 완료'}
           onPress={handleSave}
-          activeOpacity={0.8}
-          disabled={isSaving}
-          style={{ opacity: isSaving ? 0.7 : 1 }}
-        >
-          {isSaving ? (
-            <View className="flex-row items-center">
-              <ActivityIndicator color="white" size="small" />
-              <Text className="text-white text-base font-bold ml-2">
-                저장 중...
-              </Text>
-            </View>
-          ) : (
-            <Text className="text-white text-base font-bold">
-              {isEdit ? '수정 완료' : '등록 완료'}
-            </Text>
-          )}
-        </TouchableOpacity>
+          loading={loading}
+          disabled={loading}
+          fullWidth
+        />
       </View>
 
       {/* 시간 선택 모달 */}

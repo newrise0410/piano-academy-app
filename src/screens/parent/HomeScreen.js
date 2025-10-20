@@ -152,7 +152,7 @@ export default function HomeScreen({ navigation }) {
               </TouchableOpacity>
             </View>
 
-            {recentActivities.slice(0, 4).map((activity, index) => (
+            {(recentActivities || []).slice(0, 4).map((activity, index) => (
               <ListItem
                 key={activity.id}
                 icon={activity.icon}

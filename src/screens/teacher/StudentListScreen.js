@@ -1,21 +1,35 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { View, ScrollView, TextInput, TouchableOpacity, Animated } from 'react-native';
+import { View, ScrollView, TouchableOpacity, Animated, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import Text from '../../components/common/Text';
+import {
+  Text,
+  FilterChip,
+  Button,
+  NoStudents,
+  NoSearchResults
+} from '../../components/common';
 import StudentCard from '../../components/teacher/StudentCard';
 import StudentDetailScreen from './StudentDetailScreen';
-import { mockStudents } from '../../data/mockStudents';
+import { useStudentStore } from '../../store';
 import TEACHER_COLORS from '../../styles/teacher_colors';
 
 export default function StudentListScreen({ navigation }) {
+  // Zustand Store
+  const { students, loading, error, fetchStudents } = useStudentStore();
+
+  // Local UI State
   const [selectedCategory, setSelectedCategory] = useState('전체');
   const [selectedLevel, setSelectedLevel] = useState('전체');
   const [searchQuery, setSearchQuery] = useState('');
-  const [students, setStudents] = useState(mockStudents);
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [showDetailScreen, setShowDetailScreen] = useState(false);
   const slideAnim = useRef(new Animated.Value(0)).current;
+
+  // Fetch students on mount
+  useEffect(() => {
+    fetchStudents();
+  }, [fetchStudents]);
 
   // 1차 카테고리
   const categories = ['전체', '초등', '고등', '성인', '미납'];
@@ -125,55 +139,23 @@ export default function StudentListScreen({ navigation }) {
 
       {/* 1차 카테고리 필터 */}
       <View className="px-5 mt-4">
-        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-          <View className="flex-row">
-            {categories.map((category) => (
-              <TouchableOpacity
-                key={category}
-                className={`rounded-full px-5 py-2 mr-2 ${
-                  selectedCategory === category ? 'bg-primary' : 'bg-white border border-gray-200'
-                }`}
-                onPress={() => handleCategoryChange(category)}
-                activeOpacity={0.7}
-              >
-                <Text
-                  className={`text-sm font-semibold ${
-                    selectedCategory === category ? 'text-white' : 'text-gray-700'
-                  }`}
-                >
-                  {category}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </ScrollView>
+        <FilterChip
+          options={categories.map(cat => ({ value: cat, label: cat }))}
+          value={selectedCategory}
+          onChange={handleCategoryChange}
+          variant="outlined"
+        />
       </View>
 
       {/* 2차 레벨 필터 (초등, 고등, 성인일 때만 표시) */}
       {showLevelFilter && (
         <View className="px-5 mt-2">
-          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            <View className="flex-row">
-              {levelFilters.map((level) => (
-                <TouchableOpacity
-                  key={level}
-                  className={`rounded-full px-4 py-1.5 mr-2 ${
-                    selectedLevel === level ? 'bg-purple-100 border border-primary' : 'bg-gray-100'
-                  }`}
-                  onPress={() => setSelectedLevel(level)}
-                  activeOpacity={0.7}
-                >
-                  <Text
-                    className={`text-xs font-semibold ${
-                      selectedLevel === level ? 'text-primary' : 'text-gray-600'
-                    }`}
-                  >
-                    {level}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </ScrollView>
+          <FilterChip
+            options={levelFilters.map(level => ({ value: level, label: level }))}
+            value={selectedLevel}
+            onChange={setSelectedLevel}
+            size="small"
+          />
         </View>
       )}
 
@@ -186,30 +168,38 @@ export default function StudentListScreen({ navigation }) {
 
       {/* 학생 목록 */}
       <ScrollView className="flex-1 px-5">
-        {filteredStudents.map((student) => (
-          <StudentCard
-            key={student.id}
-            student={student}
-            onPress={() => handleStudentPress(student)}
-          />
-        ))}
-
-        {filteredStudents.length === 0 && (
-          <View className="flex-1 items-center justify-center py-20">
-            <Ionicons name="people-outline" size={64} color={TEACHER_COLORS.gray[200]} />
-            <Text className="text-gray-400 mt-4">
-              {students.length === 0 ? '등록된 학생이 없습니다' : '검색 결과가 없습니다'}
-            </Text>
-          </View>
+        {filteredStudents.length === 0 ? (
+          searchQuery.length > 0 ? (
+            <NoSearchResults
+              searchQuery={searchQuery}
+              onClear={() => setSearchQuery('')}
+            />
+          ) : students.length === 0 ? (
+            <NoStudents onAddStudent={handleAddStudent} />
+          ) : (
+            <View className="flex-1 items-center justify-center py-20">
+              <Ionicons name="people-outline" size={64} color={TEACHER_COLORS.gray[200]} />
+              <Text className="text-gray-400 mt-4">해당하는 학생이 없습니다</Text>
+            </View>
+          )
+        ) : (
+          filteredStudents.map((student) => (
+            <StudentCard
+              key={student.id}
+              student={student}
+              onPress={() => handleStudentPress(student)}
+            />
+          ))
         )}
       </ScrollView>
 
       {/* 학생 추가 버튼 */}
       <View className="px-5 pb-4">
-        <TouchableOpacity
-          className="bg-primary rounded-2xl p-4 flex-row items-center justify-center"
-          activeOpacity={0.8}
+        <Button
+          title="새 학생 등록"
+          icon="add-circle-outline"
           onPress={handleAddStudent}
+          fullWidth
           style={{
             shadowColor: TEACHER_COLORS.primary[600],
             shadowOffset: { width: 0, height: 4 },
@@ -217,10 +207,7 @@ export default function StudentListScreen({ navigation }) {
             shadowRadius: 8,
             elevation: 4,
           }}
-        >
-          <Ionicons name="add-circle-outline" size={24} color="white" />
-          <Text className="text-white text-base font-bold ml-2">새 학생 등록</Text>
-        </TouchableOpacity>
+        />
       </View>
     </SafeAreaView>
       </Animated.View>

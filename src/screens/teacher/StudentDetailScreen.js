@@ -1,20 +1,32 @@
 import React, { useState } from 'react';
-import { View, ScrollView, TouchableOpacity, TextInput, Alert, Image, ActivityIndicator } from 'react-native';
+import { View, ScrollView, TouchableOpacity, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
-import Text from '../../components/common/Text';
+import {
+  Text,
+  FormInput,
+  Button,
+  StatusBadge,
+  AttendanceStatusBadge,
+  PaymentStatusBadge,
+  SectionCard
+} from '../../components/common';
 import TEACHER_COLORS, { TEACHER_SHADOW_COLORS, TEACHER_OVERLAY_COLORS } from '../../styles/teacher_colors';
-import { StudentRepository } from '../../repositories';
+import { useStudentStore } from '../../store';
+import { useToastStore } from '../../store';
 import { formatDate, formatCurrency } from '../../utils';
 
 export default function StudentDetailScreen({ route, navigation }) {
   const { student } = route?.params || {};
+
+  // Zustand Store
+  const { deleteStudent, loading } = useStudentStore();
+
   const [activeTab, setActiveTab] = useState('정보');
   const [memo, setMemo] = useState('');
   const [attachments, setAttachments] = useState([]);
   const [isAIGenerating, setIsAIGenerating] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
 
   // 출석 관련 상태
   const [attendanceRecords, setAttendanceRecords] = useState([
@@ -57,17 +69,14 @@ export default function StudentDetailScreen({ route, navigation }) {
           text: '삭제',
           style: 'destructive',
           onPress: async () => {
-            setIsDeleting(true);
             try {
-              await StudentRepository.delete(student.id);
+              await deleteStudent(student.id);
               Alert.alert('성공', '학생이 삭제되었습니다.', [
                 { text: '확인', onPress: () => navigation.goBack() }
               ]);
             } catch (error) {
               Alert.alert('오류', `삭제에 실패했습니다.\n${error.message}`);
               console.error('학생 삭제 오류:', error);
-            } finally {
-              setIsDeleting(false);
             }
           },
         },

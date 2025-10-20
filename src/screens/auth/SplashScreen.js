@@ -1,14 +1,14 @@
 // src/screens/auth/SplashScreen.js
-import React, { useContext } from 'react';
+import React from 'react';
 import { View, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import Text from '../../components/common/Text';
 import AUTH_COLORS, { AUTH_GRADIENTS, AUTH_SEMANTIC_COLORS, AUTH_INPUT_COLORS, AUTH_OVERLAY_COLORS, AUTH_SHADOW_COLORS } from '../../styles/auth_colors';
-import { AuthContext } from '../../context/AuthContext';
+import { useAuthStore } from '../../store/authStore';
 
 export default function SplashScreen({ navigation }) {
-  const { login } = useContext(AuthContext);
+  const login = useAuthStore((state) => state.login);
   return (
     <LinearGradient
       colors={AUTH_GRADIENTS.splashGradient}

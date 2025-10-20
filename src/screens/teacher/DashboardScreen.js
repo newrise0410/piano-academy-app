@@ -1,6 +1,6 @@
 // src/screens/teacher/DashboardScreen.js
-import React from 'react';
-import { View, ScrollView, RefreshControl } from 'react-native';
+import React, { useState, useMemo, useEffect } from 'react';
+import { View, ScrollView, RefreshControl, TouchableOpacity, Linking, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import TEACHER_COLORS from '../../styles/teacher_colors';
@@ -11,18 +11,124 @@ import Button from '../../components/common/Button';
 import StatBox from '../../components/common/StatBox';
 import ActivityItem from '../../components/common/ActivityItem';
 
+// 모달 컴포넌트
+import TodayClassesModal from '../../components/teacher/TodayClassesModal';
+import UnpaidStudentsModal from '../../components/teacher/UnpaidStudentsModal';
+import MakeupClassesModal from '../../components/teacher/MakeupClassesModal';
+
 import useDashboard from '../../hooks/useDashboard';
 import useActivities from '../../hooks/useActivities';
+import { useStudentStore } from '../../store';
+import { useToastStore } from '../../store';
 
 export default function DashboardScreen({ navigation }) {
   const { stats, loading: statsLoading, refresh: refreshStats } = useDashboard();
   const { activities, loading: activitiesLoading, refresh: refreshActivities } = useActivities();
+  const { students, fetchStudents } = useStudentStore();
+  const toast = useToastStore();
+
+  // 모달 상태
+  const [todayClassesModalVisible, setTodayClassesModalVisible] = useState(false);
+  const [unpaidModalVisible, setUnpaidModalVisible] = useState(false);
+  const [makeupModalVisible, setMakeupModalVisible] = useState(false);
+
+  // 초기 데이터 로드
+  useEffect(() => {
+    fetchStudents();
+  }, [fetchStudents]);
 
   const onRefresh = async () => {
-    await Promise.all([refreshStats(), refreshActivities()]);
+    await Promise.all([refreshStats(), refreshActivities(), fetchStudents()]);
   };
 
   const isLoading = statsLoading || activitiesLoading;
+
+  // 오늘 수업 학생 필터링 (실제로는 요일/시간 기반으로 필터링)
+  const todayStudents = useMemo(() => {
+    const today = new Date().getDay(); // 0: 일, 1: 월, ...
+    const dayMap = ['일', '월', '화', '수', '목', '금', '토'];
+    const todayKorean = dayMap[today];
+
+    return students.filter(student => {
+      const schedule = student.schedule || '';
+      return schedule.includes(todayKorean);
+    });
+  }, [students]);
+
+  // 미납 학생 필터링
+  const unpaidStudents = useMemo(() => {
+    return students.filter(student => student.unpaid === true).map(student => ({
+      ...student,
+      unpaidAmount: 280000, // 실제로는 DB에서
+      lastPaymentDate: '2025.01.05', // 실제로는 DB에서
+    }));
+  }, [students]);
+
+  // 보강 예정 (Mock 데이터 - 실제로는 별도 Store에서)
+  const makeupClasses = useMemo(() => [
+    {
+      id: '1',
+      studentName: '김철수',
+      level: '중급',
+      originalDate: '2025-01-13',
+      reason: '학교 행사',
+      scheduledDate: '2025-01-20',
+      scheduledTime: '16:00',
+    },
+    {
+      id: '2',
+      studentName: '이영희',
+      level: '초급',
+      originalDate: '2025-01-14',
+      reason: '감기',
+      scheduledDate: null,
+      scheduledTime: null,
+    },
+  ], []);
+
+  // 연락하기 핸들러
+  const handleContact = (student) => {
+    if (student.parentPhone) {
+      Alert.alert(
+        '학부모 연락',
+        `${student.name} 학부모님께 연락하시겠습니까?`,
+        [
+          { text: '취소', style: 'cancel' },
+          {
+            text: '전화',
+            onPress: () => Linking.openURL(`tel:${student.parentPhone}`),
+          },
+        ]
+      );
+    } else {
+      toast.warning('등록된 연락처가 없습니다');
+    }
+  };
+
+  // 보강 일정 잡기
+  const handleScheduleMakeup = (makeup) => {
+    toast.info('일정 잡기 기능은 준비 중입니다');
+    // TODO: 날짜/시간 선택 모달 열기
+  };
+
+  // 보강 완료 처리
+  const handleCompleteMakeup = (makeup) => {
+    Alert.alert(
+      '보강 완료',
+      `${makeup.studentName}의 보강을 완료 처리하시겠습니까?`,
+      [
+        { text: '취소', style: 'cancel' },
+        {
+          text: '완료',
+          onPress: () => {
+            toast.success('보강이 완료되었습니다');
+            setMakeupModalVisible(false);
+            // TODO: Store 업데이트
+          },
+        },
+      ]
+    );
+  };
 
   return (
     <SafeAreaView className="flex-1 bg-primary">
@@ -48,20 +154,40 @@ export default function DashboardScreen({ navigation }) {
           <Card>
             <Text className="text-lg font-bold text-gray-800 mb-4">오늘의 현황</Text>
             <View className="flex-row justify-between -mx-1">
-              <StatBox 
-                number={`${stats.todayClasses}명`}
-                label="오늘 수업"
-              />
-              <StatBox 
-                number={`${stats.unpaidStudents}명`}
-                label="미납 학생"
-                variant="warning"
-              />
-              <StatBox 
-                number={`${stats.makeupClasses}건`}
-                label="보강 예정"
-                variant="success"
-              />
+              <TouchableOpacity
+                onPress={() => setTodayClassesModalVisible(true)}
+                activeOpacity={0.7}
+                style={{ flex: 1 }}
+              >
+                <StatBox
+                  number={`${todayStudents.length}명`}
+                  label="오늘 수업"
+                />
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={() => setUnpaidModalVisible(true)}
+                activeOpacity={0.7}
+                style={{ flex: 1 }}
+              >
+                <StatBox
+                  number={`${unpaidStudents.length}명`}
+                  label="미납 학생"
+                  variant="warning"
+                />
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={() => setMakeupModalVisible(true)}
+                activeOpacity={0.7}
+                style={{ flex: 1 }}
+              >
+                <StatBox
+                  number={`${makeupClasses.length}건`}
+                  label="보강 예정"
+                  variant="success"
+                />
+              </TouchableOpacity>
             </View>
           </Card>
 
@@ -88,20 +214,54 @@ export default function DashboardScreen({ navigation }) {
           {/* 최근 활동 */}
           <Card className="mt-4 mb-5">
             <Text className="text-lg font-bold text-gray-800 mb-4">최근 활동</Text>
-            
-            {activities.map((activity, index) => (
+
+            {(activities || []).map((activity, index) => (
               <ActivityItem
                 key={activity.id}
                 icon={activity.icon}
                 iconColor={activity.color}
                 title={activity.title}
                 description={activity.description}
-                isLast={index === activities.length - 1}
+                isLast={index === (activities || []).length - 1}
               />
             ))}
           </Card>
         </View>
       </ScrollView>
+
+      {/* 모달들 */}
+      <TodayClassesModal
+        visible={todayClassesModalVisible}
+        onClose={() => setTodayClassesModalVisible(false)}
+        students={todayStudents}
+        onViewAll={() => {
+          setTodayClassesModalVisible(false);
+          navigation.navigate('TodayClassesScreen');
+        }}
+      />
+
+      <UnpaidStudentsModal
+        visible={unpaidModalVisible}
+        onClose={() => setUnpaidModalVisible(false)}
+        students={unpaidStudents}
+        onContact={handleContact}
+        onViewAll={() => {
+          setUnpaidModalVisible(false);
+          navigation.navigate('UnpaidStudentsScreen');
+        }}
+      />
+
+      <MakeupClassesModal
+        visible={makeupModalVisible}
+        onClose={() => setMakeupModalVisible(false)}
+        makeupClasses={makeupClasses}
+        onSchedule={handleScheduleMakeup}
+        onComplete={handleCompleteMakeup}
+        onViewAll={() => {
+          setMakeupModalVisible(false);
+          navigation.navigate('MakeupClassesScreen');
+        }}
+      />
     </SafeAreaView>
   );
 }
