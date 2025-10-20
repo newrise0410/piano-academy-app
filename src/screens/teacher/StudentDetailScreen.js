@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import { View, ScrollView, TouchableOpacity, TextInput, Alert, Image } from 'react-native';
+import { View, ScrollView, TouchableOpacity, TextInput, Alert, Image, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import Text from '../../components/common/Text';
-import { SHADOW_COLORS, OVERLAY_COLORS } from '../../styles/colors';
-import { deleteStudent } from '../../data/mockStudents';
+import TEACHER_COLORS, { TEACHER_SHADOW_COLORS, TEACHER_OVERLAY_COLORS } from '../../styles/teacher_colors';
+import { StudentRepository } from '../../repositories';
 
 export default function StudentDetailScreen({ route, navigation }) {
   const { student } = route?.params || {};
@@ -13,6 +13,7 @@ export default function StudentDetailScreen({ route, navigation }) {
   const [memo, setMemo] = useState('');
   const [attachments, setAttachments] = useState([]);
   const [isAIGenerating, setIsAIGenerating] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // 출석 관련 상태
   const [attendanceRecords, setAttendanceRecords] = useState([
@@ -54,15 +55,18 @@ export default function StudentDetailScreen({ route, navigation }) {
         {
           text: '삭제',
           style: 'destructive',
-          onPress: () => {
+          onPress: async () => {
+            setIsDeleting(true);
             try {
-              deleteStudent(student.id);
+              await StudentRepository.delete(student.id);
               Alert.alert('성공', '학생이 삭제되었습니다.', [
                 { text: '확인', onPress: () => navigation.goBack() }
               ]);
             } catch (error) {
-              Alert.alert('오류', '삭제에 실패했습니다.');
+              Alert.alert('오류', `삭제에 실패했습니다.\n${error.message}`);
               console.error('학생 삭제 오류:', error);
+            } finally {
+              setIsDeleting(false);
             }
           },
         },
@@ -120,13 +124,13 @@ export default function StudentDetailScreen({ route, navigation }) {
   const getAttendanceStatusColor = (status) => {
     switch (status) {
       case 'present':
-        return { bg: '#DCFCE7', text: '#16A34A', label: '출석' };
+        return { bg: TEACHER_COLORS.green[50], text: TEACHER_COLORS.success[600], label: '출석' };
       case 'absent':
-        return { bg: '#FEE2E2', text: '#DC2626', label: '결석' };
+        return { bg: TEACHER_COLORS.red[100], text: TEACHER_COLORS.red[600], label: '결석' };
       case 'late':
-        return { bg: '#FEF3C7', text: '#D97706', label: '지각' };
+        return { bg: '#FEF3C7', text: TEACHER_COLORS.warning[600], label: '지각' };
       default:
-        return { bg: '#F3F4F6', text: '#6B7280', label: '-' };
+        return { bg: TEACHER_COLORS.gray[100], text: TEACHER_COLORS.gray[600], label: '-' };
     }
   };
 
@@ -134,13 +138,13 @@ export default function StudentDetailScreen({ route, navigation }) {
   const getPaymentStatusColor = (status) => {
     switch (status) {
       case 'paid':
-        return { bg: '#DCFCE7', text: '#16A34A', label: '완료' };
+        return { bg: TEACHER_COLORS.green[50], text: TEACHER_COLORS.success[600], label: '완료' };
       case 'unpaid':
-        return { bg: '#FEE2E2', text: '#DC2626', label: '미납' };
+        return { bg: TEACHER_COLORS.red[100], text: TEACHER_COLORS.red[600], label: '미납' };
       case 'overdue':
-        return { bg: '#FEF3C7', text: '#D97706', label: '연체' };
+        return { bg: '#FEF3C7', text: TEACHER_COLORS.warning[600], label: '연체' };
       default:
-        return { bg: '#F3F4F6', text: '#6B7280', label: '-' };
+        return { bg: TEACHER_COLORS.gray[100], text: TEACHER_COLORS.gray[600], label: '-' };
     }
   };
 
@@ -262,20 +266,22 @@ export default function StudentDetailScreen({ route, navigation }) {
               {/* 첨부 및 AI 버튼 */}
               <View className="flex-row mt-3">
                 <TouchableOpacity
-                  className="flex-1 bg-gray-100 rounded-xl py-3 mr-2 flex-row items-center justify-center"
+                  className="flex-1 rounded-xl py-3 mr-2 flex-row items-center justify-center"
+                  style={{ backgroundColor: TEACHER_COLORS.gray[100] }}
                   onPress={() => pickMedia('image')}
                   activeOpacity={0.7}
                 >
-                  <Ionicons name="image-outline" size={20} color="#6B7280" />
+                  <Ionicons name="image-outline" size={20} color={TEACHER_COLORS.gray[600]} />
                   <Text className="text-gray-700 text-sm font-semibold ml-2">사진</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
-                  className="flex-1 bg-gray-100 rounded-xl py-3 mr-2 flex-row items-center justify-center"
+                  className="flex-1 rounded-xl py-3 mr-2 flex-row items-center justify-center"
+                  style={{ backgroundColor: TEACHER_COLORS.gray[100] }}
                   onPress={() => pickMedia('video')}
                   activeOpacity={0.7}
                 >
-                  <Ionicons name="videocam-outline" size={20} color="#6B7280" />
+                  <Ionicons name="videocam-outline" size={20} color={TEACHER_COLORS.gray[600]} />
                   <Text className="text-gray-700 text-sm font-semibold ml-2">영상</Text>
                 </TouchableOpacity>
 
@@ -306,7 +312,7 @@ export default function StudentDetailScreen({ route, navigation }) {
               className="bg-primary rounded-2xl p-4 items-center"
               activeOpacity={0.8}
               style={{
-                shadowColor: SHADOW_COLORS.primary,
+                shadowColor: TEACHER_COLORS.primary[600],
                 shadowOffset: { width: 0, height: 4 },
                 shadowOpacity: 0.3,
                 shadowRadius: 8,
@@ -336,15 +342,15 @@ export default function StudentDetailScreen({ route, navigation }) {
               <Text className="text-base font-bold text-gray-800 mb-3">이번 달 출석률</Text>
               <View className="flex-row justify-around">
                 <View className="items-center">
-                  <Text className="text-2xl font-bold text-green-600">8</Text>
+                  <Text className="text-2xl font-bold" style={{ color: TEACHER_COLORS.success[600] }}>8</Text>
                   <Text className="text-xs text-gray-500 mt-1">출석</Text>
                 </View>
                 <View className="items-center">
-                  <Text className="text-2xl font-bold text-red-600">1</Text>
+                  <Text className="text-2xl font-bold" style={{ color: TEACHER_COLORS.red[600] }}>1</Text>
                   <Text className="text-xs text-gray-500 mt-1">결석</Text>
                 </View>
                 <View className="items-center">
-                  <Text className="text-2xl font-bold text-orange-600">1</Text>
+                  <Text className="text-2xl font-bold" style={{ color: TEACHER_COLORS.orange[600] }}>1</Text>
                   <Text className="text-xs text-gray-500 mt-1">지각</Text>
                 </View>
                 <View className="items-center">
@@ -388,13 +394,13 @@ export default function StudentDetailScreen({ route, navigation }) {
             {/* 수강권 정보 */}
             <View className="bg-white rounded-2xl p-4 mb-4">
               <Text className="text-base font-bold text-gray-800 mb-3">현재 수강권</Text>
-              <View className="bg-purple-50 rounded-xl p-4">
+              <View className="rounded-xl p-4" style={{ backgroundColor: TEACHER_COLORS.purple[50] }}>
                 <View className="flex-row items-center justify-between mb-2">
                   <View className="flex-row items-center">
                     <Ionicons
                       name={student?.ticketType === 'period' ? 'calendar' : 'ticket'}
                       size={20}
-                      color="#7C3AED"
+                      color={TEACHER_COLORS.primary[600]}
                     />
                     <Text className="text-sm font-semibold text-gray-700 ml-2">
                       {student?.ticketType === 'period' ? '기간정액권' : '회차권'}
@@ -402,7 +408,7 @@ export default function StudentDetailScreen({ route, navigation }) {
                   </View>
                   {student?.ticketType === 'count' && (
                     <View className="bg-white rounded-full px-3 py-1">
-                      <Text className="text-xs font-bold text-purple-600">
+                      <Text className="text-xs font-bold" style={{ color: TEACHER_COLORS.purple[600] }}>
                         {student?.ticketCount}회 남음
                       </Text>
                     </View>
@@ -517,7 +523,7 @@ export default function StudentDetailScreen({ route, navigation }) {
           <View className="flex-row items-center">
             <View
               className="w-12 h-12 rounded-xl items-center justify-center mr-3"
-              style={{ backgroundColor: OVERLAY_COLORS.whiteLight }}
+              style={{ backgroundColor: TEACHER_OVERLAY_COLORS.whiteLight }}
             >
               <Ionicons name="person" size={24} color="white" />
             </View>
@@ -526,7 +532,7 @@ export default function StudentDetailScreen({ route, navigation }) {
                 <Text className="text-white text-xl font-bold mr-2">{student?.name || '김민지'}</Text>
                 <View
                   className="rounded-full px-2 py-0.5"
-                  style={{ backgroundColor: OVERLAY_COLORS.whiteLight }}
+                  style={{ backgroundColor: TEACHER_OVERLAY_COLORS.whiteLight }}
                 >
                   <Text className="text-white text-xs font-bold">{student?.level || '초급'}</Text>
                 </View>

@@ -1,19 +1,35 @@
 import React, { useState, useEffect } from 'react';
-import { View, ScrollView, TextInput, TouchableOpacity, Alert } from 'react-native';
+import { View, ScrollView, TextInput, TouchableOpacity, Alert, ActivityIndicator, Modal, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import Text from '../../components/common/Text';
-import { addStudent, updateStudent } from '../../data/mockStudents';
+import TEACHER_COLORS from '../../styles/teacher_colors';
+import { StudentRepository } from '../../repositories';
 
 export default function StudentFormScreen({ navigation, route }) {
   const student = route?.params?.student;
   const isEdit = !!student;
 
+  // 기존 schedule을 파싱 (예: "월/수 16:00" -> selectedDays: ['월', '수'], selectedTime: '16:00')
+  const parseSchedule = (schedule) => {
+    if (!schedule) return { days: [], time: '09:00' };
+    const parts = schedule.split(' ');
+    const days = parts[0] ? parts[0].split('/') : [];
+    const time = parts[1] || '09:00';
+    return { days, time };
+  };
+
+  const parsed = parseSchedule(student?.schedule);
+
   const [formData, setFormData] = useState({
     name: student?.name || '',
+    age: student?.age || '',
+    phone: student?.phone || '',
+    parentName: student?.parentName || '',
+    parentPhone: student?.parentPhone || '',
     category: student?.category || '초등',
     level: student?.level || '초급',
-    schedule: student?.schedule || '',
     book: student?.book || '',
     ticketType: student?.ticketType || 'count',
     ticketCount: student?.ticketCount || 8,
@@ -22,6 +38,11 @@ export default function StudentFormScreen({ navigation, route }) {
     unpaid: student?.unpaid || false,
   });
 
+  const [selectedDays, setSelectedDays] = useState(parsed.days);
+  const [selectedTime, setSelectedTime] = useState(parsed.time);
+  const [showTimePicker, setShowTimePicker] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+
   const categories = ['초등', '고등', '성인'];
   const levels = ['초급', '중급', '고급'];
   const ticketTypes = [
@@ -29,14 +50,45 @@ export default function StudentFormScreen({ navigation, route }) {
     { value: 'period', label: '기간 정액권' }
   ];
 
-  const handleSave = () => {
+  const daysOfWeek = ['월', '화', '수', '목', '금', '토', '일'];
+
+  // 요일 토글
+  const toggleDay = (day) => {
+    if (selectedDays.includes(day)) {
+      setSelectedDays(selectedDays.filter(d => d !== day));
+    } else {
+      setSelectedDays([...selectedDays, day].sort((a, b) =>
+        daysOfWeek.indexOf(a) - daysOfWeek.indexOf(b)
+      ));
+    }
+  };
+
+  // 시간 변경 핸들러
+  const onTimeChange = (event, selectedDate) => {
+    if (Platform.OS === 'android') {
+      setShowTimePicker(false);
+    }
+    if (selectedDate) {
+      const hours = selectedDate.getHours().toString().padStart(2, '0');
+      const minutes = selectedDate.getMinutes().toString().padStart(2, '0');
+      setSelectedTime(`${hours}:${minutes}`);
+    }
+  };
+
+  // schedule 문자열 생성
+  const getScheduleString = () => {
+    if (selectedDays.length === 0) return '';
+    return `${selectedDays.join('/')} ${selectedTime}`;
+  };
+
+  const handleSave = async () => {
     // 필수 입력 검증
     if (!formData.name.trim()) {
       Alert.alert('알림', '학생 이름을 입력해주세요.');
       return;
     }
-    if (!formData.schedule.trim()) {
-      Alert.alert('알림', '수업 일정을 입력해주세요.');
+    if (selectedDays.length === 0) {
+      Alert.alert('알림', '수업 요일을 선택해주세요.');
       return;
     }
 
@@ -50,28 +102,33 @@ export default function StudentFormScreen({ navigation, route }) {
       return;
     }
 
+    setIsSaving(true);
+
     try {
       const studentData = {
         ...formData,
+        schedule: getScheduleString(),
         ticketPeriod: formData.ticketType === 'period'
           ? { start: formData.ticketPeriodStart, end: formData.ticketPeriodEnd }
           : null,
       };
 
       if (isEdit) {
-        updateStudent(student.id, studentData);
+        await StudentRepository.update(student.id, studentData);
         Alert.alert('성공', '학생 정보가 수정되었습니다.', [
           { text: '확인', onPress: () => navigation.goBack() }
         ]);
       } else {
-        addStudent(studentData);
+        await StudentRepository.create(studentData);
         Alert.alert('성공', '새 학생이 등록되었습니다.', [
           { text: '확인', onPress: () => navigation.goBack() }
         ]);
       }
     } catch (error) {
-      Alert.alert('오류', '저장에 실패했습니다.');
+      Alert.alert('오류', `저장에 실패했습니다.\n${error.message}`);
       console.error('학생 저장 오류:', error);
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -103,6 +160,32 @@ export default function StudentFormScreen({ navigation, route }) {
               placeholder="학생 이름"
               value={formData.name}
               onChangeText={(text) => setFormData({ ...formData, name: text })}
+              style={{ fontFamily: 'MaruBuri-Regular' }}
+            />
+          </View>
+
+          {/* 나이 */}
+          <View className="mb-4">
+            <Text className="text-sm font-semibold text-gray-700 mb-2">나이</Text>
+            <TextInput
+              className="bg-gray-50 rounded-xl p-4 text-base border border-gray-200"
+              placeholder="예: 10"
+              value={formData.age}
+              onChangeText={(text) => setFormData({ ...formData, age: text })}
+              keyboardType="numeric"
+              style={{ fontFamily: 'MaruBuri-Regular' }}
+            />
+          </View>
+
+          {/* 학생 연락처 */}
+          <View className="mb-4">
+            <Text className="text-sm font-semibold text-gray-700 mb-2">학생 연락처</Text>
+            <TextInput
+              className="bg-gray-50 rounded-xl p-4 text-base border border-gray-200"
+              placeholder="010-0000-0000"
+              value={formData.phone}
+              onChangeText={(text) => setFormData({ ...formData, phone: text })}
+              keyboardType="phone-pad"
               style={{ fontFamily: 'MaruBuri-Regular' }}
             />
           </View>
@@ -167,21 +250,55 @@ export default function StudentFormScreen({ navigation, route }) {
 
           {/* 수업 일정 */}
           <View className="mb-4">
-            <Text className="text-sm font-semibold text-gray-700 mb-2">수업 일정 *</Text>
-            <TextInput
-              className="bg-gray-50 rounded-xl p-4 text-base border border-gray-200"
-              placeholder="예: 월/수 16:00"
-              value={formData.schedule}
-              onChangeText={(text) => setFormData({ ...formData, schedule: text })}
-              style={{ fontFamily: 'MaruBuri-Regular' }}
-            />
-            <Text className="text-xs text-gray-500 mt-1">
-              요일과 시간을 입력해주세요 (예: 월/수 16:00)
-            </Text>
+            <Text className="text-sm font-semibold text-gray-700 mb-2">수업 요일 *</Text>
+            <View className="flex-row flex-wrap mb-3">
+              {daysOfWeek.map((day) => (
+                <TouchableOpacity
+                  key={day}
+                  className={`rounded-full w-12 h-12 items-center justify-center mr-2 mb-2 ${
+                    selectedDays.includes(day) ? 'bg-primary' : 'bg-gray-100'
+                  }`}
+                  onPress={() => toggleDay(day)}
+                  activeOpacity={0.7}
+                >
+                  <Text
+                    className={`text-base font-bold ${
+                      selectedDays.includes(day) ? 'text-white' : 'text-gray-700'
+                    }`}
+                  >
+                    {day}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            <Text className="text-sm font-semibold text-gray-700 mb-2">수업 시간 *</Text>
+            <TouchableOpacity
+              className="bg-gray-50 rounded-xl p-4 border border-gray-200 flex-row items-center justify-between"
+              onPress={() => setShowTimePicker(true)}
+              activeOpacity={0.7}
+            >
+              <View className="flex-row items-center">
+                <Ionicons name="time-outline" size={20} color={TEACHER_COLORS.gray[600]} />
+                <Text className="text-base text-gray-700 ml-2" style={{ fontFamily: 'MaruBuri-Regular' }}>
+                  {selectedTime}
+                </Text>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color={TEACHER_COLORS.gray[400]} />
+            </TouchableOpacity>
+
+            {selectedDays.length > 0 && (
+              <View className="rounded-xl p-3 mt-2" style={{ backgroundColor: TEACHER_COLORS.purple[50] }}>
+                <Text className="text-sm text-gray-700">
+                  <Text className="font-bold text-primary">선택된 일정: </Text>
+                  {getScheduleString()}
+                </Text>
+              </View>
+            )}
           </View>
 
           {/* 교재 */}
-          <View className="mb-4">
+          <View>
             <Text className="text-sm font-semibold text-gray-700 mb-2">교재</Text>
             <TextInput
               className="bg-gray-50 rounded-xl p-4 text-base border border-gray-200"
@@ -191,6 +308,41 @@ export default function StudentFormScreen({ navigation, route }) {
               style={{ fontFamily: 'MaruBuri-Regular' }}
             />
           </View>
+        </View>
+
+        {/* 학부모 정보 */}
+        <View className="bg-white rounded-2xl p-4 mb-4">
+          <Text className="text-base font-bold text-gray-800 mb-4">학부모 정보</Text>
+
+          {/* 학부모 이름 */}
+          <View className="mb-4">
+            <Text className="text-sm font-semibold text-gray-700 mb-2">학부모 이름</Text>
+            <TextInput
+              className="bg-gray-50 rounded-xl p-4 text-base border border-gray-200"
+              placeholder="예: 김영희"
+              value={formData.parentName}
+              onChangeText={(text) => setFormData({ ...formData, parentName: text })}
+              style={{ fontFamily: 'MaruBuri-Regular' }}
+            />
+          </View>
+
+          {/* 학부모 연락처 */}
+          <View>
+            <Text className="text-sm font-semibold text-gray-700 mb-2">학부모 연락처</Text>
+            <TextInput
+              className="bg-gray-50 rounded-xl p-4 text-base border border-gray-200"
+              placeholder="010-0000-0000"
+              value={formData.parentPhone}
+              onChangeText={(text) => setFormData({ ...formData, parentPhone: text })}
+              keyboardType="phone-pad"
+              style={{ fontFamily: 'MaruBuri-Regular' }}
+            />
+          </View>
+        </View>
+
+        {/* 수강권 정보 */}
+        <View className="bg-white rounded-2xl p-4 mb-4">
+          <Text className="text-base font-bold text-gray-800 mb-4">수강권 정보</Text>
 
           {/* 수강권 타입 */}
           <View className="mb-4">
@@ -268,31 +420,27 @@ export default function StudentFormScreen({ navigation, route }) {
             <Text className="text-sm font-semibold text-gray-700 mb-2">수강료 납부 상태</Text>
             <View className="flex-row">
               <TouchableOpacity
-                className={`flex-1 rounded-xl py-3 mr-2 ${
-                  !formData.unpaid ? 'bg-green-500' : 'bg-gray-100'
-                }`}
+                className="flex-1 rounded-xl py-3 mr-2"
+                style={{ backgroundColor: !formData.unpaid ? TEACHER_COLORS.green[500] : TEACHER_COLORS.gray[100] }}
                 onPress={() => setFormData({ ...formData, unpaid: false })}
                 activeOpacity={0.7}
               >
                 <Text
-                  className={`text-center text-sm font-bold ${
-                    !formData.unpaid ? 'text-white' : 'text-gray-700'
-                  }`}
+                  className="text-center text-sm font-bold"
+                  style={{ color: !formData.unpaid ? TEACHER_COLORS.white : TEACHER_COLORS.gray[700] }}
                 >
                   납부 완료
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity
-                className={`flex-1 rounded-xl py-3 ml-2 ${
-                  formData.unpaid ? 'bg-red-500' : 'bg-gray-100'
-                }`}
+                className="flex-1 rounded-xl py-3 ml-2"
+                style={{ backgroundColor: formData.unpaid ? TEACHER_COLORS.red[500] : TEACHER_COLORS.gray[100] }}
                 onPress={() => setFormData({ ...formData, unpaid: true })}
                 activeOpacity={0.7}
               >
                 <Text
-                  className={`text-center text-sm font-bold ${
-                    formData.unpaid ? 'text-white' : 'text-gray-700'
-                  }`}
+                  className="text-center text-sm font-bold"
+                  style={{ color: formData.unpaid ? TEACHER_COLORS.white : TEACHER_COLORS.gray[700] }}
                 >
                   미납
                 </Text>
@@ -308,12 +456,59 @@ export default function StudentFormScreen({ navigation, route }) {
           className="bg-primary rounded-xl p-4 items-center"
           onPress={handleSave}
           activeOpacity={0.8}
+          disabled={isSaving}
+          style={{ opacity: isSaving ? 0.7 : 1 }}
         >
-          <Text className="text-white text-base font-bold">
-            {isEdit ? '수정 완료' : '등록 완료'}
-          </Text>
+          {isSaving ? (
+            <View className="flex-row items-center">
+              <ActivityIndicator color="white" size="small" />
+              <Text className="text-white text-base font-bold ml-2">
+                저장 중...
+              </Text>
+            </View>
+          ) : (
+            <Text className="text-white text-base font-bold">
+              {isEdit ? '수정 완료' : '등록 완료'}
+            </Text>
+          )}
         </TouchableOpacity>
       </View>
+
+      {/* 시간 선택 모달 */}
+      {Platform.OS === 'ios' ? (
+        <Modal
+          visible={showTimePicker}
+          transparent={true}
+          animationType="slide"
+        >
+          <View className="flex-1 justify-end bg-black/50">
+            <View className="bg-white rounded-t-3xl p-5">
+              <View className="flex-row justify-between items-center mb-4">
+                <Text className="text-lg font-bold text-gray-800">수업 시간 선택</Text>
+                <TouchableOpacity onPress={() => setShowTimePicker(false)}>
+                  <Text className="text-primary text-base font-bold">완료</Text>
+                </TouchableOpacity>
+              </View>
+              <DateTimePicker
+                value={new Date(`2000-01-01T${selectedTime}:00`)}
+                mode="time"
+                display="spinner"
+                onChange={onTimeChange}
+                locale="ko-KR"
+              />
+            </View>
+          </View>
+        </Modal>
+      ) : (
+        showTimePicker && (
+          <DateTimePicker
+            value={new Date(`2000-01-01T${selectedTime}:00`)}
+            mode="time"
+            display="default"
+            onChange={onTimeChange}
+          />
+        )
+      )}
     </SafeAreaView>
   );
 }

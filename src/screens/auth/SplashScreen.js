@@ -4,14 +4,14 @@ import { View, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import Text from '../../components/common/Text';
-import { SHADOW_COLORS } from '../../styles/colors';
+import AUTH_COLORS, { AUTH_GRADIENTS, AUTH_SEMANTIC_COLORS, AUTH_INPUT_COLORS, AUTH_OVERLAY_COLORS, AUTH_SHADOW_COLORS } from '../../styles/auth_colors';
 import { AuthContext } from '../../context/AuthContext';
 
 export default function SplashScreen({ navigation }) {
   const { login } = useContext(AuthContext);
   return (
     <LinearGradient
-      colors={['#8B5CF6', '#7C3AED', '#EC4899']}
+      colors={AUTH_GRADIENTS.splashGradient}
       start={{ x: 0, y: 0 }}
       end={{ x: 1, y: 1 }}
       style={{ flex: 1 }}
@@ -31,7 +31,7 @@ export default function SplashScreen({ navigation }) {
             onPress={() => navigation.navigate('Login')}
             activeOpacity={0.8}
             style={{
-              shadowColor: SHADOW_COLORS.primary,
+              shadowColor: AUTH_SHADOW_COLORS.primary,
               shadowOffset: { width: 0, height: 4 },
               shadowOpacity: 0.3,
               shadowRadius: 8,
@@ -60,7 +60,8 @@ export default function SplashScreen({ navigation }) {
           <Text className="text-white text-xs text-center mb-2 opacity-50">디버깅용</Text>
           <View className="flex-row space-x-2">
             <TouchableOpacity
-              className="flex-1 bg-white/20 rounded-lg py-2 items-center"
+              className="flex-1 rounded-lg py-2 items-center"
+              style={{ backgroundColor: AUTH_OVERLAY_COLORS.whiteLight }}
               onPress={() => {
                 login({
                   id: '1',
@@ -74,7 +75,8 @@ export default function SplashScreen({ navigation }) {
             </TouchableOpacity>
 
             <TouchableOpacity
-              className="flex-1 bg-white/20 rounded-lg py-2 items-center"
+              className="flex-1 rounded-lg py-2 items-center"
+              style={{ backgroundColor: AUTH_OVERLAY_COLORS.whiteLight }}
               onPress={() => {
                 login({
                   id: '2',

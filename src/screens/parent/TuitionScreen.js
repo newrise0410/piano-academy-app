@@ -8,7 +8,7 @@ import Text from '../../components/common/Text';
 import Card from '../../components/common/Card';
 import ProgressBar from '../../components/common/ProgressBar';
 import { childData, paymentHistory, ticketPrices } from '../../data/mockParentData';
-import PARENT_COLORS from '../../styles/parentColors';
+import PARENT_COLORS, { PARENT_GRADIENTS, PARENT_SEMANTIC_COLORS, PARENT_OVERLAY_COLORS } from '../../styles/parent_colors';
 
 export default function TuitionScreen() {
   const activePayment = paymentHistory.find(p => p.status === 'active');
@@ -37,8 +37,8 @@ export default function TuitionScreen() {
                     <Text className="text-gray-800 font-bold text-base">{activePayment.type}</Text>
                   </View>
                 </View>
-                <View className="px-3 py-1 rounded-full" style={{ backgroundColor: PARENT_COLORS.attendance.bg }}>
-                  <Text className="text-xs font-bold" style={{ color: PARENT_COLORS.attendance.text }}>사용중</Text>
+                <View className="px-3 py-1 rounded-full" style={{ backgroundColor: PARENT_COLORS.success[50] }}>
+                  <Text className="text-xs font-bold" style={{ color: PARENT_COLORS.success[600] }}>사용중</Text>
                 </View>
               </View>
 
@@ -87,7 +87,7 @@ export default function TuitionScreen() {
                     <Text className="text-xs" style={{ color: PARENT_COLORS.gray[500] }}>
                       {activePayment.startDate} ~ {activePayment.endDate}
                     </Text>
-                    <Text className="text-xs font-semibold" style={{ color: PARENT_COLORS.tuition.text }}>
+                    <Text className="text-xs font-semibold" style={{ color: PARENT_COLORS.blue[600] }}>
                       무제한 수업
                     </Text>
                   </View>
@@ -99,7 +99,7 @@ export default function TuitionScreen() {
           {/* 결제 알림 */}
           <Card className="mt-4">
             <View className="flex-row items-center mb-3">
-              <View className="w-8 h-8 rounded-lg items-center justify-center mr-2" style={{ backgroundColor: PARENT_COLORS.notice.warning }}>
+              <View className="w-8 h-8 rounded-lg items-center justify-center mr-2" style={{ backgroundColor: PARENT_COLORS.warning.DEFAULT }}>
                 <Ionicons name="notifications" size={18} color="white" />
               </View>
               <Text className="text-gray-800 font-bold text-lg">결제 안내</Text>
@@ -134,12 +134,12 @@ export default function TuitionScreen() {
                     <View className="flex-row items-center mb-1">
                       <Text className="text-gray-800 font-bold">{payment.type}</Text>
                       {payment.status === 'active' && (
-                        <View className="ml-2 px-2 py-0.5 rounded" style={{ backgroundColor: PARENT_COLORS.attendance.DEFAULT }}>
+                        <View className="ml-2 px-2 py-0.5 rounded" style={{ backgroundColor: PARENT_COLORS.success.DEFAULT }}>
                           <Text className="text-white text-xs font-bold">사용중</Text>
                         </View>
                       )}
                       {payment.ticketType === 'period' && payment.proratedDays && (
-                        <View className="ml-2 px-2 py-0.5 rounded" style={{ backgroundColor: PARENT_COLORS.notice.warning }}>
+                        <View className="ml-2 px-2 py-0.5 rounded" style={{ backgroundColor: PARENT_COLORS.warning.DEFAULT }}>
                           <Text className="text-white text-xs font-bold">일할계산</Text>
                         </View>
                       )}
@@ -216,7 +216,7 @@ export default function TuitionScreen() {
                       </View>
                     )}
                     {ticket.ticketType === 'period' && (
-                      <View className="ml-2 px-2 py-0.5 rounded" style={{ backgroundColor: PARENT_COLORS.tuition.DEFAULT }}>
+                      <View className="ml-2 px-2 py-0.5 rounded" style={{ backgroundColor: PARENT_COLORS.blue[500] }}>
                         <Text className="text-white text-xs font-bold">기간권</Text>
                       </View>
                     )}

@@ -6,7 +6,7 @@ import Text from '../../components/common/Text';
 import StudentCard from '../../components/teacher/StudentCard';
 import StudentDetailScreen from './StudentDetailScreen';
 import { mockStudents } from '../../data/mockStudents';
-import { SHADOW_COLORS } from '../../styles/colors';
+import TEACHER_COLORS from '../../styles/teacher_colors';
 
 export default function StudentListScreen({ navigation }) {
   const [selectedCategory, setSelectedCategory] = useState('전체');
@@ -107,7 +107,7 @@ export default function StudentListScreen({ navigation }) {
       {/* 검색 영역 */}
       <View className="px-5 mt-4">
         <View className="bg-white rounded-2xl px-4 py-3 flex-row items-center border border-gray-200">
-          <Ionicons name="search" size={20} color="#9CA3AF" />
+          <Ionicons name="search" size={20} color={TEACHER_COLORS.gray[400]} />
           <TextInput
             className="flex-1 ml-3 text-base"
             placeholder="학생 이름 검색"
@@ -117,7 +117,7 @@ export default function StudentListScreen({ navigation }) {
           />
           {searchQuery.length > 0 && (
             <TouchableOpacity onPress={() => setSearchQuery('')}>
-              <Ionicons name="close-circle" size={20} color="#9CA3AF" />
+              <Ionicons name="close-circle" size={20} color={TEACHER_COLORS.gray[400]} />
             </TouchableOpacity>
           )}
         </View>
@@ -196,7 +196,7 @@ export default function StudentListScreen({ navigation }) {
 
         {filteredStudents.length === 0 && (
           <View className="flex-1 items-center justify-center py-20">
-            <Ionicons name="people-outline" size={64} color="#D1D5DB" />
+            <Ionicons name="people-outline" size={64} color={TEACHER_COLORS.gray[200]} />
             <Text className="text-gray-400 mt-4">
               {students.length === 0 ? '등록된 학생이 없습니다' : '검색 결과가 없습니다'}
             </Text>
@@ -211,7 +211,7 @@ export default function StudentListScreen({ navigation }) {
           activeOpacity={0.8}
           onPress={handleAddStudent}
           style={{
-            shadowColor: SHADOW_COLORS.primary,
+            shadowColor: TEACHER_COLORS.primary[600],
             shadowOffset: { width: 0, height: 4 },
             shadowOpacity: 0.3,
             shadowRadius: 8,
@@ -241,6 +241,10 @@ export default function StudentListScreen({ navigation }) {
             route={{ params: { student: selectedStudent } }}
             navigation={{
               goBack: () => setShowDetailScreen(false),
+              navigate: (screenName, params) => {
+                setShowDetailScreen(false);
+                navigation.navigate(screenName, params);
+              },
             }}
           />
         </Animated.View>

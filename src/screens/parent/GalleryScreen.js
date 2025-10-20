@@ -6,7 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import Text from '../../components/common/Text';
 import Card from '../../components/common/Card';
 import { galleryItems, timeline, achievements } from '../../data/mockParentData';
-import PARENT_COLORS from '../../styles/parentColors';
+import PARENT_COLORS, { PARENT_GRADIENTS, PARENT_SEMANTIC_COLORS, PARENT_OVERLAY_COLORS } from '../../styles/parent_colors';
 
 export default function GalleryScreen() {
   return (
@@ -47,13 +47,13 @@ export default function GalleryScreen() {
                   <View
                     className="w-10 h-10 rounded-xl items-center justify-center mr-3"
                     style={{
-                      backgroundColor: event.type === 'achievement' ? PARENT_COLORS.gallery.light : PARENT_COLORS.attendance.light
+                      backgroundColor: event.type === 'achievement' ? PARENT_COLORS.primary[50] : PARENT_COLORS.success[50]
                     }}
                   >
                     <Ionicons
                       name={event.type === 'achievement' ? 'trophy' : 'star'}
                       size={20}
-                      color={event.type === 'achievement' ? PARENT_COLORS.gallery.DEFAULT : PARENT_COLORS.attendance.DEFAULT}
+                      color={event.type === 'achievement' ? PARENT_COLORS.primary.DEFAULT : PARENT_COLORS.success.DEFAULT}
                     />
                   </View>
                   <View className="flex-1">
@@ -70,13 +70,13 @@ export default function GalleryScreen() {
                   <View className="flex-row -mx-1">
                     {[...Array(event.mediaCount)].map((_, i) => {
                       const iconColors = [
-                        PARENT_COLORS.gallery.DEFAULT,
-                        PARENT_COLORS.tuition.DEFAULT,
+                        PARENT_COLORS.primary.DEFAULT,
+                        PARENT_COLORS.blue[500],
                         PARENT_COLORS.primary.DEFAULT
                       ];
                       const bgColors = [
-                        PARENT_COLORS.gallery.light,
-                        PARENT_COLORS.tuition.light,
+                        PARENT_COLORS.primary[50],
+                        PARENT_COLORS.blue[50],
                         PARENT_COLORS.primary[100]
                       ];
                       return (
@@ -109,13 +109,13 @@ export default function GalleryScreen() {
                   <View
                     className={`items-center p-3 rounded-xl ${!badge.active && 'opacity-40'}`}
                     style={{
-                      backgroundColor: badge.active ? PARENT_COLORS.gallery.light : PARENT_COLORS.gray[50]
+                      backgroundColor: badge.active ? PARENT_COLORS.primary[50] : PARENT_COLORS.gray[50]
                     }}
                   >
                     <Text style={{ fontSize: 28 }}>{badge.icon}</Text>
                     <Text
                       className="text-xs font-semibold text-center mt-1.5"
-                      style={{ color: badge.active ? PARENT_COLORS.gallery.text : PARENT_COLORS.gray[500] }}
+                      style={{ color: badge.active ? PARENT_COLORS.primary[600] : PARENT_COLORS.gray[500] }}
                     >
                       {badge.name}
                     </Text>

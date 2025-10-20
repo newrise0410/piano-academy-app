@@ -2,6 +2,10 @@ let mockStudents = [
   {
     id: '1',
     name: '김지우',
+    age: '10',
+    phone: '010-1111-1111',
+    parentName: '김영희',
+    parentPhone: '010-9999-1111',
     category: '초등',
     level: '초급',
     schedule: '월/수 16:00',
@@ -142,6 +146,10 @@ export const addStudent = (studentData) => {
   const newStudent = {
     id: newId,
     name: studentData.name,
+    age: studentData.age || '',
+    phone: studentData.phone || '',
+    parentName: studentData.parentName || '',
+    parentPhone: studentData.parentPhone || '',
     category: studentData.category,
     level: studentData.level,
     schedule: studentData.schedule,

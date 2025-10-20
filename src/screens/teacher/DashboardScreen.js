@@ -3,7 +3,7 @@ import React from 'react';
 import { View, ScrollView, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import COLORS from '../../styles/colors';
+import TEACHER_COLORS from '../../styles/teacher_colors';
 
 import Text from '../../components/common/Text';
 import Card from '../../components/common/Card';
@@ -39,7 +39,7 @@ export default function DashboardScreen({ navigation }) {
             <Text className="text-white text-sm opacity-90">안녕하세요 👋</Text>
             <Text className="text-white text-xl font-bold mt-1">김세욱 선생님</Text>
           </View>
-          <Ionicons name="notifications-outline" size={24} color={COLORS.white} />
+          <Ionicons name="notifications-outline" size={24} color={TEACHER_COLORS.white} />
         </View>
 
         {/* 컨텐츠 */}

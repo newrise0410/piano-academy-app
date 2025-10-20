@@ -12,7 +12,7 @@ import {
   getMonthCalendar,
   getAttendanceStatus
 } from '../../data/mockParentData';
-import PARENT_COLORS from '../../styles/parentColors';
+import PARENT_COLORS, { PARENT_GRADIENTS, PARENT_SEMANTIC_COLORS, PARENT_OVERLAY_COLORS } from '../../styles/parent_colors';
 
 export default function AttendanceScreen() {
   const [currentDate, setCurrentDate] = useState(new Date(2025, 9, 16)); // 2025년 10월 16일
@@ -43,17 +43,17 @@ export default function AttendanceScreen() {
                 icon="checkmark-circle"
                 label="출석률"
                 number={childData.attendanceRate}
-                backgroundColor={PARENT_COLORS.attendance.bg}
-                textColor={PARENT_COLORS.attendance.text}
-                iconColor={PARENT_COLORS.attendance.DEFAULT}
+                backgroundColor={PARENT_COLORS.success[50]}
+                textColor={PARENT_COLORS.success[600]}
+                iconColor={PARENT_COLORS.success.DEFAULT}
               />
               <StatBox
                 icon="calendar"
                 label="총 출석"
                 number={`${childData.totalAttendance}회`}
-                backgroundColor={PARENT_COLORS.tuition.bg}
-                textColor={PARENT_COLORS.tuition.text}
-                iconColor={PARENT_COLORS.tuition.DEFAULT}
+                backgroundColor={PARENT_COLORS.blue[50]}
+                textColor={PARENT_COLORS.blue[600]}
+                iconColor={PARENT_COLORS.blue[500]}
               />
               <StatBox
                 icon="flame"
@@ -115,21 +115,21 @@ export default function AttendanceScreen() {
                       className="aspect-square items-center justify-center rounded-lg"
                       style={{
                         backgroundColor: isToday ? PARENT_COLORS.primary.DEFAULT :
-                                       isAttended ? PARENT_COLORS.attendance.light :
-                                       isLate ? PARENT_COLORS.notice.warning + '30' :
-                                       isAbsent ? PARENT_COLORS.status.error + '20' :
-                                       isMakeup ? PARENT_COLORS.tuition.light :
+                                       isAttended ? PARENT_COLORS.success[50] :
+                                       isLate ? PARENT_COLORS.warning.DEFAULT + '30' :
+                                       isAbsent ? PARENT_COLORS.danger.DEFAULT + '20' :
+                                       isMakeup ? PARENT_COLORS.blue[50] :
                                        'transparent'
                       }}
                     >
                       <Text
                         className="text-sm font-semibold"
                         style={{
-                          color: isToday ? '#FFFFFF' :
-                                isAttended ? PARENT_COLORS.attendance.text :
-                                isLate ? PARENT_COLORS.notice.warning :
-                                isAbsent ? PARENT_COLORS.status.error :
-                                isMakeup ? PARENT_COLORS.tuition.text :
+                          color: isToday ? PARENT_COLORS.white :
+                                isAttended ? PARENT_COLORS.success[600] :
+                                isLate ? PARENT_COLORS.warning.DEFAULT :
+                                isAbsent ? PARENT_COLORS.danger.DEFAULT :
+                                isMakeup ? PARENT_COLORS.blue[600] :
                                 PARENT_COLORS.gray[400]
                         }}
                       >
@@ -144,19 +144,19 @@ export default function AttendanceScreen() {
             {/* 범례 */}
             <View className="flex-row flex-wrap justify-center pt-3 border-t" style={{ borderColor: PARENT_COLORS.gray[200] }}>
               <View className="flex-row items-center mx-2 mb-1">
-                <View className="w-3 h-3 rounded mr-1.5" style={{ backgroundColor: PARENT_COLORS.attendance.light }} />
+                <View className="w-3 h-3 rounded mr-1.5" style={{ backgroundColor: PARENT_COLORS.success[50] }} />
                 <Text className="text-xs" style={{ color: PARENT_COLORS.gray[600] }}>출석</Text>
               </View>
               <View className="flex-row items-center mx-2 mb-1">
-                <View className="w-3 h-3 rounded mr-1.5" style={{ backgroundColor: PARENT_COLORS.notice.warning + '30' }} />
+                <View className="w-3 h-3 rounded mr-1.5" style={{ backgroundColor: PARENT_COLORS.warning.DEFAULT + '30' }} />
                 <Text className="text-xs" style={{ color: PARENT_COLORS.gray[600] }}>지각</Text>
               </View>
               <View className="flex-row items-center mx-2 mb-1">
-                <View className="w-3 h-3 rounded mr-1.5" style={{ backgroundColor: PARENT_COLORS.status.error + '20' }} />
+                <View className="w-3 h-3 rounded mr-1.5" style={{ backgroundColor: PARENT_COLORS.danger.DEFAULT + '20' }} />
                 <Text className="text-xs" style={{ color: PARENT_COLORS.gray[600] }}>결석</Text>
               </View>
               <View className="flex-row items-center mx-2 mb-1">
-                <View className="w-3 h-3 rounded mr-1.5" style={{ backgroundColor: PARENT_COLORS.tuition.light }} />
+                <View className="w-3 h-3 rounded mr-1.5" style={{ backgroundColor: PARENT_COLORS.blue[50] }} />
                 <Text className="text-xs" style={{ color: PARENT_COLORS.gray[600] }}>보강예정</Text>
               </View>
               <View className="flex-row items-center mx-2 mb-1">

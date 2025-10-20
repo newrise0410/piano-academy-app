@@ -3,7 +3,11 @@
     "allow": [
       "Bash(lsof -ti:8082)",
       "Bash(tree -L 3 /Users/sw/Documents/GitHub/piano-academy-app/src -I 'node_modules')",
-      "Bash(mkdir -p /Users/sw/Documents/GitHub/piano-academy-app/docs)"
+      "Bash(mkdir -p /Users/sw/Documents/GitHub/piano-academy-app/docs)",
+      "Bash(tree:*)",
+      "Bash(cat:*)",
+      "Bash(mkdir:*)",
+      "Bash(npm install:*)"
     ],
     "deny": [],
     "ask": []

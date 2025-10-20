@@ -9,7 +9,7 @@ import Card from '../../components/common/Card';
 import StatBox from '../../components/common/StatBox';
 import ListItem from '../../components/common/ListItem';
 import { childData, recentActivities, todaySchedule } from '../../data/mockParentData';
-import PARENT_COLORS from '../../styles/parentColors';
+import PARENT_COLORS, { PARENT_GRADIENTS, PARENT_SEMANTIC_COLORS, PARENT_OVERLAY_COLORS } from '../../styles/parent_colors';
 
 export default function HomeScreen({ navigation }) {
   return (
@@ -35,7 +35,7 @@ export default function HomeScreen({ navigation }) {
           <Card>
             <View className="flex-row items-center mb-4">
               <LinearGradient
-                colors={PARENT_COLORS.gradients.primary}
+                colors={PARENT_GRADIENTS.primaryGradient}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
                 className="w-16 h-16 rounded-2xl items-center justify-center mr-4"
@@ -57,25 +57,25 @@ export default function HomeScreen({ navigation }) {
                 icon="checkmark-circle"
                 label="출석률"
                 number={childData.attendanceRate}
-                backgroundColor={PARENT_COLORS.attendance.bg}
-                textColor={PARENT_COLORS.attendance.text}
-                iconColor={PARENT_COLORS.attendance.DEFAULT}
+                backgroundColor={PARENT_COLORS.success[50]}
+                textColor={PARENT_COLORS.success[600]}
+                iconColor={PARENT_COLORS.success.DEFAULT}
               />
               <StatBox
                 icon="bar-chart"
                 label="진도율"
                 number={`${childData.progress}%`}
-                backgroundColor={PARENT_COLORS.progress.bg}
-                textColor={PARENT_COLORS.progress.text}
-                iconColor={PARENT_COLORS.progress.DEFAULT}
+                backgroundColor={PARENT_COLORS.purple[50]}
+                textColor={PARENT_COLORS.purple[600]}
+                iconColor={PARENT_COLORS.purple[600]}
               />
               <StatBox
                 icon="ticket"
                 label="남은 수업"
                 number={`${childData.ticketCount}회`}
-                backgroundColor={PARENT_COLORS.tuition.bg}
-                textColor={PARENT_COLORS.tuition.text}
-                iconColor={PARENT_COLORS.tuition.DEFAULT}
+                backgroundColor={PARENT_COLORS.blue[50]}
+                textColor={PARENT_COLORS.blue[600]}
+                iconColor={PARENT_COLORS.blue[500]}
               />
             </View>
           </Card>
@@ -123,10 +123,10 @@ export default function HomeScreen({ navigation }) {
 
             <View className="flex-row -mx-1">
               {[
-                { icon: 'book', label: '진도', color: PARENT_COLORS.progress.DEFAULT, bg: PARENT_COLORS.progress.light, screen: 'Progress' },
-                { icon: 'calendar', label: '출석', color: PARENT_COLORS.attendance.DEFAULT, bg: PARENT_COLORS.attendance.light, screen: 'Attendance' },
-                { icon: 'card', label: '수강료', color: PARENT_COLORS.tuition.DEFAULT, bg: PARENT_COLORS.tuition.light, screen: 'Tuition' },
-                { icon: 'images', label: '앨범', color: PARENT_COLORS.gallery.DEFAULT, bg: PARENT_COLORS.gallery.light, screen: 'Gallery' },
+                { icon: 'book', label: '진도', color: PARENT_COLORS.purple[600], bg: PARENT_COLORS.purple[50], screen: 'Progress' },
+                { icon: 'calendar', label: '출석', color: PARENT_COLORS.success.DEFAULT, bg: PARENT_COLORS.success[50], screen: 'Attendance' },
+                { icon: 'card', label: '수강료', color: PARENT_COLORS.blue[500], bg: PARENT_COLORS.blue[50], screen: 'Tuition' },
+                { icon: 'images', label: '앨범', color: PARENT_COLORS.primary.DEFAULT, bg: PARENT_COLORS.primary[50], screen: 'Gallery' },
               ].map((menu) => (
                 <View key={menu.label} className="flex-1 mx-1">
                   <TouchableOpacity
@@ -160,7 +160,7 @@ export default function HomeScreen({ navigation }) {
                 title={activity.title}
                 subtitle={`${activity.content} · ${activity.date}`}
                 badge={activity.isNew ? 'N' : null}
-                badgeColor={PARENT_COLORS.notice.new}
+                badgeColor={PARENT_COLORS.primary.DEFAULT}
                 onPress={() => {}}
                 isLast={index === 3}
               />

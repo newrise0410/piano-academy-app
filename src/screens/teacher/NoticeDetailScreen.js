@@ -5,7 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import Text from '../../components/common/Text';
 import { deleteNotice } from '../../data/mockNotices';
-import COLORS from '../../styles/colors';
+import TEACHER_COLORS from '../../styles/teacher_colors';
 
 export default function NoticeDetailScreen({ route, navigation }) {
   const { notice } = route.params;
@@ -62,7 +62,7 @@ export default function NoticeDetailScreen({ route, navigation }) {
         {/* 발송 정보 카드 */}
         <View className="bg-white rounded-2xl p-5 mb-4 border border-gray-200">
           <View className="flex-row items-center mb-3">
-            <Ionicons name="paper-plane" size={20} color={COLORS.primary.DEFAULT} />
+            <Ionicons name="paper-plane" size={20} color={TEACHER_COLORS.primary.DEFAULT} />
             <Text className="text-base font-bold text-gray-800 ml-2">발송 정보</Text>
           </View>
 
@@ -98,10 +98,10 @@ export default function NoticeDetailScreen({ route, navigation }) {
 
         {/* 미확인 학부모 */}
         {notice.confirmed < notice.total && (
-          <View className="bg-orange-50 rounded-2xl p-4 mb-4 border border-orange-200">
+          <View className="rounded-2xl p-4 mb-4 border" style={{ backgroundColor: TEACHER_COLORS.orange[50], borderColor: TEACHER_COLORS.orange[200] }}>
             <View className="flex-row items-center mb-3">
-              <Ionicons name="alert-circle" size={20} color="#F97316" />
-              <Text className="text-orange-700 font-bold ml-2">
+              <Ionicons name="alert-circle" size={20} color={TEACHER_COLORS.orange[500]} />
+              <Text className="font-bold ml-2" style={{ color: TEACHER_COLORS.orange[600] }}>
                 미확인 학부모 ({notice.total - notice.confirmed}명)
               </Text>
             </View>

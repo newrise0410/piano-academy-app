@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { View, TextInput, TouchableOpacity, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Text from '../../components/common/Text';
-import COLORS from '../../styles/colors';
+import AUTH_COLORS, { AUTH_GRADIENTS, AUTH_SEMANTIC_COLORS, AUTH_INPUT_COLORS, AUTH_OVERLAY_COLORS } from '../../styles/auth_colors';
 
 export default function SignupScreen({ navigation }) {
   const [name, setName] = useState('');

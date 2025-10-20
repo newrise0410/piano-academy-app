@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import Text from '../../components/common/Text';
 import NoticeCreateScreen from './NoticeCreateScreen';
-import COLORS, { SHADOW_COLORS } from '../../styles/colors';
+import TEACHER_COLORS, { TEACHER_SHADOW_COLORS } from '../../styles/teacher_colors';
 import { getNotices, deleteNotice } from '../../data/mockNotices';
 
 export default function NoticeListScreen({ navigation }) {
@@ -119,8 +119,8 @@ export default function NoticeListScreen({ navigation }) {
           {/* 새 알림장 작성 버튼 */}
           <View className="px-5 mt-4">
             <TouchableOpacity
-              className="bg-gradient-to-r from-primary to-purple-600 rounded-2xl p-5 flex-row items-center justify-center"
-              style={{ backgroundColor: COLORS.primary[600] }}
+              className="rounded-2xl p-5 flex-row items-center justify-center"
+              style={{ backgroundColor: TEACHER_COLORS.primary[600] }}
               activeOpacity={0.8}
               onPress={handleOpenCreate}
             >
@@ -134,7 +134,7 @@ export default function NoticeListScreen({ navigation }) {
             <View className="flex-row justify-between items-center">
               <Text className="text-base font-bold text-gray-800">발송 내역</Text>
               <TouchableOpacity className="flex-row items-center">
-                <Ionicons name="search" size={20} color="#9CA3AF" />
+                <Ionicons name="search" size={20} color={TEACHER_COLORS.gray[400]} />
               </TouchableOpacity>
             </View>
           </View>
@@ -148,7 +148,7 @@ export default function NoticeListScreen({ navigation }) {
                 activeOpacity={0.7}
                 onPress={() => handleOpenDetail(notice)}
                 style={{
-                  shadowColor: SHADOW_COLORS.black,
+                  shadowColor: TEACHER_COLORS.black,
                   shadowOffset: { width: 0, height: 1 },
                   shadowOpacity: 0.05,
                   shadowRadius: 2,
@@ -159,13 +159,13 @@ export default function NoticeListScreen({ navigation }) {
                 <View className="flex-row justify-between items-start mb-2">
                   <View className="flex-row items-start flex-1">
                     {index === 0 && (
-                      <Ionicons name="star" size={16} color="#F59E0B" style={{ marginTop: 2, marginRight: 4 }} />
+                      <Ionicons name="star" size={16} color={TEACHER_COLORS.warning.DEFAULT} style={{ marginTop: 2, marginRight: 4 }} />
                     )}
                     <Text className="text-base font-bold text-gray-800 flex-1">
                       {notice.title}
                     </Text>
                   </View>
-                  <Ionicons name="create-outline" size={20} color="#9CA3AF" />
+                  <Ionicons name="create-outline" size={20} color={TEACHER_COLORS.gray[400]} />
                 </View>
 
                 {/* 내용 미리보기 */}
@@ -176,8 +176,8 @@ export default function NoticeListScreen({ navigation }) {
                 {/* 날짜와 확인 현황 */}
                 <View className="flex-row justify-between items-center">
                   <Text className="text-xs text-gray-400">{notice.date}</Text>
-                  <View className="bg-green-50 px-3 py-1 rounded-full">
-                    <Text className="text-xs text-green-600 font-semibold">
+                  <View className="px-3 py-1 rounded-full" style={{ backgroundColor: TEACHER_COLORS.green[50] }}>
+                    <Text className="text-xs font-semibold" style={{ color: TEACHER_COLORS.success[600] }}>
                       {notice.confirmed}/{notice.total}명 확인
                     </Text>
                   </View>
@@ -187,7 +187,7 @@ export default function NoticeListScreen({ navigation }) {
 
             {notices.length === 0 && (
               <View className="flex-1 items-center justify-center py-20">
-                <Ionicons name="notifications-outline" size={64} color="#D1D5DB" />
+                <Ionicons name="notifications-outline" size={64} color={TEACHER_COLORS.gray[200]} />
                 <Text className="text-gray-400 mt-4">아직 작성된 알림장이 없습니다</Text>
               </View>
             )}
@@ -242,7 +242,7 @@ export default function NoticeListScreen({ navigation }) {
               {/* 발송 정보 카드 */}
               <View className="bg-white rounded-2xl p-5 mb-4 border border-gray-200">
                 <View className="flex-row items-center mb-3">
-                  <Ionicons name="paper-plane" size={20} color={COLORS.primary.DEFAULT} />
+                  <Ionicons name="paper-plane" size={20} color={TEACHER_COLORS.primary.DEFAULT} />
                   <Text className="text-base font-bold text-gray-800 ml-2">발송 정보</Text>
                 </View>
 

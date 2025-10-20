@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import Text from '../../components/common/Text';
 import { mockStudents } from '../../data/mockStudents';
-import { GRADIENTS, OVERLAY_COLORS } from '../../styles/colors';
+import TEACHER_COLORS, { TEACHER_GRADIENTS, TEACHER_OVERLAY_COLORS } from '../../styles/teacher_colors';
 
 export default function TuitionScreen() {
   const [editingPrice, setEditingPrice] = useState(null);
@@ -91,7 +91,7 @@ export default function TuitionScreen() {
         {/* 이번 달 수강권 현황 - 그라디언트 배경 */}
         <View className="px-5 mb-4">
           <LinearGradient
-            colors={GRADIENTS.tuitionHeader}
+            colors={TEACHER_GRADIENTS.tuitionHeader}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 0 }}
             style={{
@@ -104,7 +104,7 @@ export default function TuitionScreen() {
             <View className="flex-row justify-between">
               {/* 정상 */}
               <View
-                style={{ backgroundColor: OVERLAY_COLORS.whiteLight }}
+                style={{ backgroundColor: TEACHER_OVERLAY_COLORS.whiteLight }}
                 className="rounded-xl p-4 flex-1 mr-2 items-center justify-center"
               >
                 <Text className="text-white text-3xl font-bold mb-1">{stats.paid}명</Text>
@@ -113,7 +113,7 @@ export default function TuitionScreen() {
 
               {/* 주의 */}
               <View
-                style={{ backgroundColor: OVERLAY_COLORS.whiteLight }}
+                style={{ backgroundColor: TEACHER_OVERLAY_COLORS.whiteLight }}
                 className="rounded-xl p-4 flex-1 mx-1 items-center justify-center"
               >
                 <Text className="text-white text-3xl font-bold mb-1">{stats.lastWeek}명</Text>
@@ -121,7 +121,7 @@ export default function TuitionScreen() {
               </View>
 
               {/* 미납 */}
-              <View className="bg-red-500 rounded-xl p-4 flex-1 ml-2 items-center justify-center">
+              <View className="rounded-xl p-4 flex-1 ml-2 items-center justify-center" style={{ backgroundColor: TEACHER_COLORS.red[500] }}>
                 <Text className="text-white text-3xl font-bold mb-1">{stats.unpaid}명</Text>
                 <Text className="text-white text-xs">미납 ⚠</Text>
               </View>
@@ -131,10 +131,10 @@ export default function TuitionScreen() {
 
         {/* 수강권 미납 (3명) */}
         <View className="px-5 mb-4">
-          <View className="bg-red-50 border border-red-200 rounded-2xl p-4">
+          <View className="rounded-2xl p-4 border" style={{ backgroundColor: TEACHER_COLORS.red[50], borderColor: TEACHER_COLORS.red[200] }}>
             <View className="flex-row items-center mb-3">
               <Text className="text-xl mr-2">⚠️</Text>
-              <Text className="text-red-600 font-bold">수강권 미납 ({unpaidStudents.length}명)</Text>
+              <Text className="font-bold" style={{ color: TEACHER_COLORS.red[600] }}>수강권 미납 ({unpaidStudents.length}명)</Text>
             </View>
 
             {unpaidStudents.map((student, index) => (
@@ -147,7 +147,7 @@ export default function TuitionScreen() {
                 <View className="flex-1">
                   <View className="flex-row items-center mb-1">
                     <Text className="text-base font-bold text-gray-800">{student.name}</Text>
-                    <View className="bg-purple-100 rounded-full px-2 py-0.5 ml-2">
+                    <View className="rounded-full px-2 py-0.5 ml-2" style={{ backgroundColor: TEACHER_COLORS.purple[100] }}>
                       <Text className="text-xs font-bold text-primary">{student.level}</Text>
                     </View>
                   </View>
@@ -156,10 +156,10 @@ export default function TuitionScreen() {
                   </Text>
                   <View className="flex-row items-center">
                     <Text className="text-xs text-gray-500">수강권: </Text>
-                    <Text className="text-xs font-semibold text-red-600">{student.ticket}</Text>
+                    <Text className="text-xs font-semibold" style={{ color: TEACHER_COLORS.red[600] }}>{student.ticket}</Text>
                   </View>
                 </View>
-                <TouchableOpacity className="bg-red-500 rounded-lg px-4 py-2.5">
+                <TouchableOpacity className="rounded-lg px-4 py-2.5" style={{ backgroundColor: TEACHER_COLORS.red[500] }}>
                   <Text className="text-sm font-bold text-white">알림</Text>
                 </TouchableOpacity>
               </View>
@@ -169,10 +169,10 @@ export default function TuitionScreen() {
 
         {/* 잔여 1회 (5명) */}
         <View className="px-5 mb-4">
-          <View className="bg-orange-50 border border-orange-200 rounded-2xl p-4">
+          <View className="rounded-2xl p-4 border" style={{ backgroundColor: TEACHER_COLORS.orange[50], borderColor: TEACHER_COLORS.orange[200] }}>
             <View className="flex-row items-center mb-3">
               <Text className="text-xl mr-2">⚡</Text>
-              <Text className="text-orange-600 font-bold">잔여 1회 ({oneSessionLeft.length}명)</Text>
+              <Text className="font-bold" style={{ color: TEACHER_COLORS.orange[600] }}>잔여 1회 ({oneSessionLeft.length}명)</Text>
             </View>
 
             {oneSessionLeft.map((student, index) => (
@@ -185,16 +185,16 @@ export default function TuitionScreen() {
                 <View className="flex-1">
                   <View className="flex-row items-center mb-1">
                     <Text className="text-base font-bold text-gray-800">{student.name}</Text>
-                    <View className="bg-purple-100 rounded-full px-2 py-0.5 ml-2">
+                    <View className="rounded-full px-2 py-0.5 ml-2" style={{ backgroundColor: TEACHER_COLORS.purple[100] }}>
                       <Text className="text-xs font-bold text-primary">{student.level}</Text>
                     </View>
                   </View>
                   <View className="flex-row items-center">
                     <Text className="text-xs text-gray-500">수강권: </Text>
-                    <Text className="text-sm text-orange-600 font-bold">⚡ {student.sessions}</Text>
+                    <Text className="text-sm font-bold" style={{ color: TEACHER_COLORS.orange[600] }}>⚡ {student.sessions}</Text>
                   </View>
                 </View>
-                <TouchableOpacity className="bg-orange-500 rounded-lg px-4 py-2.5">
+                <TouchableOpacity className="rounded-lg px-4 py-2.5" style={{ backgroundColor: TEACHER_COLORS.orange[500] }}>
                   <Text className="text-sm font-bold text-white">알림</Text>
                 </TouchableOpacity>
               </View>

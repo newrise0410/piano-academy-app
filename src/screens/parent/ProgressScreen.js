@@ -8,7 +8,7 @@ import Card from '../../components/common/Card';
 import ProgressBar from '../../components/common/ProgressBar';
 import ListItem from '../../components/common/ListItem';
 import { childData, completedSongs, weeklyTasks } from '../../data/mockParentData';
-import PARENT_COLORS from '../../styles/parentColors';
+import PARENT_COLORS, { PARENT_GRADIENTS, PARENT_SEMANTIC_COLORS, PARENT_OVERLAY_COLORS } from '../../styles/parent_colors';
 
 export default function ProgressScreen() {
   const [tasks, setTasks] = useState(weeklyTasks);
@@ -27,7 +27,7 @@ export default function ProgressScreen() {
           <Card>
             <View className="flex-row items-center justify-between mb-4">
               <Text className="text-gray-800 font-bold text-lg">{childData.book}</Text>
-              <View className="px-3 py-1 rounded-full" style={{ backgroundColor: PARENT_COLORS.progress.DEFAULT }}>
+              <View className="px-3 py-1 rounded-full" style={{ backgroundColor: PARENT_COLORS.purple[600] }}>
                 <Text className="text-white text-sm font-bold">{childData.progress}%</Text>
               </View>
             </View>
@@ -36,7 +36,7 @@ export default function ProgressScreen() {
               progress={childData.progress}
               height={12}
               backgroundColor={PARENT_COLORS.gray[200]}
-              progressColor={PARENT_COLORS.progress.DEFAULT}
+              progressColor={PARENT_COLORS.purple[600]}
               className="mb-3"
             />
 
@@ -63,7 +63,7 @@ export default function ProgressScreen() {
                         className="w-full rounded-t-lg"
                         style={{
                           height: `${stat.progress}%`,
-                          backgroundColor: PARENT_COLORS.progress.DEFAULT,
+                          backgroundColor: PARENT_COLORS.purple[600],
                           minHeight: 4
                         }}
                       />
@@ -77,9 +77,9 @@ export default function ProgressScreen() {
             </View>
 
             <View className="items-center pt-3 border-t" style={{ borderColor: PARENT_COLORS.gray[200] }}>
-              <View className="flex-row items-center px-3 py-1.5 rounded-full" style={{ backgroundColor: PARENT_COLORS.attendance.bg }}>
-                <Ionicons name="trending-up" size={16} color={PARENT_COLORS.attendance.text} />
-                <Text className="text-sm font-semibold ml-1" style={{ color: PARENT_COLORS.attendance.text }}>
+              <View className="flex-row items-center px-3 py-1.5 rounded-full" style={{ backgroundColor: PARENT_COLORS.success[50] }}>
+                <Ionicons name="trending-up" size={16} color={PARENT_COLORS.success[600]} />
+                <Text className="text-sm font-semibold ml-1" style={{ color: PARENT_COLORS.success[600] }}>
                   꾸준히 성장 중이에요!
                 </Text>
               </View>
@@ -97,8 +97,8 @@ export default function ProgressScreen() {
               <ListItem
                 key={song.id}
                 icon="checkmark-circle"
-                iconColor={PARENT_COLORS.attendance.DEFAULT}
-                iconBackgroundColor={PARENT_COLORS.attendance.light}
+                iconColor={PARENT_COLORS.success.DEFAULT}
+                iconBackgroundColor={PARENT_COLORS.success[50]}
                 title={song.name}
                 subtitle={song.date}
                 rightIcon="star"
@@ -138,7 +138,7 @@ export default function ProgressScreen() {
                     <Text className={`text-gray-800 font-semibold text-sm ${task.completed ? 'line-through' : ''}`}>
                       {task.title}
                     </Text>
-                    <Text className="text-xs mt-0.5" style={{ color: task.completed ? PARENT_COLORS.attendance.text : PARENT_COLORS.gray[500] }}>
+                    <Text className="text-xs mt-0.5" style={{ color: task.completed ? PARENT_COLORS.success[600] : PARENT_COLORS.gray[500] }}>
                       {task.completed ? '✓ 완료됨' : task.description}
                     </Text>
                   </View>

@@ -5,7 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import Text from '../../components/common/Text';
-import { SHADOW_COLORS } from '../../styles/colors';
+import AUTH_COLORS, { AUTH_GRADIENTS, AUTH_SEMANTIC_COLORS, AUTH_INPUT_COLORS, AUTH_OVERLAY_COLORS, AUTH_SHADOW_COLORS } from '../../styles/auth_colors';
 
 export default function LoginScreen({ navigation }) {
   const [email, setEmail] = useState('');
@@ -31,7 +31,7 @@ export default function LoginScreen({ navigation }) {
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
         {/* 헤더 */}
         <LinearGradient
-          colors={['#8B5CF6', '#EC4899']}
+          colors={AUTH_GRADIENTS.purpleToPink}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 0 }}
           className="px-5 py-6"
@@ -56,13 +56,13 @@ export default function LoginScreen({ navigation }) {
               <Ionicons
                 name="mail-outline"
                 size={20}
-                color="#9CA3AF"
+                color={AUTH_COLORS.gray[400]}
                 style={{ position: 'absolute', left: 12, top: 12, zIndex: 1 }}
               />
               <TextInput
                 className="w-full border-2 border-gray-200 rounded-xl pl-11 pr-4 py-3 text-sm bg-white"
                 placeholder="example@email.com"
-                placeholderTextColor="#9CA3AF"
+                placeholderTextColor={AUTH_COLORS.gray[400]}
                 value={email}
                 onChangeText={setEmail}
                 keyboardType="email-address"
@@ -79,13 +79,13 @@ export default function LoginScreen({ navigation }) {
               <Ionicons
                 name="lock-closed-outline"
                 size={20}
-                color="#9CA3AF"
+                color={AUTH_COLORS.gray[400]}
                 style={{ position: 'absolute', left: 12, top: 12, zIndex: 1 }}
               />
               <TextInput
                 className="w-full border-2 border-gray-200 rounded-xl pl-11 pr-11 py-3 text-sm bg-white"
                 placeholder="••••••••"
-                placeholderTextColor="#9CA3AF"
+                placeholderTextColor={AUTH_COLORS.gray[400]}
                 value={password}
                 onChangeText={setPassword}
                 secureTextEntry={!showPassword}
@@ -99,7 +99,7 @@ export default function LoginScreen({ navigation }) {
                 <Ionicons
                   name={showPassword ? 'eye-off-outline' : 'eye-outline'}
                   size={20}
-                  color="#9CA3AF"
+                  color={AUTH_COLORS.gray[400]}
                 />
               </TouchableOpacity>
             </View>
@@ -135,7 +135,7 @@ export default function LoginScreen({ navigation }) {
             onPress={handleLogin}
             activeOpacity={0.8}
             style={{
-              shadowColor: SHADOW_COLORS.primary,
+              shadowColor: AUTH_SHADOW_COLORS.primary,
               shadowOffset: { width: 0, height: 4 },
               shadowOpacity: 0.3,
               shadowRadius: 8,
@@ -143,7 +143,7 @@ export default function LoginScreen({ navigation }) {
             }}
           >
             <LinearGradient
-              colors={['#8B5CF6', '#EC4899']}
+              colors={AUTH_GRADIENTS.purpleToPink}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
               className="rounded-xl py-4 items-center"

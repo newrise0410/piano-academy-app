@@ -5,7 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import Text from '../../components/common/Text';
-import { SHADOW_COLORS } from '../../styles/colors';
+import AUTH_COLORS, { AUTH_GRADIENTS, AUTH_SEMANTIC_COLORS, AUTH_INPUT_COLORS, AUTH_OVERLAY_COLORS, AUTH_SHADOW_COLORS } from '../../styles/auth_colors';
 
 export default function SignupTeacherScreen({ navigation }) {
   const [formData, setFormData] = useState({
@@ -43,7 +43,7 @@ export default function SignupTeacherScreen({ navigation }) {
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
         {/* 헤더 */}
         <LinearGradient
-          colors={['#8B5CF6', '#EC4899']}
+          colors={AUTH_GRADIENTS.purpleToPink}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 0 }}
           className="px-5 py-6"
@@ -65,11 +65,11 @@ export default function SignupTeacherScreen({ navigation }) {
           <View>
             <Text className="text-sm font-semibold text-gray-700 mb-2">학원명 *</Text>
             <View className="relative">
-              <Ionicons name="business" size={20} color="#9CA3AF" style={{ position: 'absolute', left: 12, top: 12, zIndex: 1 }} />
+              <Ionicons name="business" size={20} color={AUTH_COLORS.gray[400]} style={{ position: 'absolute', left: 12, top: 12, zIndex: 1 }} />
               <TextInput
                 className="w-full border-2 border-gray-200 rounded-xl pl-11 pr-4 py-3 text-sm bg-white"
                 placeholder="예: 서울 피아노학원"
-                placeholderTextColor="#9CA3AF"
+                placeholderTextColor={AUTH_COLORS.gray[400]}
                 value={formData.academyName}
                 onChangeText={(text) => setFormData({...formData, academyName: text})}
                 style={{ fontFamily: 'MaruBuri-Regular' }}
@@ -81,11 +81,11 @@ export default function SignupTeacherScreen({ navigation }) {
           <View>
             <Text className="text-sm font-semibold text-gray-700 mb-2">원장님 성함 *</Text>
             <View className="relative">
-              <Ionicons name="person" size={20} color="#9CA3AF" style={{ position: 'absolute', left: 12, top: 12, zIndex: 1 }} />
+              <Ionicons name="person" size={20} color={AUTH_COLORS.gray[400]} style={{ position: 'absolute', left: 12, top: 12, zIndex: 1 }} />
               <TextInput
                 className="w-full border-2 border-gray-200 rounded-xl pl-11 pr-4 py-3 text-sm bg-white"
                 placeholder="홍길동"
-                placeholderTextColor="#9CA3AF"
+                placeholderTextColor={AUTH_COLORS.gray[400]}
                 value={formData.name}
                 onChangeText={(text) => setFormData({...formData, name: text})}
                 style={{ fontFamily: 'MaruBuri-Regular' }}
@@ -97,11 +97,11 @@ export default function SignupTeacherScreen({ navigation }) {
           <View>
             <Text className="text-sm font-semibold text-gray-700 mb-2">연락처 *</Text>
             <View className="relative">
-              <Ionicons name="call" size={20} color="#9CA3AF" style={{ position: 'absolute', left: 12, top: 12, zIndex: 1 }} />
+              <Ionicons name="call" size={20} color={AUTH_COLORS.gray[400]} style={{ position: 'absolute', left: 12, top: 12, zIndex: 1 }} />
               <TextInput
                 className="w-full border-2 border-gray-200 rounded-xl pl-11 pr-4 py-3 text-sm bg-white"
                 placeholder="010-1234-5678"
-                placeholderTextColor="#9CA3AF"
+                placeholderTextColor={AUTH_COLORS.gray[400]}
                 value={formData.phone}
                 onChangeText={(text) => setFormData({...formData, phone: text})}
                 keyboardType="phone-pad"
@@ -114,11 +114,11 @@ export default function SignupTeacherScreen({ navigation }) {
           <View>
             <Text className="text-sm font-semibold text-gray-700 mb-2">이메일 *</Text>
             <View className="relative">
-              <Ionicons name="mail-outline" size={20} color="#9CA3AF" style={{ position: 'absolute', left: 12, top: 12, zIndex: 1 }} />
+              <Ionicons name="mail-outline" size={20} color={AUTH_COLORS.gray[400]} style={{ position: 'absolute', left: 12, top: 12, zIndex: 1 }} />
               <TextInput
                 className="w-full border-2 border-gray-200 rounded-xl pl-11 pr-4 py-3 text-sm bg-white"
                 placeholder="example@email.com"
-                placeholderTextColor="#9CA3AF"
+                placeholderTextColor={AUTH_COLORS.gray[400]}
                 value={formData.email}
                 onChangeText={(text) => setFormData({...formData, email: text})}
                 keyboardType="email-address"
@@ -132,18 +132,18 @@ export default function SignupTeacherScreen({ navigation }) {
           <View>
             <Text className="text-sm font-semibold text-gray-700 mb-2">비밀번호 *</Text>
             <View className="relative">
-              <Ionicons name="lock-closed-outline" size={20} color="#9CA3AF" style={{ position: 'absolute', left: 12, top: 12, zIndex: 1 }} />
+              <Ionicons name="lock-closed-outline" size={20} color={AUTH_COLORS.gray[400]} style={{ position: 'absolute', left: 12, top: 12, zIndex: 1 }} />
               <TextInput
                 className="w-full border-2 border-gray-200 rounded-xl pl-11 pr-11 py-3 text-sm bg-white"
                 placeholder="8자 이상"
-                placeholderTextColor="#9CA3AF"
+                placeholderTextColor={AUTH_COLORS.gray[400]}
                 value={formData.password}
                 onChangeText={(text) => setFormData({...formData, password: text})}
                 secureTextEntry={!showPassword}
                 style={{ fontFamily: 'MaruBuri-Regular' }}
               />
               <TouchableOpacity onPress={() => setShowPassword(!showPassword)} className="absolute right-3 top-3" activeOpacity={0.7}>
-                <Ionicons name={showPassword ? 'eye-off-outline' : 'eye-outline'} size={20} color="#9CA3AF" />
+                <Ionicons name={showPassword ? 'eye-off-outline' : 'eye-outline'} size={20} color={AUTH_COLORS.gray[400]} />
               </TouchableOpacity>
             </View>
           </View>
@@ -152,18 +152,18 @@ export default function SignupTeacherScreen({ navigation }) {
           <View>
             <Text className="text-sm font-semibold text-gray-700 mb-2">비밀번호 확인 *</Text>
             <View className="relative">
-              <Ionicons name="lock-closed-outline" size={20} color="#9CA3AF" style={{ position: 'absolute', left: 12, top: 12, zIndex: 1 }} />
+              <Ionicons name="lock-closed-outline" size={20} color={AUTH_COLORS.gray[400]} style={{ position: 'absolute', left: 12, top: 12, zIndex: 1 }} />
               <TextInput
                 className="w-full border-2 border-gray-200 rounded-xl pl-11 pr-11 py-3 text-sm bg-white"
                 placeholder="비밀번호 재입력"
-                placeholderTextColor="#9CA3AF"
+                placeholderTextColor={AUTH_COLORS.gray[400]}
                 value={formData.passwordConfirm}
                 onChangeText={(text) => setFormData({...formData, passwordConfirm: text})}
                 secureTextEntry={!showPasswordConfirm}
                 style={{ fontFamily: 'MaruBuri-Regular' }}
               />
               <TouchableOpacity onPress={() => setShowPasswordConfirm(!showPasswordConfirm)} className="absolute right-3 top-3" activeOpacity={0.7}>
-                <Ionicons name={showPasswordConfirm ? 'eye-off-outline' : 'eye-outline'} size={20} color="#9CA3AF" />
+                <Ionicons name={showPasswordConfirm ? 'eye-off-outline' : 'eye-outline'} size={20} color={AUTH_COLORS.gray[400]} />
               </TouchableOpacity>
             </View>
           </View>
@@ -194,14 +194,14 @@ export default function SignupTeacherScreen({ navigation }) {
             onPress={handleSignup}
             activeOpacity={0.8}
             style={{
-              shadowColor: SHADOW_COLORS.primary,
+              shadowColor: AUTH_SHADOW_COLORS.primary,
               shadowOffset: { width: 0, height: 4 },
               shadowOpacity: 0.3,
               shadowRadius: 8,
               elevation: 4,
             }}
           >
-            <LinearGradient colors={['#8B5CF6', '#EC4899']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} className="rounded-xl py-4 items-center mt-2">
+            <LinearGradient colors={AUTH_GRADIENTS.purpleToPink} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} className="rounded-xl py-4 items-center mt-2">
               <Text className="text-white text-lg font-bold">가입하기</Text>
             </LinearGradient>
           </TouchableOpacity>

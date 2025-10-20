@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import Text from '../../components/common/Text';
 import { mockStudents } from '../../data/mockStudents';
+import TEACHER_COLORS from '../../styles/teacher_colors';
 
 export default function AttendanceScreen() {
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -15,13 +16,13 @@ export default function AttendanceScreen() {
   const getLevelColors = (level) => {
     switch (level) {
       case '초급':
-        return { bg: '#EFF6FF', text: '#2563EB' };
+        return { bg: TEACHER_COLORS.blue[50], text: TEACHER_COLORS.blue[600] };
       case '중급':
-        return { bg: '#FAF5FF', text: '#7C3AED' };
+        return { bg: TEACHER_COLORS.purple[50], text: TEACHER_COLORS.primary[600] };
       case '고급':
-        return { bg: '#FFF7ED', text: '#EA580C' };
+        return { bg: TEACHER_COLORS.orange[50], text: TEACHER_COLORS.orange[600] };
       default:
-        return { bg: '#F9FAFB', text: '#6B7280' };
+        return { bg: TEACHER_COLORS.gray[50], text: TEACHER_COLORS.gray[600] };
     }
   };
 
@@ -195,7 +196,7 @@ export default function AttendanceScreen() {
         <View className="px-5 mb-4">
           <View className="bg-white rounded-2xl p-4 flex-row items-center justify-between">
             <View className="flex-row items-center">
-              <Ionicons name="calendar-outline" size={20} color="#8B5CF6" />
+              <Ionicons name="calendar-outline" size={20} color={TEACHER_COLORS.primary.DEFAULT} />
               <Text className="text-lg font-bold text-gray-800 ml-2">
                 {formatDate(selectedDate)}
               </Text>
@@ -206,7 +207,7 @@ export default function AttendanceScreen() {
               activeOpacity={0.7}
             >
               <Text className="text-primary text-sm font-semibold mr-1">날짜 변경</Text>
-              <Ionicons name="chevron-forward" size={16} color="#8B5CF6" />
+              <Ionicons name="chevron-forward" size={16} color={TEACHER_COLORS.primary.DEFAULT} />
             </TouchableOpacity>
           </View>
         </View>
@@ -252,7 +253,8 @@ export default function AttendanceScreen() {
         {/* 일괄 처리 버튼 */}
         <View className="px-5 mb-4 flex-row">
           <TouchableOpacity
-            className="flex-1 bg-green-500 rounded-xl py-3 mr-2"
+            className="flex-1 rounded-xl py-3 mr-2"
+            style={{ backgroundColor: TEACHER_COLORS.green[500] }}
             onPress={handleMarkAllPresent}
             activeOpacity={0.7}
           >
@@ -263,7 +265,8 @@ export default function AttendanceScreen() {
           </TouchableOpacity>
 
           <TouchableOpacity
-            className="flex-1 bg-blue-500 rounded-xl py-3 ml-2"
+            className="flex-1 rounded-xl py-3 ml-2"
+            style={{ backgroundColor: TEACHER_COLORS.blue[500] }}
             onPress={handleMarkUncheckedPresent}
             activeOpacity={0.7}
           >
@@ -287,12 +290,13 @@ export default function AttendanceScreen() {
                 <View key={timeSlot} className="mb-4">
                   {/* 시간대 헤더 */}
                   <TouchableOpacity
-                    className="bg-purple-100 rounded-xl p-3 mb-2 flex-row items-center justify-between"
+                    className="rounded-xl p-3 mb-2 flex-row items-center justify-between"
+                    style={{ backgroundColor: TEACHER_COLORS.purple[100] }}
                     onPress={() => toggleGroup(timeSlot)}
                     activeOpacity={0.7}
                   >
                     <View className="flex-row items-center">
-                      <Ionicons name="time" size={20} color="#8B5CF6" />
+                      <Ionicons name="time" size={20} color={TEACHER_COLORS.primary.DEFAULT} />
                       <Text className="text-primary text-base font-bold ml-2">{timeSlot}</Text>
                       <View className="bg-white rounded-full px-2 py-0.5 ml-2">
                         <Text className="text-primary text-xs font-semibold">
@@ -303,7 +307,7 @@ export default function AttendanceScreen() {
                     <Ionicons
                       name={isCollapsed ? "chevron-down" : "chevron-up"}
                       size={20}
-                      color="#8B5CF6"
+                      color={TEACHER_COLORS.primary.DEFAULT}
                     />
                   </TouchableOpacity>
 
@@ -314,15 +318,18 @@ export default function AttendanceScreen() {
                     return (
                       <View
                         key={student.id}
-                        className={`mb-3 rounded-2xl p-4 ${
-                          student.status === 'present'
-                            ? 'bg-green-50 border border-green-200'
-                            : student.status === 'absent'
-                            ? 'bg-red-50 border border-red-200'
-                            : isUnchecked
-                            ? 'bg-yellow-50 border-2 border-yellow-300'
-                            : 'bg-white border border-gray-200'
-                        }`}
+                        className="mb-3 rounded-2xl p-4"
+                        style={{
+                          backgroundColor: student.status === 'present' ? TEACHER_COLORS.green[50] :
+                                          student.status === 'absent' ? TEACHER_COLORS.red[50] :
+                                          isUnchecked ? '#FEFCE8' :
+                                          TEACHER_COLORS.white,
+                          borderWidth: isUnchecked ? 2 : 1,
+                          borderColor: student.status === 'present' ? TEACHER_COLORS.green[200] :
+                                      student.status === 'absent' ? TEACHER_COLORS.red[200] :
+                                      isUnchecked ? '#FDE047' :
+                                      TEACHER_COLORS.gray[200]
+                        }}
                       >
               {/* 학생 정보 */}
               <View className="flex-row items-center justify-between mb-3">
@@ -338,10 +345,10 @@ export default function AttendanceScreen() {
                   <Text className="text-sm text-gray-600">{student.time}</Text>
                 </View>
                 {student.status === 'present' && (
-                  <Ionicons name="checkmark-circle" size={28} color="#10B981" />
+                  <Ionicons name="checkmark-circle" size={28} color={TEACHER_COLORS.success.DEFAULT} />
                 )}
                 {student.status === 'absent' && (
-                  <View className="bg-red-500 rounded-full px-2 py-1">
+                  <View className="rounded-full px-2 py-1" style={{ backgroundColor: TEACHER_COLORS.red[500] }}>
                     <Text className="text-xs font-bold text-white">결석</Text>
                   </View>
                 )}
@@ -350,9 +357,12 @@ export default function AttendanceScreen() {
               {/* 출석 버튼 */}
               <View className="flex-row">
                 <TouchableOpacity
-                  className={`flex-1 rounded-xl py-3 mr-2 ${
-                    student.status === 'present' ? 'bg-green-500' : 'bg-white border border-gray-200'
-                  }`}
+                  className="flex-1 rounded-xl py-3 mr-2"
+                  style={{
+                    backgroundColor: student.status === 'present' ? TEACHER_COLORS.green[500] : TEACHER_COLORS.white,
+                    borderWidth: student.status === 'present' ? 0 : 1,
+                    borderColor: TEACHER_COLORS.gray[200]
+                  }}
                   onPress={() => handleStatusChange(student.id, 'present')}
                   activeOpacity={0.7}
                 >
@@ -360,12 +370,11 @@ export default function AttendanceScreen() {
                     <Ionicons
                       name="checkmark"
                       size={18}
-                      color={student.status === 'present' ? 'white' : '#6B7280'}
+                      color={student.status === 'present' ? TEACHER_COLORS.white : TEACHER_COLORS.gray[600]}
                     />
                     <Text
-                      className={`text-sm font-bold ml-1 ${
-                        student.status === 'present' ? 'text-white' : 'text-gray-600'
-                      }`}
+                      className="text-sm font-bold ml-1"
+                      style={{ color: student.status === 'present' ? TEACHER_COLORS.white : TEACHER_COLORS.gray[600] }}
                     >
                       출석
                     </Text>
@@ -373,9 +382,12 @@ export default function AttendanceScreen() {
                 </TouchableOpacity>
 
                 <TouchableOpacity
-                  className={`flex-1 rounded-xl py-3 mx-1 ${
-                    student.status === 'absent' ? 'bg-red-500' : 'bg-white border border-gray-200'
-                  }`}
+                  className="flex-1 rounded-xl py-3 mx-1"
+                  style={{
+                    backgroundColor: student.status === 'absent' ? TEACHER_COLORS.red[500] : TEACHER_COLORS.white,
+                    borderWidth: student.status === 'absent' ? 0 : 1,
+                    borderColor: TEACHER_COLORS.gray[200]
+                  }}
                   onPress={() => handleStatusChange(student.id, 'absent')}
                   activeOpacity={0.7}
                 >
@@ -383,12 +395,11 @@ export default function AttendanceScreen() {
                     <Ionicons
                       name="close"
                       size={18}
-                      color={student.status === 'absent' ? 'white' : '#6B7280'}
+                      color={student.status === 'absent' ? TEACHER_COLORS.white : TEACHER_COLORS.gray[600]}
                     />
                     <Text
-                      className={`text-sm font-bold ml-1 ${
-                        student.status === 'absent' ? 'text-white' : 'text-gray-600'
-                      }`}
+                      className="text-sm font-bold ml-1"
+                      style={{ color: student.status === 'absent' ? TEACHER_COLORS.white : TEACHER_COLORS.gray[600] }}
                     >
                       결석
                     </Text>
@@ -396,9 +407,12 @@ export default function AttendanceScreen() {
                 </TouchableOpacity>
 
                 <TouchableOpacity
-                  className={`flex-1 rounded-xl py-3 ml-2 ${
-                    student.status === 'makeup' ? 'bg-blue-500' : 'bg-white border border-gray-200'
-                  }`}
+                  className="flex-1 rounded-xl py-3 ml-2"
+                  style={{
+                    backgroundColor: student.status === 'makeup' ? TEACHER_COLORS.blue[500] : TEACHER_COLORS.white,
+                    borderWidth: student.status === 'makeup' ? 0 : 1,
+                    borderColor: TEACHER_COLORS.gray[200]
+                  }}
                   onPress={() => handleStatusChange(student.id, 'makeup')}
                   activeOpacity={0.7}
                 >
@@ -406,12 +420,11 @@ export default function AttendanceScreen() {
                     <Ionicons
                       name="calendar"
                       size={18}
-                      color={student.status === 'makeup' ? 'white' : '#6B7280'}
+                      color={student.status === 'makeup' ? TEACHER_COLORS.white : TEACHER_COLORS.gray[600]}
                     />
                     <Text
-                      className={`text-sm font-bold ml-1 ${
-                        student.status === 'makeup' ? 'text-white' : 'text-gray-600'
-                      }`}
+                      className="text-sm font-bold ml-1"
+                      style={{ color: student.status === 'makeup' ? TEACHER_COLORS.white : TEACHER_COLORS.gray[600] }}
                     >
                       보강
                     </Text>
@@ -422,7 +435,8 @@ export default function AttendanceScreen() {
               {/* 결석 시 보강 예약 버튼 */}
               {student.status === 'absent' && (
                 <TouchableOpacity
-                  className="mt-3 bg-blue-500 rounded-xl py-3"
+                  className="mt-3 rounded-xl py-3"
+                  style={{ backgroundColor: TEACHER_COLORS.blue[500] }}
                   activeOpacity={0.8}
                 >
                   <View className="flex-row items-center justify-center">
@@ -441,7 +455,7 @@ export default function AttendanceScreen() {
 
         {/* 이번 주 보강 예정 */}
         <View className="px-5 mt-4 mb-20">
-          <View className="bg-blue-50 rounded-2xl p-4 border border-blue-200">
+          <View className="rounded-2xl p-4 border" style={{ backgroundColor: TEACHER_COLORS.blue[50], borderColor: TEACHER_COLORS.blue[200] }}>
             <Text className="text-base font-bold text-gray-800 mb-3">이번 주 보강 예정</Text>
             {makeupLessons.map((lesson) => (
               <View
@@ -454,8 +468,8 @@ export default function AttendanceScreen() {
                     {lesson.date} {lesson.time}
                   </Text>
                 </View>
-                <TouchableOpacity className="bg-blue-100 rounded-lg px-3 py-1">
-                  <Text className="text-xs font-semibold text-blue-600">완료 처리</Text>
+                <TouchableOpacity className="rounded-lg px-3 py-1" style={{ backgroundColor: TEACHER_COLORS.blue[100] }}>
+                  <Text className="text-xs font-semibold" style={{ color: TEACHER_COLORS.blue[600] }}>완료 처리</Text>
                 </TouchableOpacity>
               </View>
             ))}
