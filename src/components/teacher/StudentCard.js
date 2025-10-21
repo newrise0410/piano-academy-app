@@ -1,75 +1,66 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Text from '../common/Text';
+import { getTicketColor, getAttendanceColor } from '../../utils/styleHelpers';
 
-export default function StudentCard({ student, onPress }) {
-  // 레벨별 색상 매핑 (더 선명한 그라데이션)
-  const getLevelColors = (level) => {
-    switch (level) {
-      case '초급':
-        return {
-          bg: '#EFF6FF',
-          text: '#2563EB',
-          iconBg: '#DBEAFE',
-          gradient: ['#EFF6FF', '#DBEAFE']
-        };
-      case '중급':
-        return {
-          bg: '#FAF5FF',
-          text: '#7C3AED',
-          iconBg: '#E9D5FF',
-          gradient: ['#FAF5FF', '#E9D5FF']
-        };
-      case '고급':
-        return {
-          bg: '#FFF7ED',
-          text: '#EA580C',
-          iconBg: '#FED7AA',
-          gradient: ['#FFF7ED', '#FED7AA']
-        };
-      default:
-        return {
-          bg: '#F9FAFB',
-          text: '#6B7280',
-          iconBg: '#F3F4F6',
-          gradient: ['#F9FAFB', '#F3F4F6']
-        };
-    }
-  };
+const StudentCard = React.memo(({ student, onPress }) => {
+  // 레벨별 색상 매핑 (useMemo로 최적화)
+  const levelColors = useMemo(() => {
+    const getLevelColors = (level) => {
+      switch (level) {
+        case '초급':
+          return {
+            bg: '#EFF6FF',
+            text: '#2563EB',
+            iconBg: '#DBEAFE',
+            gradient: ['#EFF6FF', '#DBEAFE']
+          };
+        case '중급':
+          return {
+            bg: '#FAF5FF',
+            text: '#7C3AED',
+            iconBg: '#E9D5FF',
+            gradient: ['#FAF5FF', '#E9D5FF']
+          };
+        case '고급':
+          return {
+            bg: '#FFF7ED',
+            text: '#EA580C',
+            iconBg: '#FED7AA',
+            gradient: ['#FFF7ED', '#FED7AA']
+          };
+        default:
+          return {
+            bg: '#F9FAFB',
+            text: '#6B7280',
+            iconBg: '#F3F4F6',
+            gradient: ['#F9FAFB', '#F3F4F6']
+          };
+      }
+    };
+    return getLevelColors(student.level);
+  }, [student.level]);
 
-  const levelColors = getLevelColors(student.level);
-
-  // 출석률 색상 결정
-  const getAttendanceColor = (attendance) => {
-    const rate = parseInt(attendance);
-    if (rate >= 95) return '#10B981';
-    if (rate >= 85) return '#3B82F6';
-    if (rate >= 75) return '#F59E0B';
-    return '#EF4444';
-  };
-
-  // 수강권 표시 헬퍼
-  const getTicketDisplay = () => {
+  // 수강권 표시 (useMemo로 최적화)
+  const ticketDisplay = useMemo(() => {
     if (student.ticketType === 'count') {
       return `${student.ticketCount}회`;
     } else if (student.ticketType === 'period') {
       return `${student.ticketPeriod.start}~${student.ticketPeriod.end}`;
     }
     return '-';
-  };
+  }, [student.ticketType, student.ticketCount, student.ticketPeriod]);
 
-  // 수강권 색상 (회차권일 때만)
-  const getTicketColor = () => {
-    if (student.ticketType === 'count') {
-      const count = student.ticketCount;
-      if (count >= 8) return '#10B981';
-      if (count >= 4) return '#3B82F6';
-      if (count >= 2) return '#F59E0B';
-      return '#EF4444';
-    }
-    return '#8B5CF6'; // 기간권은 보라색
-  };
+  // 수강권 색상 (useMemo로 최적화)
+  const ticketColorValue = useMemo(() => {
+    return getTicketColor(student);
+  }, [student.ticketType, student.ticketCount]);
+
+  // 출석률 색상 (useMemo로 최적화)
+  const attendanceColorValue = useMemo(() => {
+    return getAttendanceColor(student.attendance);
+  }, [student.attendance]);
 
   return (
     <TouchableOpacity
@@ -162,12 +153,12 @@ export default function StudentCard({ student, onPress }) {
           {student.attendance && (
             <View className="flex-1 bg-blue-50 rounded-lg p-2 mx-1">
               <View className="flex-row items-center mb-0.5">
-                <Ionicons name="checkmark-circle" size={12} color={getAttendanceColor(student.attendance)} />
+                <Ionicons name="checkmark-circle" size={12} color={attendanceColorValue} />
                 <Text className="text-xs text-gray-600 ml-1 font-semibold">출석</Text>
               </View>
               <Text
                 className="text-xs font-bold"
-                style={{ color: getAttendanceColor(student.attendance) }}
+                style={{ color: attendanceColorValue }}
               >
                 {student.attendance}
               </Text>
@@ -175,20 +166,24 @@ export default function StudentCard({ student, onPress }) {
           )}
           <View className="flex-1 bg-green-50 rounded-lg p-2 ml-1">
             <View className="flex-row items-center mb-0.5">
-              <Ionicons name={student.ticketType === 'period' ? 'calendar' : 'ticket'} size={12} color={getTicketColor()} />
+              <Ionicons name={student.ticketType === 'period' ? 'calendar' : 'ticket'} size={12} color={ticketColorValue} />
               <Text className="text-xs text-gray-600 ml-1 font-semibold">
                 {student.ticketType === 'period' ? '기간' : '권'}
               </Text>
             </View>
             <Text
               className="text-xs font-bold"
-              style={{ color: getTicketColor() }}
+              style={{ color: ticketColorValue }}
             >
-              {getTicketDisplay()}
+              {ticketDisplay}
             </Text>
           </View>
         </View>
       </View>
     </TouchableOpacity>
   );
-}
+});
+
+StudentCard.displayName = 'StudentCard';
+
+export default StudentCard;

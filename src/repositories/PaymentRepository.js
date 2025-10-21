@@ -8,6 +8,7 @@ import {
   getTuitionRecords,
   saveTuitionRecord,
   updateTuitionStatus,
+  deleteTuitionRecord,
 } from '../services/firestoreService';
 import { getCurrentUser } from '../services/authService';
 
@@ -266,9 +267,11 @@ export const PaymentRepository = {
     }
 
     if (isFirebaseMode()) {
-      // Firebase에서는 결제 삭제 기능이 구현되어 있지 않음
-      // 필요시 firestoreService에 deleteTuitionRecord 함수 추가 필요
-      throw new Error('Firebase 모드에서는 결제 삭제가 지원되지 않습니다');
+      const result = await deleteTuitionRecord(id);
+      if (!result.success) {
+        throw new Error(result.error);
+      }
+      return { success: true };
     }
 
     try {

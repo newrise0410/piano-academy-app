@@ -10,6 +10,7 @@ let notices = [
     time: '14:30',
     confirmed: 28,
     total: 30,
+    recipients: ['1', '2', '3', '4', '5'], // 학생 ID 배열
     createdAt: new Date('2025-10-15T14:30:00'),
   },
   {
@@ -20,6 +21,7 @@ let notices = [
     time: '09:15',
     confirmed: 30,
     total: 30,
+    recipients: ['1', '2', '3', '4', '5'],
     createdAt: new Date('2025-10-10T09:15:00'),
   },
   {
@@ -30,6 +32,7 @@ let notices = [
     time: '10:00',
     confirmed: 30,
     total: 30,
+    recipients: ['1', '2', '3', '4', '5'],
     createdAt: new Date('2025-10-01T10:00:00'),
   },
 ];
@@ -44,8 +47,9 @@ export const addNotice = (notice) => {
   const newNotice = {
     id: Date.now().toString(),
     ...notice,
-    confirmed: 0,
-    total: 30, // 전체 학생 수 (mockStudents.length로 대체 가능)
+    confirmed: notice.confirmed || 0,
+    total: notice.total || (notice.recipients?.length || 30),
+    recipients: notice.recipients || [],
     createdAt: new Date(),
   };
 

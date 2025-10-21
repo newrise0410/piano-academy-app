@@ -1,6 +1,8 @@
 // src/store/studentStore.js
 import { create } from 'zustand';
-import { StudentRepository } from '../repositories/studentRepository';
+import { StudentRepository } from '../repositories/StudentRepository';
+import { useNotificationStore } from './notificationStore';
+import { useAuthStore } from './authStore';
 
 /**
  * 학생 데이터 관리 Store
@@ -105,6 +107,27 @@ export const useStudentStore = create((set, get) => ({
         loading: false,
         lastFetched: Date.now() // 캐시 갱신
       }));
+
+      // 알림 추가 (새 학생 등록)
+      try {
+        const user = useAuthStore.getState().user;
+        if (user?.uid) {
+          const { addNotification } = useNotificationStore.getState();
+          await addNotification(
+            {
+              type: 'student_added',
+              title: '새 학생 등록',
+              message: `${studentData.name} 학생이 등록되었습니다`,
+              targetId: newStudent.id,
+            },
+            user.uid
+          );
+        }
+      } catch (notificationError) {
+        console.error('알림 추가 실패:', notificationError);
+        // 알림 추가 실패는 무시하고 계속 진행
+      }
+
       return newStudent;
     } catch (error) {
       set({

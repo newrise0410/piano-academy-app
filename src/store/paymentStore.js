@@ -2,6 +2,8 @@
 import { create } from 'zustand';
 import { PaymentRepository } from '../repositories/PaymentRepository';
 import { getTicketStatus, getDaysUntilExpiry } from '../utils';
+import { useNotificationStore } from './notificationStore';
+import { useAuthStore } from './authStore';
 
 /**
  * 결제 및 수강권 데이터 관리 Store
@@ -89,7 +91,7 @@ export const usePaymentStore = create((set, get) => ({
 
   /**
    * 결제 추가
-   * @param {Object} paymentData - { studentId, amount, type, method, date, ticketInfo }
+   * @param {Object} paymentData - { studentId, studentName, amount, type, method, date, ticketInfo }
    */
   addPayment: async (paymentData) => {
     set({ loading: true, error: null });
@@ -116,6 +118,27 @@ export const usePaymentStore = create((set, get) => ({
 
       // 통계 재계산
       get().calculateStats();
+
+      // 알림 추가 (결제 완료 시)
+      try {
+        const user = useAuthStore.getState().user;
+        if (user?.uid) {
+          const { addNotification } = useNotificationStore.getState();
+          const formattedAmount = new Intl.NumberFormat('ko-KR').format(paymentData.amount);
+          await addNotification(
+            {
+              type: 'payment_received',
+              title: '결제 완료',
+              message: `${paymentData.studentName || '학생'}의 ${formattedAmount}원 결제가 완료되었습니다`,
+              targetId: paymentData.studentId,
+            },
+            user.uid
+          );
+        }
+      } catch (notificationError) {
+        console.error('알림 추가 실패:', notificationError);
+        // 알림 추가 실패는 무시하고 계속 진행
+      }
 
       return newPayment;
     } catch (error) {

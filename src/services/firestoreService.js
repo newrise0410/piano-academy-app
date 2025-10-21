@@ -324,6 +324,35 @@ export const updateNotice = async (noticeId, noticeData) => {
 };
 
 /**
+ * 알림장 상세 정보 가져오기
+ * @param {string} noticeId - 알림장 ID
+ * @returns {Promise<Object>} 알림장 정보
+ */
+export const getNoticeById = async (noticeId) => {
+  try {
+    const docRef = doc(db, 'notices', noticeId);
+    const docSnap = await getDoc(docRef);
+
+    if (docSnap.exists()) {
+      return {
+        success: true,
+        data: {
+          id: docSnap.id,
+          ...docSnap.data(),
+          createdAt: docSnap.data().createdAt?.toDate?.()?.toISOString() || docSnap.data().createdAt,
+          updatedAt: docSnap.data().updatedAt?.toDate?.()?.toISOString() || docSnap.data().updatedAt,
+        }
+      };
+    } else {
+      return { success: false, error: '알림장을 찾을 수 없습니다.' };
+    }
+  } catch (error) {
+    console.error('Get notice error:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+/**
  * 알림장 삭제
  * @param {string} noticeId - 알림장 ID
  * @returns {Promise<Object>} 삭제 결과
@@ -416,6 +445,23 @@ export const updateTuitionStatus = async (tuitionId, isPaid, paidDate = null) =>
     return { success: true };
   } catch (error) {
     console.error('Update tuition status error:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+/**
+ * 수강료 기록 삭제
+ * @param {string} tuitionId - 수강료 ID
+ * @returns {Promise<Object>} 삭제 결과
+ */
+export const deleteTuitionRecord = async (tuitionId) => {
+  try {
+    const docRef = doc(db, 'tuition', tuitionId);
+    await deleteDoc(docRef);
+
+    return { success: true };
+  } catch (error) {
+    console.error('Delete tuition error:', error);
     return { success: false, error: error.message };
   }
 };

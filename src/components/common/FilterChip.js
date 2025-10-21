@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import { View, TouchableOpacity, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Text from './Text';
@@ -18,7 +18,7 @@ import Text from './Text';
  * @param {object} containerStyle - 컨테이너 추가 스타일
  * @param {object} chipStyle - 칩 추가 스타일
  */
-export default function FilterChip({
+const FilterChip = React.memo(({
   options = [],
   value,
   onChange,
@@ -30,17 +30,17 @@ export default function FilterChip({
   activeTextColor = 'text-white',
   containerStyle,
   chipStyle,
-}) {
-  // 선택 상태 확인
-  const isSelected = (optionValue) => {
+}) => {
+  // 선택 상태 확인 (useCallback으로 최적화)
+  const isSelected = useCallback((optionValue) => {
     if (multiple) {
       return Array.isArray(value) && value.includes(optionValue);
     }
     return value === optionValue;
-  };
+  }, [multiple, value]);
 
-  // 선택 핸들러
-  const handleSelect = (optionValue) => {
+  // 선택 핸들러 (useCallback으로 최적화)
+  const handleSelect = useCallback((optionValue) => {
     if (multiple) {
       const currentValues = Array.isArray(value) ? value : [];
       if (currentValues.includes(optionValue)) {
@@ -51,7 +51,7 @@ export default function FilterChip({
     } else {
       onChange(optionValue);
     }
-  };
+  }, [multiple, value, onChange]);
 
   // 크기별 스타일
   const sizeStyles = {
@@ -169,20 +169,22 @@ export default function FilterChip({
       {options.map(renderChip)}
     </ScrollView>
   );
-}
+});
+
+FilterChip.displayName = 'FilterChip';
 
 /**
  * SegmentedControl - 세그먼트 컨트롤 (필터칩의 변형)
  * 전체 너비를 차지하는 탭 형태의 컨트롤
  */
-export function SegmentedControl({
+const SegmentedControl = React.memo(({
   options = [],
   value,
   onChange,
   activeColor = 'bg-primary',
   activeTextColor = 'text-white',
   containerStyle,
-}) {
+}) => {
   return (
     <View
       className="flex-row bg-gray-100 rounded-xl p-1"
@@ -222,4 +224,9 @@ export function SegmentedControl({
       })}
     </View>
   );
-}
+});
+
+SegmentedControl.displayName = 'SegmentedControl';
+
+export default FilterChip;
+export { SegmentedControl };

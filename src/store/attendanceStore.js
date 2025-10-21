@@ -2,6 +2,8 @@
 import { create } from 'zustand';
 import { AttendanceRepository } from '../repositories/AttendanceRepository';
 import { calculateAttendanceRate, getMonthlyStats } from '../utils';
+import { useNotificationStore } from './notificationStore';
+import { useAuthStore } from './authStore';
 
 /**
  * 출석 데이터 관리 Store
@@ -83,7 +85,7 @@ export const useAttendanceStore = create((set, get) => ({
 
   /**
    * 출석 기록 추가
-   * @param {Object} recordData - { studentId, date, status, note }
+   * @param {Object} recordData - { studentId, date, status, note, studentName }
    */
   addRecord: async (recordData) => {
     set({ loading: true, error: null });
@@ -107,6 +109,26 @@ export const useAttendanceStore = create((set, get) => ({
       const studentId = recordData.studentId;
       const updatedRecords = get().studentRecords[studentId];
       get().calculateStats(studentId, updatedRecords);
+
+      // 알림 추가 (결석인 경우)
+      try {
+        const user = useAuthStore.getState().user;
+        if (user?.uid && recordData.status === 'absent') {
+          const { addNotification } = useNotificationStore.getState();
+          await addNotification(
+            {
+              type: 'attendance_absent',
+              title: '결석 기록',
+              message: `${recordData.studentName || '학생'}이(가) ${recordData.date}에 결석했습니다`,
+              targetId: studentId,
+            },
+            user.uid
+          );
+        }
+      } catch (notificationError) {
+        console.error('알림 추가 실패:', notificationError);
+        // 알림 추가 실패는 무시하고 계속 진행
+      }
 
       return newRecord;
     } catch (error) {

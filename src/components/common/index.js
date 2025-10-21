@@ -13,6 +13,7 @@ export { default as FormInput } from './FormInput';
 // Filter & Selection
 export { default as FilterChip } from './FilterChip';
 export { SegmentedControl } from './FilterChip';
+export { default as FilterSection } from './FilterSection';
 
 // Status & Badges
 export { default as StatusBadge } from './StatusBadge';
@@ -57,6 +58,7 @@ export { default as ErrorBoundary } from './ErrorBoundary';
 // Modals
 export { default as BottomSheet } from './BottomSheet';
 export { default as Drawer } from './Drawer';
+export { default as DatePickerModal } from './DatePickerModal';
 
 // Headers
 export { default as ScreenHeader } from './ScreenHeader';
@@ -77,3 +79,6 @@ export { default as ImageViewerModal } from './ImageViewerModal';
 export { default as ImageUploadButton } from './ImageUploadButton';
 export { default as GalleryUploadModal } from './GalleryUploadModal';
 export { default as GalleryDetailModal } from './GalleryDetailModal';
+
+// Sidebar
+export { default as AppSidebar } from './AppSidebar';

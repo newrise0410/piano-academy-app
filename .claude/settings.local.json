@@ -15,7 +15,13 @@
       "Bash(netstat:*)",
       "Bash(findstr:*)",
       "Bash(timeout 15 bash:*)",
-      "Bash(npm uninstall:*)"
+      "Bash(npm uninstall:*)",
+      "Bash(curl -s \"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=AIzaSyDegfR6QuY0RkPYnEu-BXnzjKJl08UNHLc\" -H 'Content-Type: application/json' -d '{\"\"\"\"contents\"\"\"\":[{\"\"\"\"parts\"\"\"\":[{\"\"\"\"text\"\"\"\":\"\"\"\"안녕\"\"\"\"}]}]}')",
+      "Bash(curl -s \"https://generativelanguage.googleapis.com/v1beta/models?key=AIzaSyDegfR6QuY0RkPYnEu-BXnzjKJl08UNHLc\")",
+      "Bash(python3 -m json.tool)",
+      "Bash(curl -s \"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=AIzaSyDegfR6QuY0RkPYnEu-BXnzjKJl08UNHLc\" -H 'Content-Type: application/json' -d '{\"\"\"\"contents\"\"\"\":[{\"\"\"\"parts\"\"\"\":[{\"\"\"\"text\"\"\"\":\"\"\"\"12월 25일 오후 2시에 학원 연주홀에서 발표회를 합니다. 학부모님들께 보낼 알림장을 작성해주세요.\"\"\"\"}]}]}')",
+      "Bash(python3 -c \"import sys, json; data=json.load(sys.stdin); print(data[''''candidates''''][0][''''content''''][''''parts''''][0][''''text''''])\")",
+      "Bash(find /Users/sw/Documents/GitHub/piano-academy-app/src/screens/teacher -name \"*.js\" -exec wc -l {})"
     ],
     "deny": [],
     "ask": []

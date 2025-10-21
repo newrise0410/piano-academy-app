@@ -9,7 +9,7 @@ import { formatCurrency } from '../../utils';
 /**
  * UnpaidStudentsModal - 미납 학생 상세 모달
  */
-export default function UnpaidStudentsModal({ visible, onClose, students = [], onContact, onViewAll }) {
+export default function UnpaidStudentsModal({ visible, onClose, students = [], onSendNotice, onViewAll }) {
   // 미납 기간별로 정렬 (오래된 순)
   const safeStudents = students || [];
   const sortedStudents = [...safeStudents].sort((a, b) => {
@@ -89,13 +89,13 @@ export default function UnpaidStudentsModal({ visible, onClose, students = [], o
                   )}
                 </View>
 
-                {/* 연락 버튼 */}
+                {/* 알림 전송 버튼 */}
                 <TouchableOpacity
-                  onPress={() => onContact?.(student)}
+                  onPress={() => onSendNotice?.(student)}
                   className="w-10 h-10 bg-primary bg-opacity-10 rounded-full items-center justify-center ml-2"
                   activeOpacity={0.7}
                 >
-                  <Ionicons name="call" size={18} color={TEACHER_COLORS.primary.DEFAULT} />
+                  <Ionicons name="send" size={18} color={TEACHER_COLORS.primary.DEFAULT} />
                 </TouchableOpacity>
               </View>
             </View>

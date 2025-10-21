@@ -23,7 +23,7 @@ export default function StatBox({
 
   return (
     <View
-      className={`flex-1 rounded-xl p-3 mx-1 items-center ${backgroundColor ? '' : bg}`}
+      className={`rounded-xl p-3 items-center ${backgroundColor ? '' : bg}`}
       style={backgroundColor ? { backgroundColor } : {}}
     >
       {icon && (

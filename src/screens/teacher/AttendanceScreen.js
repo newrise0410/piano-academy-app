@@ -1,11 +1,11 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { View, ScrollView, TouchableOpacity, Alert, Platform, Modal } from 'react-native';
+import { View, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import DateTimePicker from '@react-native-community/datetimepicker';
-import { Text, ScreenHeader } from '../../components/common';
+import { Text, ScreenHeader, DatePickerModal } from '../../components/common';
 import TEACHER_COLORS from '../../styles/teacher_colors';
 import { getMonthName, getDayOfWeek } from '../../utils';
+import { getLevelColors, getAttendanceStatusColors } from '../../utils/styleHelpers';
 import { useStudentStore } from '../../store';
 
 export default function AttendanceScreen() {
@@ -18,20 +18,6 @@ export default function AttendanceScreen() {
   useEffect(() => {
     fetchStudents();
   }, [fetchStudents]);
-
-  // 레벨별 색상 매핑 (StudentCard와 동일)
-  const getLevelColors = (level) => {
-    switch (level) {
-      case '초급':
-        return { bg: TEACHER_COLORS.blue[50], text: TEACHER_COLORS.blue[600] };
-      case '중급':
-        return { bg: TEACHER_COLORS.purple[50], text: TEACHER_COLORS.primary[600] };
-      case '고급':
-        return { bg: TEACHER_COLORS.orange[50], text: TEACHER_COLORS.orange[600] };
-      default:
-        return { bg: TEACHER_COLORS.gray[50], text: TEACHER_COLORS.gray[600] };
-    }
-  };
 
   // 선택한 날짜의 요일 구하기
   const getSelectedDayOfWeek = () => {
@@ -149,10 +135,6 @@ export default function AttendanceScreen() {
 
   // 날짜 선택 완료
   const onDateChange = (event, date) => {
-    if (Platform.OS === 'android') {
-      setShowDatePicker(false);
-    }
-
     if (date) {
       setSelectedDate(date);
       // 날짜가 변경되면 출석 데이터 리셋
@@ -303,22 +285,16 @@ export default function AttendanceScreen() {
 
                   {/* 학생 목록 */}
                   {!isCollapsed && students.map((student) => {
-                    const isUnchecked = student.status === null;
                     const levelColors = getLevelColors(student.level);
+                    const statusColors = getAttendanceStatusColors(student.status);
                     return (
                       <View
                         key={student.id}
                         className="mb-3 rounded-2xl p-4"
                         style={{
-                          backgroundColor: student.status === 'present' ? TEACHER_COLORS.green[50] :
-                                          student.status === 'absent' ? TEACHER_COLORS.red[50] :
-                                          isUnchecked ? '#FEFCE8' :
-                                          TEACHER_COLORS.white,
-                          borderWidth: isUnchecked ? 2 : 1,
-                          borderColor: student.status === 'present' ? TEACHER_COLORS.green[200] :
-                                      student.status === 'absent' ? TEACHER_COLORS.red[200] :
-                                      isUnchecked ? '#FDE047' :
-                                      TEACHER_COLORS.gray[200]
+                          backgroundColor: statusColors.bg,
+                          borderWidth: statusColors.borderWidth,
+                          borderColor: statusColors.border,
                         }}
                       >
               {/* 학생 정보 */}
@@ -468,44 +444,14 @@ export default function AttendanceScreen() {
       </ScrollView>
 
       {/* 날짜 선택기 */}
-      {Platform.OS === 'ios' ? (
-        <Modal
-          visible={showDatePicker}
-          transparent={true}
-          animationType="slide"
-          onRequestClose={() => setShowDatePicker(false)}
-        >
-          <View className="flex-1 justify-end bg-black bg-opacity-50">
-            <View className="bg-white rounded-t-3xl p-4">
-              <View className="flex-row justify-between items-center mb-4">
-                <TouchableOpacity onPress={() => setShowDatePicker(false)}>
-                  <Text className="text-primary text-base font-semibold">취소</Text>
-                </TouchableOpacity>
-                <Text className="text-lg font-bold text-gray-800">날짜 선택</Text>
-                <TouchableOpacity onPress={() => setShowDatePicker(false)}>
-                  <Text className="text-primary text-base font-semibold">완료</Text>
-                </TouchableOpacity>
-              </View>
-              <DateTimePicker
-                value={selectedDate}
-                mode="date"
-                display="spinner"
-                onChange={onDateChange}
-                locale="ko-KR"
-              />
-            </View>
-          </View>
-        </Modal>
-      ) : (
-        showDatePicker && (
-          <DateTimePicker
-            value={selectedDate}
-            mode="date"
-            display="default"
-            onChange={onDateChange}
-          />
-        )
-      )}
+      <DatePickerModal
+        visible={showDatePicker}
+        value={selectedDate}
+        mode="date"
+        onChange={onDateChange}
+        onClose={() => setShowDatePicker(false)}
+        title="날짜 선택"
+      />
     </SafeAreaView>
   );
 }

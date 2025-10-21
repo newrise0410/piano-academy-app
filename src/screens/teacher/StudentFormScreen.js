@@ -1,15 +1,15 @@
 import React, { useState } from 'react';
-import { View, ScrollView, TouchableOpacity, Alert, Modal, Platform } from 'react-native';
+import { View, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import DateTimePicker from '@react-native-community/datetimepicker';
 import {
   Text,
   FormInput,
   Button,
   SectionCard,
   SegmentedControl,
-  ScreenHeader
+  ScreenHeader,
+  DatePickerModal
 } from '../../components/common';
 import TEACHER_COLORS from '../../styles/teacher_colors';
 import { useStudentStore } from '../../store';
@@ -76,9 +76,6 @@ export default function StudentFormScreen({ navigation, route }) {
 
   // 시간 변경 핸들러
   const onTimeChange = (event, selectedDate) => {
-    if (Platform.OS === 'android') {
-      setShowTimePicker(false);
-    }
     if (selectedDate) {
       const hours = selectedDate.getHours().toString().padStart(2, '0');
       const minutes = selectedDate.getMinutes().toString().padStart(2, '0');
@@ -358,40 +355,14 @@ export default function StudentFormScreen({ navigation, route }) {
       </View>
 
       {/* 시간 선택 모달 */}
-      {Platform.OS === 'ios' ? (
-        <Modal
-          visible={showTimePicker}
-          transparent={true}
-          animationType="slide"
-        >
-          <View className="flex-1 justify-end bg-black/50">
-            <View className="bg-white rounded-t-3xl p-5">
-              <View className="flex-row justify-between items-center mb-4">
-                <Text className="text-lg font-bold text-gray-800">수업 시간 선택</Text>
-                <TouchableOpacity onPress={() => setShowTimePicker(false)}>
-                  <Text className="text-primary text-base font-bold">완료</Text>
-                </TouchableOpacity>
-              </View>
-              <DateTimePicker
-                value={new Date(`2000-01-01T${selectedTime}:00`)}
-                mode="time"
-                display="spinner"
-                onChange={onTimeChange}
-                locale="ko-KR"
-              />
-            </View>
-          </View>
-        </Modal>
-      ) : (
-        showTimePicker && (
-          <DateTimePicker
-            value={new Date(`2000-01-01T${selectedTime}:00`)}
-            mode="time"
-            display="default"
-            onChange={onTimeChange}
-          />
-        )
-      )}
+      <DatePickerModal
+        visible={showTimePicker}
+        value={new Date(`2000-01-01T${selectedTime}:00`)}
+        mode="time"
+        onChange={onTimeChange}
+        onClose={() => setShowTimePicker(false)}
+        title="수업 시간 선택"
+      />
     </SafeAreaView>
   );
 }

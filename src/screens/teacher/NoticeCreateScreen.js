@@ -6,20 +6,24 @@ import {
   Text,
   Card,
   FormInput,
-  FilterChip,
   Button,
-  LevelBadge,
   ScreenHeader
 } from '../../components/common';
-import TEACHER_COLORS, { TEACHER_TEMPLATE_COLORS } from '../../styles/teacher_colors';
-import { useNoticeStore, useStudentStore } from '../../store';
+import TEACHER_COLORS from '../../styles/teacher_colors';
+import { useNoticeStore, useStudentStore, useNotificationStore, useAuthStore } from '../../store';
 import { useToastStore } from '../../store';
-import { formatDate } from '../../utils';
+import { generateNoticeContent, improveNoticeContent, isGeminiAvailable } from '../../services/geminiService';
+import { ActivityRepository } from '../../repositories/ActivityRepository';
+import NoticeTemplateSelector from '../../components/teacher/NoticeTemplateSelector';
+import NoticeRecipientSelector from '../../components/teacher/NoticeRecipientSelector';
+import { NOTICE_TEMPLATES } from '../../constants/noticeTemplates';
 
 export default function NoticeCreateScreen({ navigation }) {
   // Zustand Stores
   const { createNotice, loading: noticeLoading } = useNoticeStore();
   const { students, fetchStudents } = useStudentStore();
+  const { addNotification } = useNotificationStore();
+  const user = useAuthStore((state) => state.user);
   const toast = useToastStore();
 
   const [selectedTemplate, setSelectedTemplate] = useState(null);
@@ -29,8 +33,6 @@ export default function NoticeCreateScreen({ navigation }) {
   const [isGenerating, setIsGenerating] = useState(false);
   const [currentStep, setCurrentStep] = useState('compose'); // 'compose' or 'selectRecipients'
   const [selectedStudents, setSelectedStudents] = useState([]);
-  const [categoryFilter, setCategoryFilter] = useState('전체');
-  const [dayFilter, setDayFilter] = useState('전체');
 
   const fadeAnim = useRef(new Animated.Value(1)).current;
   const scaleAnim = useRef(new Animated.Value(1)).current;
@@ -39,45 +41,6 @@ export default function NoticeCreateScreen({ navigation }) {
   useEffect(() => {
     fetchStudents();
   }, [fetchStudents]);
-
-  const templates = [
-    {
-      id: '1',
-      title: '발표회 안내',
-      emoji: '🎹',
-      color: TEACHER_TEMPLATE_COLORS.concert,
-      prompt: '12월 25일 오후 2시에 학원 연주홀에서 발표회를 개최합니다.',
-      generatedTitle: '[발표회 안내]',
-      generatedContent: '안녕하세요, 학부모님 😊\n\n12월 25일(수) 오후 2시, 학원 연주홀에서 정기 발표회를 개최합니다.\n\n그동안 열심히 연습한 곡들을 보여드릴 수 있는 소중한 시간이니 많은 참석 부탁드립니다.',
-    },
-    {
-      id: '2',
-      title: '휴강 안내',
-      emoji: '🏠',
-      color: TEACHER_TEMPLATE_COLORS.closure,
-      prompt: '10월 18일(금)은 원장님 개인 사정으로 휴강합니다.',
-      generatedTitle: '[휴강 안내]',
-      generatedContent: '안녕하세요, 학부모님 😊\n\n10월 18일(금)은 원장님 개인 사정으로 휴강하게 되었습니다.\n\n보강 일정은 추후 개별적으로 안내드리겠습니다. 양해 부탁드립니다.',
-    },
-    {
-      id: '3',
-      title: '수강료 안내',
-      emoji: '💰',
-      color: TEACHER_TEMPLATE_COLORS.tuition,
-      prompt: '10월 수강료는 10월 5일까지 납부해주세요.',
-      generatedTitle: '[수강료 납부 안내]',
-      generatedContent: '안녕하세요, 학부모님 😊\n\n10월 수강료 납부 안내드립니다.\n\n납부 기한: 10월 5일(목)까지\n입금 계좌: 국민은행 123-456-789012\n\n기한 내 납부 부탁드립니다.',
-    },
-    {
-      id: '4',
-      title: '직접 입력',
-      emoji: '✏️',
-      color: TEACHER_TEMPLATE_COLORS.custom,
-      prompt: '',
-      generatedTitle: '',
-      generatedContent: '',
-    },
-  ];
 
   // 템플릿 선택 시 애니메이션
   useEffect(() => {
@@ -116,9 +79,40 @@ export default function NoticeCreateScreen({ navigation }) {
     ]).start();
 
     setSelectedTemplate(template.id);
-    setAiPrompt(template.prompt);
-    setPreviewTitle(template.generatedTitle);
-    setPreviewContent(template.generatedContent);
+    setAiPrompt(template.prompt || '');
+    setPreviewTitle(template.generatedTitle || '');
+    setPreviewContent(template.generatedContent || '');
+  };
+
+  // AI로 내용 개선하기 (더 친절하게 / 더 간결하게)
+  const handleImproveContent = async (direction) => {
+    if (!previewContent.trim()) {
+      toast.warning('먼저 알림장을 작성해주세요');
+      return;
+    }
+
+    if (!isGeminiAvailable()) {
+      toast.error('Gemini API 키가 설정되지 않았습니다');
+      return;
+    }
+
+    setIsGenerating(true);
+
+    try {
+      const result = await improveNoticeContent(previewContent, direction);
+
+      if (result.success) {
+        setPreviewContent(result.content);
+        toast.success(direction === 'friendly' ? '더 친절하게 수정했습니다! 😊' : '더 간결하게 수정했습니다! ✂️');
+      } else {
+        toast.error('내용 개선에 실패했습니다');
+      }
+    } catch (error) {
+      console.error('내용 개선 오류:', error);
+      toast.error('내용 개선 중 오류가 발생했습니다');
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   const handleAiGenerate = async () => {
@@ -127,20 +121,38 @@ export default function NoticeCreateScreen({ navigation }) {
       return;
     }
 
+    // Gemini API 사용 가능 여부 확인
+    if (!isGeminiAvailable()) {
+      toast.error('Gemini API 키가 설정되지 않았습니다');
+      return;
+    }
+
     setIsGenerating(true);
 
-    // AI 생성 시뮬레이션 (실제로는 OpenAI API 등을 호출)
-    setTimeout(() => {
-      // 간단한 AI 시뮬레이션: 프롬프트 기반으로 내용 생성
-      const generatedTitle = generateTitle(aiPrompt);
-      const generatedContent = generateContent(aiPrompt);
+    try {
+      // Gemini AI로 알림장 생성
+      const result = await generateNoticeContent(aiPrompt, selectedTemplate);
 
-      setPreviewTitle(generatedTitle);
-      setPreviewContent(generatedContent);
+      if (result.success) {
+        setPreviewTitle(result.title);
+        setPreviewContent(result.content);
+        toast.success('AI가 알림장을 작성했습니다! ✨');
+      } else {
+        // AI 실패시 폴백 컨텐츠 사용
+        setPreviewTitle(result.title);
+        setPreviewContent(result.content);
+        toast.warning('AI 생성에 실패했지만 기본 템플릿을 사용합니다');
+      }
+    } catch (error) {
+      console.error('AI 생성 오류:', error);
+      toast.error('AI 생성 중 오류가 발생했습니다');
+
+      // 에러 발생시 기본 템플릿 사용
+      setPreviewTitle(generateTitle(aiPrompt));
+      setPreviewContent(generateContent(aiPrompt));
+    } finally {
       setIsGenerating(false);
-
-      toast.success('AI가 알림장을 작성했습니다!');
-    }, 2000); // 2초 딜레이로 AI 생성 시뮬레이션
+    }
   };
 
   // AI 제목 생성 함수 (목업)
@@ -211,8 +223,43 @@ export default function NoticeCreateScreen({ navigation }) {
         content: previewContent,
         date: dateStr,
         time: timeStr,
-        recipients: selectedStudents.length,
+        confirmed: 0,
+        total: selectedStudents.length,
+        recipients: selectedStudents, // 학생 ID 배열 저장
       });
+
+      // 활동 로그 추가 (대시보드 최근 활동용)
+      try {
+        await ActivityRepository.create({
+          type: 'notice',
+          action: '알림장 발송',
+          studentName: null,
+          details: `${selectedStudents.length}명에게 발송`,
+          icon: 'chatbubble-ellipses',
+          color: TEACHER_COLORS.primary.DEFAULT,
+        });
+      } catch (activityError) {
+        console.error('활동 로그 저장 실패:', activityError);
+        // 활동 로그 실패는 무시하고 계속 진행
+      }
+
+      // 알림 추가 (알림 뱃지용)
+      try {
+        if (user?.uid) {
+          await addNotification(
+            {
+              type: 'notice_sent',
+              title: '알림장 발송 완료',
+              message: `${selectedStudents.length}명에게 알림장이 발송되었습니다`,
+              targetId: null,
+            },
+            user.uid
+          );
+        }
+      } catch (notificationError) {
+        console.error('알림 추가 실패:', notificationError);
+        // 알림 추가 실패는 무시하고 계속 진행
+      }
 
       toast.success(`${selectedStudents.length}명의 학생에게 알림장이 발송되었습니다`);
       navigation.goBack();
@@ -468,13 +515,23 @@ export default function NoticeCreateScreen({ navigation }) {
                   {isDirectInput ? '직접 작성하기' : '생성된 알림장'}
                 </Text>
               </View>
-              {!isDirectInput && selectedTemplate && (
+              {!isDirectInput && selectedTemplate && previewContent && (
                 <View className="flex-row">
-                  <TouchableOpacity className="border border-gray-300 rounded-lg px-3 py-1 mr-2">
-                    <Text className="text-xs text-gray-700">더 친절하게</Text>
+                  <TouchableOpacity
+                    className="border border-gray-300 rounded-lg px-3 py-1 mr-2"
+                    onPress={() => handleImproveContent('friendly')}
+                    disabled={isGenerating}
+                    activeOpacity={0.7}
+                  >
+                    <Text className="text-xs text-gray-700">{isGenerating ? '⏳' : '더 친절하게'}</Text>
                   </TouchableOpacity>
-                  <TouchableOpacity className="border border-gray-300 rounded-lg px-3 py-1">
-                    <Text className="text-xs text-gray-700">더 간결하게</Text>
+                  <TouchableOpacity
+                    className="border border-gray-300 rounded-lg px-3 py-1"
+                    onPress={() => handleImproveContent('concise')}
+                    disabled={isGenerating}
+                    activeOpacity={0.7}
+                  >
+                    <Text className="text-xs text-gray-700">{isGenerating ? '⏳' : '더 간결하게'}</Text>
                   </TouchableOpacity>
                 </View>
               )}

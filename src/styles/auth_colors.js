@@ -100,4 +100,12 @@ export const AUTH_INPUT_COLORS = {
   text: AUTH_COLORS.gray[800],
 };
 
+// 소셜 로그인 색상
+export const AUTH_SOCIAL_COLORS = {
+  kakao: '#FEE500',
+  naver: '#03C75A',
+  google: '#FFFFFF',
+  apple: '#000000',
+};
+
 export default AUTH_COLORS;

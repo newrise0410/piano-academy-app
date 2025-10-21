@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
-import { View, ScrollView, TouchableOpacity, Image, Alert, TextInput } from 'react-native';
+import { View, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import * as ImagePicker from 'expo-image-picker';
 import {
   Text,
   FormInput,
@@ -17,17 +16,17 @@ import TEACHER_COLORS, { TEACHER_SHADOW_COLORS, TEACHER_OVERLAY_COLORS } from '.
 import { useStudentStore } from '../../store';
 import { useToastStore } from '../../store';
 import { formatDate, formatCurrency } from '../../utils';
+import AiMemoEditor from '../../components/teacher/AiMemoEditor';
 
 export default function StudentDetailScreen({ route, navigation }) {
   const { student } = route?.params || {};
 
   // Zustand Store
   const { deleteStudent, loading } = useStudentStore();
+  const toast = useToastStore();
 
   const [activeTab, setActiveTab] = useState('정보');
   const [memo, setMemo] = useState('');
-  const [attachments, setAttachments] = useState([]);
-  const [isAIGenerating, setIsAIGenerating] = useState(false);
 
   // 출석 관련 상태
   const [attendanceRecords, setAttendanceRecords] = useState([
@@ -85,51 +84,6 @@ export default function StudentDetailScreen({ route, navigation }) {
     );
   };
 
-  // 사진/영상 선택
-  const pickMedia = async (type) => {
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== 'granted') {
-      Alert.alert('권한 필요', '사진/영상 접근 권한이 필요합니다.');
-      return;
-    }
-
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: type === 'video' ? ImagePicker.MediaTypeOptions.Videos : ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      quality: 0.8,
-    });
-
-    if (!result.canceled) {
-      setAttachments([...attachments, {
-        id: Date.now().toString(),
-        uri: result.assets[0].uri,
-        type: type,
-      }]);
-    }
-  };
-
-  // 첨부파일 삭제
-  const removeAttachment = (id) => {
-    setAttachments(attachments.filter(att => att.id !== id));
-  };
-
-  // AI로 메모 개선
-  const handleAIImprove = async () => {
-    if (!memo.trim()) {
-      Alert.alert('알림', '먼저 메모를 입력해주세요.');
-      return;
-    }
-
-    setIsAIGenerating(true);
-
-    // AI 생성 시뮬레이션
-    setTimeout(() => {
-      const improvedMemo = `[AI 개선]\n${memo}\n\n추가 관찰사항:\n- 리듬감이 향상되고 있습니다.\n- 다음 주까지 ${student?.book || '교재'} 복습 필요`;
-      setMemo(improvedMemo);
-      setIsAIGenerating(false);
-      Alert.alert('완료', 'AI가 메모를 개선했습니다!');
-    }, 2000);
-  };
 
   // 출석 상태 배지 색상
   const getAttendanceStatusColor = (status) => {
@@ -216,106 +170,50 @@ export default function StudentDetailScreen({ route, navigation }) {
             </View>
 
             {/* 현재 진도 */}
-            <View className="bg-white rounded-2xl p-4 mb-4">
-              <Text className="text-base font-bold text-gray-800 mb-3">현재 진도</Text>
+            {student?.book && (
+              <View className="bg-white rounded-2xl p-4 mb-4">
+                <Text className="text-base font-bold text-gray-800 mb-3">현재 진도</Text>
 
-              <View className="mb-3">
-                <View className="flex-row justify-between items-center mb-2">
-                  <Text className="text-sm text-gray-600">바이엘</Text>
-                  <Text className="text-sm font-bold text-primary">48%</Text>
+                <View className="mb-3">
+                  <View className="flex-row justify-between items-center mb-2">
+                    <Text className="text-sm text-gray-600">{student.book}</Text>
+                    {student.progress !== undefined && (
+                      <Text className="text-sm font-bold text-primary">{student.progress}%</Text>
+                    )}
+                  </View>
+                  {student.progress !== undefined && (
+                    <>
+                      <View className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                        <View className="h-full bg-primary rounded-full" style={{ width: `${student.progress}%` }} />
+                      </View>
+                      {student.progressPage && student.totalPages && (
+                        <Text className="text-xs text-gray-500 mt-1">
+                          {student.progressPage}/{student.totalPages}곡 완료
+                        </Text>
+                      )}
+                    </>
+                  )}
                 </View>
-                <View className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                  <View className="h-full bg-primary rounded-full" style={{ width: '48%' }} />
-                </View>
-                <Text className="text-xs text-gray-500 mt-1">48/100곡 완료</Text>
               </View>
-            </View>
+            )}
 
             {/* 메모 */}
             <View className="bg-white rounded-2xl p-4 mb-4">
               <Text className="text-base font-bold text-gray-800 mb-3">메모</Text>
-              <TextInput
-                className="bg-gray-50 rounded-xl p-3 text-sm min-h-[100px]"
-                placeholder="학생에 대한 메모를 입력하세요..."
-                multiline
-                textAlignVertical="top"
+
+              <AiMemoEditor
                 value={memo}
-                onChangeText={setMemo}
-                style={{ fontFamily: 'MaruBuri-Regular' }}
+                onChange={setMemo}
+                studentInfo={{
+                  name: student?.name,
+                  level: student?.level,
+                  book: student?.book || '바이엘',
+                  recentProgress: student?.progress,
+                }}
+                placeholder="학생에 대한 메모를 입력하세요..."
+                enableAttachments={true}
+                enableHomeworkGenerator={true}
               />
-
-              {/* 첨부파일 목록 */}
-              {attachments.length > 0 && (
-                <View className="mt-3">
-                  <View className="flex-row flex-wrap">
-                    {attachments.map((attachment) => (
-                      <View key={attachment.id} className="mr-2 mb-2 relative">
-                        <Image
-                          source={{ uri: attachment.uri }}
-                          className="w-20 h-20 rounded-lg"
-                        />
-                        {attachment.type === 'video' && (
-                          <View className="absolute inset-0 items-center justify-center">
-                            <View className="bg-black/50 rounded-full p-2">
-                              <Ionicons name="play" size={20} color="white" />
-                            </View>
-                          </View>
-                        )}
-                        <TouchableOpacity
-                          className="absolute -top-1 -right-1 bg-red-500 rounded-full w-5 h-5 items-center justify-center"
-                          onPress={() => removeAttachment(attachment.id)}
-                          activeOpacity={0.7}
-                        >
-                          <Ionicons name="close" size={14} color="white" />
-                        </TouchableOpacity>
-                      </View>
-                    ))}
-                  </View>
-                </View>
-              )}
-
-              {/* 첨부 및 AI 버튼 */}
-              <View className="flex-row mt-3">
-                <TouchableOpacity
-                  className="flex-1 rounded-xl py-3 mr-2 flex-row items-center justify-center"
-                  style={{ backgroundColor: TEACHER_COLORS.gray[100] }}
-                  onPress={() => pickMedia('image')}
-                  activeOpacity={0.7}
-                >
-                  <Ionicons name="image-outline" size={20} color={TEACHER_COLORS.gray[600]} />
-                  <Text className="text-gray-700 text-sm font-semibold ml-2">사진</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  className="flex-1 rounded-xl py-3 mr-2 flex-row items-center justify-center"
-                  style={{ backgroundColor: TEACHER_COLORS.gray[100] }}
-                  onPress={() => pickMedia('video')}
-                  activeOpacity={0.7}
-                >
-                  <Ionicons name="videocam-outline" size={20} color={TEACHER_COLORS.gray[600]} />
-                  <Text className="text-gray-700 text-sm font-semibold ml-2">영상</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  className="flex-1 bg-primary rounded-xl py-3 flex-row items-center justify-center"
-                  onPress={handleAIImprove}
-                  activeOpacity={0.7}
-                  disabled={isAIGenerating}
-                  style={{ opacity: isAIGenerating ? 0.6 : 1 }}
-                >
-                  {isAIGenerating ? (
-                    <>
-                      <Ionicons name="hourglass-outline" size={20} color="white" />
-                      <Text className="text-white text-sm font-semibold ml-2">생성중...</Text>
-                    </>
-                  ) : (
-                    <>
-                      <Ionicons name="sparkles-outline" size={20} color="white" />
-                      <Text className="text-white text-sm font-semibold ml-2">AI 개선</Text>
-                    </>
-                  )}
-                </TouchableOpacity>
-              </View>
             </View>
 
             {/* 저장하기 버튼 */}

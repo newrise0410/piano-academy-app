@@ -13,6 +13,7 @@ import {
 } from '../data/mockNotices';
 import {
   getAllNotices,
+  getNoticeById as getFirebaseNoticeById,
   createNotice,
   updateNotice as updateFirebaseNotice,
   deleteNotice as deleteFirebaseNotice,
@@ -88,6 +89,14 @@ export const NoticeRepository = {
         throw new Error('알림장을 찾을 수 없습니다');
       }
       return notice;
+    }
+
+    if (isFirebaseMode()) {
+      const result = await getFirebaseNoticeById(id);
+      if (!result.success) {
+        throw new Error(result.error);
+      }
+      return result.data;
     }
 
     try {

@@ -23,52 +23,78 @@ export default function SignupTeacherScreen({ navigation }) {
 
   const handleSignup = () => {
     if (!formData.academyName || !formData.name || !formData.phone || !formData.email || !formData.password) {
-      Alert.alert('알림', '필수 항목을 모두 입력해주세요.');
+      Alert.alert('필수 항목을 확인해주세요', '모든 항목을 입력해주세요.');
       return;
     }
     if (formData.password !== formData.passwordConfirm) {
-      Alert.alert('알림', '비밀번호가 일치하지 않습니다.');
+      Alert.alert('비밀번호가 다릅니다', '비밀번호를 다시 확인해주세요.');
       return;
     }
     if (!agreedTerms) {
-      Alert.alert('알림', '이용약관에 동의해주세요.');
+      Alert.alert('약관 동의가 필요해요', '이용약관에 동의해주세요.');
       return;
     }
     // TODO: 실제 회원가입 로직 구현
-    Alert.alert('회원가입', '회원가입 기능은 준비 중입니다.');
+    Alert.alert('조금만 기다려주세요', '회원가입 기능은 준비 중입니다.');
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-50">
-      <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
-        {/* 헤더 */}
-        <LinearGradient
-          colors={AUTH_GRADIENTS.purpleToPink}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 0 }}
-          className="px-5 py-6"
-        >
-          <TouchableOpacity
-            onPress={() => navigation.goBack()}
-            className="mb-4"
-            activeOpacity={0.7}
-          >
-            <Ionicons name="arrow-back" size={24} color="white" />
-          </TouchableOpacity>
-          <Text className="text-white text-3xl font-bold mb-1">원장님 회원가입</Text>
-          <Text className="text-white text-sm opacity-90">학원 정보를 입력해주세요</Text>
-        </LinearGradient>
+    <LinearGradient
+      colors={AUTH_GRADIENTS.splashGradient}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 1 }}
+      style={{ flex: 1 }}
+    >
+      <SafeAreaView style={{ flex: 1 }}>
+        <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false}>
+          {/* 헤더 - 심플하게 */}
+          <View className="px-6 pt-6 pb-4 flex-row items-center justify-between">
+            <TouchableOpacity
+              onPress={() => navigation.goBack()}
+              activeOpacity={0.7}
+              className="w-10 h-10 items-center justify-center"
+            >
+              <Ionicons name="arrow-back" size={24} color={AUTH_COLORS.white} />
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => navigation.navigate('Login')}
+              activeOpacity={0.7}
+            >
+              <Text className="text-sm font-semibold" style={{ color: AUTH_COLORS.white }}>
+                로그인
+              </Text>
+            </TouchableOpacity>
+          </View>
 
-        {/* 컨텐츠 */}
-        <View className="px-6 py-6 space-y-4">
+          {/* 타이틀 */}
+          <View className="px-6 pt-6 pb-8">
+            <Text className="text-3xl font-bold mb-2" style={{ color: AUTH_COLORS.white }}>
+              시작하기
+            </Text>
+            <Text className="text-base opacity-90" style={{ color: AUTH_COLORS.white }}>
+              학원 정보만 입력하면 바로 시작할 수 있어요
+            </Text>
+          </View>
+
+          {/* 컨텐츠 - 흰색 카드로 감싸기 */}
+          <View className="px-6 pb-6">
+            <View className="bg-white rounded-3xl px-6 py-6 space-y-4"
+              style={{
+                shadowColor: AUTH_COLORS.black,
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.1,
+                shadowRadius: 12,
+                elevation: 5,
+              }}
+            >
           {/* 학원명 */}
           <View>
-            <Text className="text-sm font-semibold text-gray-700 mb-2">학원명 *</Text>
+            <Text className="text-sm font-semibold text-gray-700 mb-2">학원 이름</Text>
             <View className="relative">
               <Ionicons name="business" size={20} color={AUTH_COLORS.gray[400]} style={{ position: 'absolute', left: 12, top: 12, zIndex: 1 }} />
               <TextInput
                 className="w-full border-2 border-gray-200 rounded-xl pl-11 pr-4 py-3 text-sm bg-white"
-                placeholder="예: 서울 피아노학원"
+                placeholder="서울 피아노학원"
                 placeholderTextColor={AUTH_COLORS.gray[400]}
                 value={formData.academyName}
                 onChangeText={(text) => setFormData({...formData, academyName: text})}
@@ -79,7 +105,7 @@ export default function SignupTeacherScreen({ navigation }) {
 
           {/* 원장님 이름 */}
           <View>
-            <Text className="text-sm font-semibold text-gray-700 mb-2">원장님 성함 *</Text>
+            <Text className="text-sm font-semibold text-gray-700 mb-2">이름</Text>
             <View className="relative">
               <Ionicons name="person" size={20} color={AUTH_COLORS.gray[400]} style={{ position: 'absolute', left: 12, top: 12, zIndex: 1 }} />
               <TextInput
@@ -95,7 +121,7 @@ export default function SignupTeacherScreen({ navigation }) {
 
           {/* 연락처 */}
           <View>
-            <Text className="text-sm font-semibold text-gray-700 mb-2">연락처 *</Text>
+            <Text className="text-sm font-semibold text-gray-700 mb-2">연락처</Text>
             <View className="relative">
               <Ionicons name="call" size={20} color={AUTH_COLORS.gray[400]} style={{ position: 'absolute', left: 12, top: 12, zIndex: 1 }} />
               <TextInput
@@ -112,12 +138,12 @@ export default function SignupTeacherScreen({ navigation }) {
 
           {/* 이메일 */}
           <View>
-            <Text className="text-sm font-semibold text-gray-700 mb-2">이메일 *</Text>
+            <Text className="text-sm font-semibold text-gray-700 mb-2">이메일</Text>
             <View className="relative">
               <Ionicons name="mail-outline" size={20} color={AUTH_COLORS.gray[400]} style={{ position: 'absolute', left: 12, top: 12, zIndex: 1 }} />
               <TextInput
                 className="w-full border-2 border-gray-200 rounded-xl pl-11 pr-4 py-3 text-sm bg-white"
-                placeholder="example@email.com"
+                placeholder="email@example.com"
                 placeholderTextColor={AUTH_COLORS.gray[400]}
                 value={formData.email}
                 onChangeText={(text) => setFormData({...formData, email: text})}
@@ -130,12 +156,12 @@ export default function SignupTeacherScreen({ navigation }) {
 
           {/* 비밀번호 */}
           <View>
-            <Text className="text-sm font-semibold text-gray-700 mb-2">비밀번호 *</Text>
+            <Text className="text-sm font-semibold text-gray-700 mb-2">비밀번호</Text>
             <View className="relative">
               <Ionicons name="lock-closed-outline" size={20} color={AUTH_COLORS.gray[400]} style={{ position: 'absolute', left: 12, top: 12, zIndex: 1 }} />
               <TextInput
                 className="w-full border-2 border-gray-200 rounded-xl pl-11 pr-11 py-3 text-sm bg-white"
-                placeholder="8자 이상"
+                placeholder="6자 이상 입력해주세요"
                 placeholderTextColor={AUTH_COLORS.gray[400]}
                 value={formData.password}
                 onChangeText={(text) => setFormData({...formData, password: text})}
@@ -150,12 +176,12 @@ export default function SignupTeacherScreen({ navigation }) {
 
           {/* 비밀번호 확인 */}
           <View>
-            <Text className="text-sm font-semibold text-gray-700 mb-2">비밀번호 확인 *</Text>
+            <Text className="text-sm font-semibold text-gray-700 mb-2">비밀번호 확인</Text>
             <View className="relative">
               <Ionicons name="lock-closed-outline" size={20} color={AUTH_COLORS.gray[400]} style={{ position: 'absolute', left: 12, top: 12, zIndex: 1 }} />
               <TextInput
                 className="w-full border-2 border-gray-200 rounded-xl pl-11 pr-11 py-3 text-sm bg-white"
-                placeholder="비밀번호 재입력"
+                placeholder="한번 더 입력해주세요"
                 placeholderTextColor={AUTH_COLORS.gray[400]}
                 value={formData.passwordConfirm}
                 onChangeText={(text) => setFormData({...formData, passwordConfirm: text})}
@@ -169,13 +195,13 @@ export default function SignupTeacherScreen({ navigation }) {
           </View>
 
           {/* 약관 동의 */}
-          <View className="space-y-2 pt-2">
+          <View className="space-y-3 pt-4">
             <TouchableOpacity className="flex-row items-start" onPress={() => setAgreedTerms(!agreedTerms)} activeOpacity={0.7}>
               <View className={`w-5 h-5 rounded border-2 ${agreedTerms ? 'bg-purple-600 border-purple-600' : 'border-gray-300 bg-white'} items-center justify-center mr-2 mt-0.5`}>
                 {agreedTerms && <Ionicons name="checkmark" size={16} color="white" />}
               </View>
               <Text className="text-sm text-gray-700 flex-1">
-                <Text className="font-semibold">[필수]</Text> 이용약관 및 개인정보처리방침에 동의합니다
+                이용약관 및 개인정보처리방침에 동의해요 (필수)
               </Text>
             </TouchableOpacity>
 
@@ -183,8 +209,8 @@ export default function SignupTeacherScreen({ navigation }) {
               <View className={`w-5 h-5 rounded border-2 ${agreedMarketing ? 'bg-purple-600 border-purple-600' : 'border-gray-300 bg-white'} items-center justify-center mr-2 mt-0.5`}>
                 {agreedMarketing && <Ionicons name="checkmark" size={16} color="white" />}
               </View>
-              <Text className="text-sm text-gray-700 flex-1">
-                <Text className="font-semibold">[선택]</Text> 마케팅 정보 수신에 동의합니다
+              <Text className="text-sm text-gray-500 flex-1">
+                마케팅 정보 수신에 동의해요 (선택)
               </Text>
             </TouchableOpacity>
           </View>
@@ -192,21 +218,20 @@ export default function SignupTeacherScreen({ navigation }) {
           {/* 가입 버튼 */}
           <TouchableOpacity
             onPress={handleSignup}
-            activeOpacity={0.8}
+            activeOpacity={0.7}
+            className="rounded-xl py-4 items-center mt-2"
             style={{
-              shadowColor: AUTH_SHADOW_COLORS.primary,
-              shadowOffset: { width: 0, height: 4 },
-              shadowOpacity: 0.3,
-              shadowRadius: 8,
-              elevation: 4,
+              backgroundColor: AUTH_COLORS.black,
             }}
           >
-            <LinearGradient colors={AUTH_GRADIENTS.purpleToPink} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} className="rounded-xl py-4 items-center mt-2">
-              <Text className="text-white text-lg font-bold">가입하기</Text>
-            </LinearGradient>
+            <Text className="text-lg font-semibold" style={{ color: AUTH_COLORS.white }}>
+              시작하기
+            </Text>
           </TouchableOpacity>
-        </View>
-      </ScrollView>
-    </SafeAreaView>
+            </View>
+          </View>
+        </ScrollView>
+      </SafeAreaView>
+    </LinearGradient>
   );
 }

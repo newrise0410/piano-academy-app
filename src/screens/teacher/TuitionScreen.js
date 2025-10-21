@@ -3,18 +3,24 @@ import { View, ScrollView, TouchableOpacity, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Text, ScreenHeader } from '../../components/common';
-import { useStudentStore } from '../../store';
+import { useStudentStore, usePaymentStore } from '../../store';
+import { useUnpaidStudents } from '../../hooks/useUnpaidStudents';
 import TEACHER_COLORS, { TEACHER_GRADIENTS, TEACHER_OVERLAY_COLORS } from '../../styles/teacher_colors';
 import { formatCurrency, formatTicketDisplay } from '../../utils';
 
 export default function TuitionScreen() {
   // Zustand Store
   const { students, fetchStudents } = useStudentStore();
+  const { fetchAllPayments } = usePaymentStore();
 
-  // Fetch students on mount
+  // 미납 학생 Hook 사용 (DashboardScreen과 통합)
+  const unpaidStudentsData = useUnpaidStudents();
+
+  // Fetch students and payments on mount
   useEffect(() => {
     fetchStudents();
-  }, [fetchStudents]);
+    fetchAllPayments();
+  }, [fetchStudents, fetchAllPayments]);
 
   const [editingPrice, setEditingPrice] = useState(null);
   const [prices, setPrices] = useState({
@@ -28,7 +34,7 @@ export default function TuitionScreen() {
 
   // 실제 데이터 기반 통계 계산
   const stats = useMemo(() => {
-    const unpaidCount = students.filter(s => s.unpaid).length;
+    const unpaidCount = unpaidStudentsData.length;
     const oneSessionCount = students.filter(s => s.ticketType === 'count' && s.ticketCount === 1).length;
     const twoSessionCount = students.filter(s => s.ticketType === 'count' && s.ticketCount === 2).length;
     const normalCount = students.length - unpaidCount - oneSessionCount - twoSessionCount;
@@ -38,20 +44,18 @@ export default function TuitionScreen() {
       lastWeek: twoSessionCount,
       unpaid: unpaidCount,
     };
-  }, [students]);
+  }, [students, unpaidStudentsData]);
 
-  // 미납자 목록 (실제 데이터)
+  // 미납자 목록 (화면에 맞게 포맷팅)
   const unpaidStudents = useMemo(() => {
-    return students
-      .filter(s => s.unpaid)
-      .map(s => ({
-        id: s.id,
-        name: s.name,
-        deadline: '미결제',
-        level: s.level,
-        ticket: formatTicketDisplay(s),
-      }));
-  }, [students]);
+    return unpaidStudentsData.map(student => ({
+      id: student.id,
+      name: student.name,
+      deadline: student.lastPaymentDate,
+      level: student.level,
+      ticket: formatTicketDisplay(student),
+    }));
+  }, [unpaidStudentsData]);
 
   // 잔여 1회 학생 (실제 데이터)
   const oneSessionLeft = useMemo(() => {
