@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import React, { useState, useEffect, useMemo } from 'react';
+import { View, ScrollView, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import {
@@ -13,36 +13,70 @@ import {
   ScreenHeader
 } from '../../components/common';
 import TEACHER_COLORS, { TEACHER_SHADOW_COLORS, TEACHER_OVERLAY_COLORS } from '../../styles/teacher_colors';
-import { useStudentStore } from '../../store';
+import { useStudentStore, usePaymentStore, useAttendanceStore } from '../../store';
 import { useToastStore } from '../../store';
 import { formatDate, formatCurrency } from '../../utils';
 import AiMemoEditor from '../../components/teacher/AiMemoEditor';
 
 export default function StudentDetailScreen({ route, navigation }) {
-  const { student } = route?.params || {};
+  const { studentId } = route?.params || {};
 
   // Zustand Store
-  const { deleteStudent, loading } = useStudentStore();
+  const { students, deleteStudent, loading: studentLoading } = useStudentStore();
+  const { payments, fetchAllPayments } = usePaymentStore();
+  const { records, fetchAllRecords } = useAttendanceStore();
   const toast = useToastStore();
 
   const [activeTab, setActiveTab] = useState('정보');
   const [memo, setMemo] = useState('');
+  const [loading, setLoading] = useState(true);
 
-  // 출석 관련 상태
-  const [attendanceRecords, setAttendanceRecords] = useState([
-    { id: '1', date: '2025.01.15', status: 'present', note: '' },
-    { id: '2', date: '2025.01.13', status: 'present', note: '30분 조기 하원' },
-    { id: '3', date: '2025.01.10', status: 'absent', note: '학교 행사' },
-    { id: '4', date: '2025.01.08', status: 'present', note: '' },
-    { id: '5', date: '2025.01.06', status: 'late', note: '10분 지각' },
-  ]);
+  // 학생 정보 가져오기
+  const student = useMemo(() => {
+    return students.find(s => s.id === studentId);
+  }, [students, studentId]);
 
-  // 수강료 관련 상태
-  const [paymentRecords, setPaymentRecords] = useState([
-    { id: '1', date: '2025.01.01', amount: 280000, type: '8회권', status: 'paid', method: '카드' },
-    { id: '2', date: '2024.12.01', amount: 280000, type: '8회권', status: 'paid', method: '현금' },
-    { id: '3', date: '2024.11.01', amount: 280000, type: '8회권', status: 'paid', method: '카드' },
-  ]);
+  // 학생의 출석 기록 가져오기
+  const attendanceRecords = useMemo(() => {
+    return records
+      .filter(r => r.studentId === studentId)
+      .sort((a, b) => new Date(b.date) - new Date(a.date));
+  }, [records, studentId]);
+
+  // 학생의 결제 기록 가져오기
+  const paymentRecords = useMemo(() => {
+    return payments
+      .filter(p => p.studentId === studentId)
+      .sort((a, b) => new Date(b.date) - new Date(a.date));
+  }, [payments, studentId]);
+
+  // 출석 통계 계산
+  const attendanceStats = useMemo(() => {
+    const now = new Date();
+    const thisMonth = attendanceRecords.filter(r => {
+      const recordDate = new Date(r.date);
+      return recordDate.getMonth() === now.getMonth() &&
+             recordDate.getFullYear() === now.getFullYear();
+    });
+
+    const present = thisMonth.filter(r => r.status === 'present').length;
+    const absent = thisMonth.filter(r => r.status === 'absent').length;
+    const late = thisMonth.filter(r => r.status === 'late').length;
+    const total = thisMonth.length;
+    const rate = total > 0 ? Math.round((present / total) * 100) : 0;
+
+    return { present, absent, late, rate, total };
+  }, [attendanceRecords]);
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const loadData = async () => {
+    setLoading(true);
+    await Promise.all([fetchAllPayments(), fetchAllRecords()]);
+    setLoading(false);
+  };
 
   const tabs = ['정보', '진도', '출석', '수강료'];
 
@@ -84,7 +118,6 @@ export default function StudentDetailScreen({ route, navigation }) {
     );
   };
 
-
   // 출석 상태 배지 색상
   const getAttendanceStatusColor = (status) => {
     switch (status) {
@@ -115,36 +148,33 @@ export default function StudentDetailScreen({ route, navigation }) {
 
   // 새 결제 추가
   const handleAddPayment = () => {
-    Alert.prompt(
-      '수강료 등록',
-      '금액을 입력하세요',
-      [
-        { text: '취소', style: 'cancel' },
-        {
-          text: '등록',
-          onPress: (amount) => {
-            if (amount && !isNaN(amount)) {
-              const newPayment = {
-                id: Date.now().toString(),
-                date: new Date().toISOString().split('T')[0].replace(/-/g, '.'),
-                amount: parseInt(amount),
-                type: student?.ticketType === 'count' ? `${student?.ticketCount}회권` : '기간권',
-                status: 'paid',
-                method: '카드',
-              };
-              setPaymentRecords([newPayment, ...paymentRecords]);
-              Alert.alert('완료', '수강료가 등록되었습니다.');
-            }
-          },
-        },
-      ],
-      'plain-text',
-      '',
-      'numeric'
-    );
+    toast.info('결제 등록 기능은 수강료 탭에서 사용할 수 있습니다');
+  };
+
+  // 날짜 포맷 함수
+  const formatDisplayDate = (dateStr) => {
+    if (!dateStr) return '-';
+    try {
+      const date = new Date(dateStr);
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      return `${year}.${month}.${day}`;
+    } catch {
+      return dateStr;
+    }
   };
 
   const renderTabContent = () => {
+    if (loading) {
+      return (
+        <View className="flex-1 items-center justify-center py-20">
+          <ActivityIndicator size="large" color={TEACHER_COLORS.primary.DEFAULT} />
+          <Text className="text-gray-500 mt-4">데이터를 불러오는 중...</Text>
+        </View>
+      );
+    }
+
     switch (activeTab) {
       case '정보':
         return (
@@ -155,17 +185,23 @@ export default function StudentDetailScreen({ route, navigation }) {
 
               <View className="flex-row justify-between items-center py-2 border-b border-gray-100">
                 <Text className="text-sm text-gray-600">생년월일</Text>
-                <Text className="text-sm font-semibold text-gray-800">2015.03.15</Text>
+                <Text className="text-sm font-semibold text-gray-800">
+                  {student?.birthDate || '-'}
+                </Text>
               </View>
 
               <View className="flex-row justify-between items-center py-2 border-b border-gray-100">
                 <Text className="text-sm text-gray-600">등록일</Text>
-                <Text className="text-sm font-semibold text-gray-800">2024.01.10</Text>
+                <Text className="text-sm font-semibold text-gray-800">
+                  {formatDisplayDate(student?.createdAt) || '-'}
+                </Text>
               </View>
 
               <View className="flex-row justify-between items-center py-2">
                 <Text className="text-sm text-gray-600">연락처</Text>
-                <Text className="text-sm font-semibold text-primary">김OO (010-1234-5678)</Text>
+                <Text className="text-sm font-semibold text-primary">
+                  {student?.parentName || '학부모'} ({student?.parentPhone || '-'})
+                </Text>
               </View>
             </View>
 
@@ -251,19 +287,25 @@ export default function StudentDetailScreen({ route, navigation }) {
               <Text className="text-base font-bold text-gray-800 mb-3">이번 달 출석률</Text>
               <View className="flex-row justify-around">
                 <View className="items-center">
-                  <Text className="text-2xl font-bold" style={{ color: TEACHER_COLORS.success[600] }}>8</Text>
+                  <Text className="text-2xl font-bold" style={{ color: TEACHER_COLORS.success[600] }}>
+                    {attendanceStats.present}
+                  </Text>
                   <Text className="text-xs text-gray-500 mt-1">출석</Text>
                 </View>
                 <View className="items-center">
-                  <Text className="text-2xl font-bold" style={{ color: TEACHER_COLORS.red[600] }}>1</Text>
+                  <Text className="text-2xl font-bold" style={{ color: TEACHER_COLORS.red[600] }}>
+                    {attendanceStats.absent}
+                  </Text>
                   <Text className="text-xs text-gray-500 mt-1">결석</Text>
                 </View>
                 <View className="items-center">
-                  <Text className="text-2xl font-bold" style={{ color: TEACHER_COLORS.orange[600] }}>1</Text>
+                  <Text className="text-2xl font-bold" style={{ color: TEACHER_COLORS.orange[600] }}>
+                    {attendanceStats.late}
+                  </Text>
                   <Text className="text-xs text-gray-500 mt-1">지각</Text>
                 </View>
                 <View className="items-center">
-                  <Text className="text-2xl font-bold text-primary">80%</Text>
+                  <Text className="text-2xl font-bold text-primary">{attendanceStats.rate}%</Text>
                   <Text className="text-xs text-gray-500 mt-1">출석률</Text>
                 </View>
               </View>
@@ -272,27 +314,36 @@ export default function StudentDetailScreen({ route, navigation }) {
             {/* 출석 기록 */}
             <View className="bg-white rounded-2xl p-4">
               <Text className="text-base font-bold text-gray-800 mb-3">출석 기록</Text>
-              {attendanceRecords.map((record) => {
-                const statusInfo = getAttendanceStatusColor(record.status);
-                return (
-                  <View key={record.id} className="flex-row items-center py-3 border-b border-gray-100">
-                    <View className="flex-1">
-                      <Text className="text-sm font-semibold text-gray-800 mb-1">{record.date}</Text>
-                      {record.note ? (
-                        <Text className="text-xs text-gray-500">{record.note}</Text>
-                      ) : null}
+              {attendanceRecords.length > 0 ? (
+                attendanceRecords.map((record) => {
+                  const statusInfo = getAttendanceStatusColor(record.status);
+                  return (
+                    <View key={record.id} className="flex-row items-center py-3 border-b border-gray-100">
+                      <View className="flex-1">
+                        <Text className="text-sm font-semibold text-gray-800 mb-1">
+                          {formatDisplayDate(record.date)}
+                        </Text>
+                        {record.note ? (
+                          <Text className="text-xs text-gray-500">{record.note}</Text>
+                        ) : null}
+                      </View>
+                      <View
+                        className="px-3 py-1 rounded-full"
+                        style={{ backgroundColor: statusInfo.bg }}
+                      >
+                        <Text className="text-xs font-bold" style={{ color: statusInfo.text }}>
+                          {statusInfo.label}
+                        </Text>
+                      </View>
                     </View>
-                    <View
-                      className="px-3 py-1 rounded-full"
-                      style={{ backgroundColor: statusInfo.bg }}
-                    >
-                      <Text className="text-xs font-bold" style={{ color: statusInfo.text }}>
-                        {statusInfo.label}
-                      </Text>
-                    </View>
-                  </View>
-                );
-              })}
+                  );
+                })
+              ) : (
+                <View className="py-12 items-center">
+                  <Ionicons name="calendar-outline" size={48} color={TEACHER_COLORS.gray[200]} />
+                  <Text className="text-gray-400 mt-3">출석 기록이 없습니다</Text>
+                </View>
+              )}
             </View>
           </View>
         );
@@ -318,14 +369,14 @@ export default function StudentDetailScreen({ route, navigation }) {
                   {student?.ticketType === 'count' && (
                     <View className="bg-white rounded-full px-3 py-1">
                       <Text className="text-xs font-bold" style={{ color: TEACHER_COLORS.purple[600] }}>
-                        {student?.ticketCount}회 남음
+                        {student?.ticketCount || 0}회 남음
                       </Text>
                     </View>
                   )}
                 </View>
                 {student?.ticketType === 'period' && (
                   <Text className="text-sm text-gray-600">
-                    {student?.ticketPeriod?.start} ~ {student?.ticketPeriod?.end}
+                    {student?.ticketPeriod?.start || '-'} ~ {student?.ticketPeriod?.end || '-'}
                   </Text>
                 )}
               </View>
@@ -344,50 +395,63 @@ export default function StudentDetailScreen({ route, navigation }) {
                 </TouchableOpacity>
               </View>
 
-              {paymentRecords.map((record) => {
-                const statusInfo = getPaymentStatusColor(record.status);
-                return (
-                  <View
-                    key={record.id}
-                    className="py-3 border-b border-gray-100"
-                  >
-                    <View className="flex-row items-start justify-between mb-2">
-                      <View className="flex-1">
-                        <View className="flex-row items-center mb-1">
-                          <Text className="text-sm font-semibold text-gray-800">
-                            {record.type}
-                          </Text>
-                          <View
-                            className="ml-2 px-2 py-0.5 rounded-full"
-                            style={{ backgroundColor: statusInfo.bg }}
-                          >
-                            <Text className="text-xs font-bold" style={{ color: statusInfo.text }}>
-                              {statusInfo.label}
+              {paymentRecords.length > 0 ? (
+                <>
+                  {paymentRecords.map((record) => {
+                    const statusInfo = getPaymentStatusColor(record.status);
+                    return (
+                      <View
+                        key={record.id}
+                        className="py-3 border-b border-gray-100"
+                      >
+                        <View className="flex-row items-start justify-between mb-2">
+                          <View className="flex-1">
+                            <View className="flex-row items-center mb-1">
+                              <Text className="text-sm font-semibold text-gray-800">
+                                {record.type || '수강료'}
+                              </Text>
+                              <View
+                                className="ml-2 px-2 py-0.5 rounded-full"
+                                style={{ backgroundColor: statusInfo.bg }}
+                              >
+                                <Text className="text-xs font-bold" style={{ color: statusInfo.text }}>
+                                  {statusInfo.label}
+                                </Text>
+                              </View>
+                            </View>
+                            <Text className="text-xs text-gray-500">
+                              {formatDisplayDate(record.date)}
+                            </Text>
+                          </View>
+                          <View className="items-end">
+                            <Text className="text-base font-bold text-gray-800">
+                              {formatCurrency(record.amount)}
+                            </Text>
+                            <Text className="text-xs text-gray-500 mt-1">
+                              {record.method || '-'}
                             </Text>
                           </View>
                         </View>
-                        <Text className="text-xs text-gray-500">{record.date}</Text>
                       </View>
-                      <View className="items-end">
-                        <Text className="text-base font-bold text-gray-800">
-                          {formatCurrency(record.amount)}
-                        </Text>
-                        <Text className="text-xs text-gray-500 mt-1">{record.method}</Text>
-                      </View>
+                    );
+                  })}
+
+                  {/* 총 결제 금액 */}
+                  <View className="mt-4 pt-4 border-t border-gray-200">
+                    <View className="flex-row justify-between items-center">
+                      <Text className="text-sm font-semibold text-gray-600">총 결제 금액</Text>
+                      <Text className="text-lg font-bold text-primary">
+                        {formatCurrency(paymentRecords.reduce((sum, record) => sum + (record.amount || 0), 0))}
+                      </Text>
                     </View>
                   </View>
-                );
-              })}
-
-              {/* 총 결제 금액 */}
-              <View className="mt-4 pt-4 border-t border-gray-200">
-                <View className="flex-row justify-between items-center">
-                  <Text className="text-sm font-semibold text-gray-600">총 결제 금액</Text>
-                  <Text className="text-lg font-bold text-primary">
-                    {formatCurrency(paymentRecords.reduce((sum, record) => sum + record.amount, 0))}
-                  </Text>
+                </>
+              ) : (
+                <View className="py-12 items-center">
+                  <Ionicons name="card-outline" size={48} color={TEACHER_COLORS.gray[200]} />
+                  <Text className="text-gray-400 mt-3">결제 내역이 없습니다</Text>
                 </View>
-              </View>
+              )}
             </View>
           </View>
         );
@@ -396,6 +460,17 @@ export default function StudentDetailScreen({ route, navigation }) {
         return null;
     }
   };
+
+  if (!student) {
+    return (
+      <SafeAreaView className="flex-1 bg-gray-50">
+        <ScreenHeader title="학생 상세" navigation={navigation} />
+        <View className="flex-1 items-center justify-center">
+          <Text className="text-gray-500">학생 정보를 찾을 수 없습니다</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView className="flex-1 bg-gray-50">

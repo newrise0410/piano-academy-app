@@ -37,6 +37,7 @@ import {
   useAuthStore
 } from '../../store';
 import { getParentContactNeeds } from '../../services/dashboardService';
+import { getTeacherMenuSections } from '../../config/sidebarConfig';
 
 export default function DashboardScreen({ navigation }) {
   const { stats, loading: statsLoading, refresh: refreshStats } = useDashboard();
@@ -96,6 +97,16 @@ export default function DashboardScreen({ navigation }) {
       unsubscribeNotifications();
     };
   }, [user?.uid]);
+
+  // 화면 포커스 시 활동 새로고침
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('focus', () => {
+      refreshActivities();
+      refreshStats();
+    });
+
+    return unsubscribe;
+  }, [navigation]);
 
   const onRefresh = async () => {
     await Promise.all([
@@ -213,146 +224,7 @@ export default function DashboardScreen({ navigation }) {
   const [sidebarVisible, setSidebarVisible] = useState(false);
 
   // 선생님용 사이드바 메뉴 설정
-  const teacherMenuSections = [
-    {
-      title: '사용자 관련',
-      items: [
-        {
-          icon: 'person-outline',
-          label: '내 정보',
-          onPress: () => {
-            console.log('내 정보');
-            setSidebarVisible(false);
-          },
-        },
-        {
-          icon: 'key-outline',
-          label: '계정 설정',
-          onPress: () => {
-            console.log('계정 설정');
-            setSidebarVisible(false);
-          },
-        },
-        {
-          icon: 'business-outline',
-          label: '학원 선택',
-          onPress: () => {
-            console.log('학원 선택');
-            setSidebarVisible(false);
-          },
-        },
-      ],
-    },
-    {
-      title: '시스템/운영 관련',
-      items: [
-        {
-          icon: 'megaphone-outline',
-          label: '공지사항',
-          onPress: () => {
-            console.log('공지사항');
-            setSidebarVisible(false);
-          },
-        },
-        {
-          icon: 'people-outline',
-          label: '강사 관리',
-          onPress: () => {
-            console.log('강사 관리');
-            setSidebarVisible(false);
-          },
-        },
-        {
-          icon: 'book-outline',
-          label: '수업 관리',
-          onPress: () => {
-            console.log('수업 관리');
-            setSidebarVisible(false);
-          },
-        },
-        {
-          icon: 'stats-chart-outline',
-          label: '통계/리포트',
-          onPress: () => {
-            console.log('통계/리포트');
-            setSidebarVisible(false);
-          },
-        },
-        {
-          icon: 'card-outline',
-          label: '수납 항목 설정',
-          onPress: () => {
-            console.log('수납 항목 설정');
-            setSidebarVisible(false);
-          },
-        },
-        {
-          icon: 'shield-checkmark-outline',
-          label: '권한 관리',
-          onPress: () => {
-            console.log('권한 관리');
-            setSidebarVisible(false);
-          },
-        },
-      ],
-    },
-    {
-      title: '커뮤니케이션/지원',
-      items: [
-        {
-          icon: 'mail-outline',
-          label: '쪽지',
-          onPress: () => {
-            console.log('쪽지');
-            setSidebarVisible(false);
-          },
-        },
-        {
-          icon: 'chatbubble-outline',
-          label: '1:1 문의',
-          onPress: () => {
-            console.log('1:1 문의');
-            setSidebarVisible(false);
-          },
-        },
-        {
-          icon: 'help-circle-outline',
-          label: 'FAQ/고객센터',
-          onPress: () => {
-            console.log('FAQ/고객센터');
-            setSidebarVisible(false);
-          },
-        },
-      ],
-    },
-    {
-      title: '시스템 관리',
-      items: [
-        {
-          icon: 'settings-outline',
-          label: '환경 설정',
-          onPress: () => {
-            console.log('환경 설정');
-            setSidebarVisible(false);
-          },
-        },
-        {
-          icon: 'information-circle-outline',
-          label: '앱 버전',
-          onPress: () => {
-            console.log('앱 버전');
-            setSidebarVisible(false);
-          },
-        },
-        {
-          icon: 'log-out-outline',
-          label: '로그아웃',
-          color: TEACHER_COLORS.red[500],
-          isLogout: true,
-        },
-      ],
-    },
-  ];
+  const teacherMenuSections = getTeacherMenuSections(navigation, () => setSidebarVisible(false));
 
   return (
     <SafeAreaView className="flex-1 bg-gray-50">

@@ -36,10 +36,25 @@ export const useUnpaidStudents = () => {
         .filter(p => p.status === 'paid')
         .sort((a, b) => new Date(b.date) - new Date(a.date))[0];
 
+      // 날짜 포맷팅 (YYYY-MM-DD -> YYYY.MM.DD)
+      const formatDate = (dateStr) => {
+        if (!dateStr) return '미납';
+        try {
+          const date = new Date(dateStr);
+          if (isNaN(date.getTime())) return '미납';
+          const year = date.getFullYear();
+          const month = String(date.getMonth() + 1).padStart(2, '0');
+          const day = String(date.getDate()).padStart(2, '0');
+          return `${year}.${month}.${day}`;
+        } catch {
+          return '미납';
+        }
+      };
+
       return {
         ...student,
         unpaidAmount: unpaidPayments.reduce((sum, p) => sum + (p.amount || 0), 0) || 280000,
-        lastPaymentDate: lastPayment?.date || '미납',
+        lastPaymentDate: formatDate(lastPayment?.date),
       };
     });
   }, [students, payments]);

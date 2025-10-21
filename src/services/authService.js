@@ -187,10 +187,11 @@ export const changePassword = async (currentPassword, newPassword) => {
 
 /**
  * 프로필 업데이트
+ * @param {string} userId - 사용자 ID (선택)
  * @param {Object} profileData - 업데이트할 프로필 정보
  * @returns {Promise<Object>} 결과
  */
-export const updateUserProfile = async (profileData) => {
+export const updateUserProfile = async (userId, profileData) => {
   try {
     const user = auth.currentUser;
     if (!user) {
@@ -205,12 +206,15 @@ export const updateUserProfile = async (profileData) => {
       });
     }
 
-    // Firestore 사용자 정보 업데이트
-    const userDocRef = doc(db, 'users', user.uid);
-    await updateDoc(userDocRef, {
+    // Firestore 사용자 정보 업데이트 (문서가 없으면 생성)
+    const uid = userId || user.uid;
+    const userDocRef = doc(db, 'users', uid);
+
+    // merge: true 옵션으로 문서가 없으면 생성, 있으면 업데이트
+    await setDoc(userDocRef, {
       ...profileData,
       updatedAt: serverTimestamp(),
-    });
+    }, { merge: true });
 
     return {
       success: true,
@@ -220,7 +224,7 @@ export const updateUserProfile = async (profileData) => {
     console.error('Update profile error:', error);
     return {
       success: false,
-      error: getErrorMessage(error.code),
+      error: getErrorMessage(error.code) || error.message,
       errorCode: error.code,
     };
   }

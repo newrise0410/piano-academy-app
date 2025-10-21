@@ -9,7 +9,19 @@ import { NoticeRepository } from '../repositories/NoticeRepository';
 // 시간 포맷 헬퍼
 const formatActivityTime = (timestamp) => {
   const now = new Date();
-  const activityTime = new Date(timestamp);
+
+  // Firestore Timestamp 객체 처리
+  let activityTime;
+  if (timestamp && typeof timestamp.toDate === 'function') {
+    activityTime = timestamp.toDate();
+  } else if (timestamp instanceof Date) {
+    activityTime = timestamp;
+  } else if (typeof timestamp === 'string' || typeof timestamp === 'number') {
+    activityTime = new Date(timestamp);
+  } else {
+    return '알 수 없음';
+  }
+
   const diffMs = now - activityTime;
   const diffMins = Math.floor(diffMs / 60000);
   const diffHours = Math.floor(diffMs / 3600000);

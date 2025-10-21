@@ -2,9 +2,10 @@ import React, { useState, useMemo } from 'react';
 import { View, ScrollView, TouchableOpacity, RefreshControl, Linking, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { Text, LevelBadge, UnpaidBadge, Button, ScreenHeader } from '../../components/common';
+import { Text, Button, ScreenHeader } from '../../components/common';
 import TEACHER_COLORS from '../../styles/teacher_colors';
-import { useStudentStore, useToastStore } from '../../store';
+import { useStudentStore, usePaymentStore, useToastStore } from '../../store';
+import { useUnpaidStudents } from '../../hooks/useUnpaidStudents';
 import { formatCurrency } from '../../utils';
 
 /**
@@ -13,27 +14,26 @@ import { formatCurrency } from '../../utils';
  * 추가 기능: 학생 상세 이동, 수강료 입력, 정렬 옵션
  */
 export default function UnpaidStudentsScreen({ navigation }) {
-  const { students, fetchStudents } = useStudentStore();
+  const { fetchStudents } = useStudentStore();
+  const { fetchAllPayments } = usePaymentStore();
   const toast = useToastStore();
+
+  // useUnpaidStudents 훅 사용 - 실제 DB에서 마지막 결제일 및 미납 금액 가져오기
+  const unpaidStudentsData = useUnpaidStudents();
+
   const [refreshing, setRefreshing] = useState(false);
   const [sortBy, setSortBy] = useState('date'); // 'date' | 'amount' | 'name'
 
   // 새로고침
   const onRefresh = async () => {
     setRefreshing(true);
-    await fetchStudents();
+    await Promise.all([fetchStudents(), fetchAllPayments()]);
     setRefreshing(false);
   };
 
-  // 미납 학생 필터링 및 정렬
+  // 미납 학생 정렬
   const unpaidStudents = useMemo(() => {
-    const filtered = (students || [])
-      .filter(s => s.unpaid === true)
-      .map(s => ({
-        ...s,
-        unpaidAmount: 280000, // 실제로는 DB에서
-        lastPaymentDate: '2025.01.05', // 실제로는 DB에서
-      }));
+    const filtered = [...unpaidStudentsData];
 
     // 정렬
     if (sortBy === 'date') {
@@ -47,30 +47,17 @@ export default function UnpaidStudentsScreen({ navigation }) {
     } else {
       return filtered.sort((a, b) => a.name.localeCompare(b.name));
     }
-  }, [students, sortBy]);
+  }, [unpaidStudentsData, sortBy]);
 
   // 총 미납 금액
   const totalUnpaid = useMemo(() => {
     return unpaidStudents.reduce((sum, s) => sum + (s.unpaidAmount || 0), 0);
   }, [unpaidStudents]);
 
-  // 연락하기
-  const handleContact = (student) => {
-    if (student.parentPhone) {
-      Alert.alert(
-        '학부모 연락',
-        `${student.name} 학부모님께 전화하시겠습니까?`,
-        [
-          { text: '취소', style: 'cancel' },
-          {
-            text: '전화',
-            onPress: () => Linking.openURL(`tel:${student.parentPhone}`),
-          },
-        ]
-      );
-    } else {
-      toast.warning('등록된 연락처가 없습니다');
-    }
+  // 알림 발송
+  const handleSendNotice = (student) => {
+    // TODO: 알림장 작성 화면으로 이동하거나 수강료 안내 템플릿 사용
+    toast.info('알림 발송 기능 준비 중');
   };
 
   // 수강료 입력
@@ -169,63 +156,56 @@ export default function UnpaidStudentsScreen({ navigation }) {
         ) : (
           <View className="px-5 py-4">
             {unpaidStudents.map((student, idx) => (
-              <TouchableOpacity
+              <View
                 key={student.id}
-                onPress={() => navigation.navigate('StudentDetail', { studentId: student.id })}
-                activeOpacity={0.7}
-                className="bg-white border-2 border-red-200 rounded-xl p-4 mb-3"
+                className="bg-white rounded-xl p-4 mb-3"
               >
-                <View className="flex-row items-start justify-between mb-3">
+                {/* 상단: 학생 정보 + 알림 버튼 */}
+                <TouchableOpacity
+                  onPress={() => navigation.navigate('StudentDetail', { studentId: student.id })}
+                  activeOpacity={0.7}
+                  className="flex-row items-center justify-between mb-3"
+                >
                   <View className="flex-1">
                     {/* 학생 정보 */}
-                    <View className="flex-row items-center mb-2">
-                      <Text className="text-base font-bold text-gray-800 mr-2">
+                    <View className="flex-row items-center mb-1">
+                      <Text className="text-base font-bold text-gray-800">
                         {student.name}
                       </Text>
-                      <LevelBadge level={student.level} />
-                      <View className="ml-2">
-                        <UnpaidBadge variant="small" />
+                      <View className="rounded-full px-2 py-0.5 ml-2" style={{ backgroundColor: TEACHER_COLORS.purple[100] }}>
+                        <Text className="text-xs font-bold text-primary">{student.level}</Text>
                       </View>
-                    </View>
-
-                    {/* 수업 일정 */}
-                    <View className="flex-row items-center mb-1">
-                      <Ionicons name="calendar-outline" size={14} color={TEACHER_COLORS.gray[500]} />
-                      <Text className="text-sm text-gray-600 ml-1">
-                        {student.schedule}
-                      </Text>
-                    </View>
-
-                    {/* 미납 금액 */}
-                    <View className="flex-row items-center mb-1">
-                      <Ionicons name="cash-outline" size={14} color={TEACHER_COLORS.red[600]} />
-                      <Text className="text-sm font-bold text-red-600 ml-1">
-                        미납: {formatCurrency(student.unpaidAmount || 280000)}
-                      </Text>
                     </View>
 
                     {/* 마지막 납부일 */}
-                    {student.lastPaymentDate && (
-                      <View className="flex-row items-center">
-                        <Ionicons name="time-outline" size={14} color={TEACHER_COLORS.gray[500]} />
-                        <Text className="text-xs text-gray-500 ml-1">
-                          마지막 납부: {student.lastPaymentDate}
-                        </Text>
-                      </View>
-                    )}
+                    <Text className="text-xs text-gray-600 mb-1">
+                      마지막 결제: {student.lastPaymentDate}
+                    </Text>
+
+                    {/* 미납 금액 */}
+                    <View className="flex-row items-center">
+                      <Text className="text-xs text-gray-500">미납 금액: </Text>
+                      <Text className="text-xs font-semibold" style={{ color: TEACHER_COLORS.red[600] }}>
+                        {formatCurrency(student.unpaidAmount || 280000)}
+                      </Text>
+                    </View>
                   </View>
 
-                  {/* 연락 버튼 */}
+                  {/* 알림 버튼 */}
                   <TouchableOpacity
-                    onPress={() => handleContact(student)}
-                    className="w-10 h-10 bg-primary bg-opacity-10 rounded-full items-center justify-center ml-2"
+                    onPress={(e) => {
+                      e.stopPropagation();
+                      handleSendNotice(student);
+                    }}
+                    className="rounded-lg px-4 py-2.5"
+                    style={{ backgroundColor: TEACHER_COLORS.red[500] }}
                     activeOpacity={0.7}
                   >
-                    <Ionicons name="call" size={18} color={TEACHER_COLORS.primary.DEFAULT} />
+                    <Text className="text-sm font-bold text-white">알림</Text>
                   </TouchableOpacity>
-                </View>
+                </TouchableOpacity>
 
-                {/* 액션 버튼 */}
+                {/* 하단: 액션 버튼 */}
                 <View className="flex-row gap-2">
                   <Button
                     title="수강료 입력"
@@ -236,15 +216,15 @@ export default function UnpaidStudentsScreen({ navigation }) {
                     style={{ flex: 1 }}
                   />
                   <Button
-                    title="알림 발송"
-                    icon="notifications"
+                    title="상세보기"
+                    icon="person"
                     variant="outline"
                     size="small"
-                    onPress={() => toast.info('알림 발송 기능 준비 중')}
+                    onPress={() => navigation.navigate('StudentDetail', { studentId: student.id })}
                     style={{ flex: 1 }}
                   />
                 </View>
-              </TouchableOpacity>
+              </View>
             ))}
           </View>
         )}
@@ -257,7 +237,7 @@ export default function UnpaidStudentsScreen({ navigation }) {
             <Ionicons name="alert-circle" size={20} color={TEACHER_COLORS.warning[600]} />
             <View className="flex-1 ml-2">
               <Text className="text-sm text-gray-700 leading-5">
-                정기적인 안내가 중요합니다. 전화 또는 알림장으로 학부모님께 연락해주세요.
+                메시지 아이콘을 눌러 수강료 안내 알림장을 보내거나, 하단의 "알림 발송" 버튼을 이용해주세요.
               </Text>
             </View>
           </View>

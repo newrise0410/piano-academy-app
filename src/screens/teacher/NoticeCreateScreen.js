@@ -33,6 +33,8 @@ export default function NoticeCreateScreen({ navigation }) {
   const [isGenerating, setIsGenerating] = useState(false);
   const [currentStep, setCurrentStep] = useState('compose'); // 'compose' or 'selectRecipients'
   const [selectedStudents, setSelectedStudents] = useState([]);
+  const [categoryFilter, setCategoryFilter] = useState('전체');
+  const [dayFilter, setDayFilter] = useState('전체');
 
   const fadeAnim = useRef(new Animated.Value(1)).current;
   const scaleAnim = useRef(new Animated.Value(1)).current;
@@ -617,4 +619,101 @@ export default function NoticeCreateScreen({ navigation }) {
       </ScrollView>
     </SafeAreaView>
   );
+}
+
+// 템플릿 데이터
+const templates = [
+  {
+    id: '1',
+    title: '발표회',
+    emoji: '🎹',
+    color: TEACHER_COLORS.blue[50],
+    prompt: '발표회 안내',
+    generatedTitle: '[발표회 안내]',
+    generatedContent: '안녕하세요, 학부모님\n\n피아노 발표회를 안내드립니다.\n자세한 내용은 AI로 작성해주세요.\n\n감사합니다.',
+  },
+  {
+    id: '2',
+    title: '휴강 안내',
+    emoji: '📅',
+    color: TEACHER_COLORS.orange[50],
+    prompt: '휴강 안내',
+    generatedTitle: '[휴강 안내]',
+    generatedContent: '안녕하세요, 학부모님\n\n휴강 일정을 안내드립니다.\n자세한 내용은 AI로 작성해주세요.\n\n감사합니다.',
+  },
+  {
+    id: '3',
+    title: '수강료',
+    emoji: '💰',
+    color: TEACHER_COLORS.green[50],
+    prompt: '수강료 납부 안내',
+    generatedTitle: '[수강료 납부 안내]',
+    generatedContent: '안녕하세요, 학부모님\n\n수강료 납부 안내드립니다.\n자세한 내용은 AI로 작성해주세요.\n\n감사합니다.',
+  },
+  {
+    id: '4',
+    title: '직접 입력',
+    emoji: '✏️',
+    color: TEACHER_COLORS.purple[50],
+  },
+];
+
+// 필터 칩 컴포넌트
+function FilterChip({ options, value, onChange, layout = 'wrapped' }) {
+  return (
+    <View className="flex-row flex-wrap gap-2">
+      {options.map((option) => (
+        <TouchableOpacity
+          key={option.value}
+          className={`px-3 py-2 rounded-lg ${
+            value === option.value
+              ? 'bg-primary'
+              : 'bg-gray-100'
+          }`}
+          onPress={() => onChange(option.value)}
+          activeOpacity={0.7}
+        >
+          <Text
+            className={`text-sm font-semibold ${
+              value === option.value
+                ? 'text-white'
+                : 'text-gray-700'
+            }`}
+          >
+            {option.label}
+          </Text>
+        </TouchableOpacity>
+      ))}
+    </View>
+  );
+}
+
+// 레벨 뱃지 컴포넌트
+function LevelBadge({ level }) {
+  const levelColors = {
+    '초급': { bg: TEACHER_COLORS.green[50], text: TEACHER_COLORS.green[700] },
+    '중급': { bg: TEACHER_COLORS.blue[50], text: TEACHER_COLORS.blue[700] },
+    '고급': { bg: TEACHER_COLORS.purple[50], text: TEACHER_COLORS.purple[700] },
+  };
+
+  const colors = levelColors[level] || levelColors['초급'];
+
+  return (
+    <View
+      className="px-2 py-0.5 rounded"
+      style={{ backgroundColor: colors.bg }}
+    >
+      <Text className="text-xs font-semibold" style={{ color: colors.text }}>
+        {level}
+      </Text>
+    </View>
+  );
+}
+
+// 날짜 포맷 함수
+function formatDate(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}.${month}.${day}`;
 }
