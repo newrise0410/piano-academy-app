@@ -69,7 +69,7 @@ export default function ChildRegistrationRequestScreen({ navigation }) {
 
   return (
     <SafeAreaView className="flex-1 bg-gray-50">
-      <ScreenHeader title="자녀 등록 요청" />
+      <ScreenHeader title="자녀 등록 요청" colorScheme="parent" />
 
       <ScrollView className="flex-1 px-5 py-4">
         {/* 안내 카드 */}

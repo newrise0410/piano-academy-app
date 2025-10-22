@@ -19,7 +19,7 @@ export default function ProgressScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-gray-50">
-      <ScreenHeader title="진도 현황" />
+      <ScreenHeader title="진도 현황" colorScheme="parent" />
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
         <View className="px-5 py-4">
           {/* 현재 교재 진도 */}

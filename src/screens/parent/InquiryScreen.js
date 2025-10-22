@@ -3,8 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { View, ScrollView, TouchableOpacity, RefreshControl, ActivityIndicator, Modal, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Text } from '../../components/common';
+import { Text, ScreenHeader } from '../../components/common';
 import { useAuthStore, useToastStore } from '../../store';
 import PARENT_COLORS from '../../styles/parent_colors';
 import { getInquiriesByParent, createInquiry } from '../../services/firestoreService';
@@ -112,35 +111,22 @@ export default function InquiryScreen() {
   }
 
   return (
-    <View className="flex-1 bg-gray-50">
-      <SafeAreaView className="flex-1">
-        <ScrollView
-          className="flex-1"
-          showsVerticalScrollIndicator={false}
-          refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-          }
-        >
-          {/* 그라디언트 헤더 */}
-          <LinearGradient
-            colors={['#3B82F6', '#1D4ED8']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={{ paddingTop: 50, paddingBottom: 80 }}
-          >
-            <View className="px-5">
-              <Text className="text-white text-3xl font-bold mb-2">문의하기</Text>
-              <View className="flex-row items-center">
-                <Text className="text-white/80 text-sm">선생님에게 문의하기</Text>
-                <View className="bg-white/20 rounded-full px-3 py-1 ml-3">
-                  <Text className="text-white font-bold text-sm">{inquiries.length}건</Text>
-                </View>
-              </View>
-            </View>
-          </LinearGradient>
-
-          {/* 플로팅 통계 카드 */}
-          <View className="px-5" style={{ marginTop: -60 }}>
+    <>
+      <SafeAreaView className="flex-1 bg-gray-50">
+        <ScreenHeader
+          title="문의하기"
+          subtitle={`총 ${inquiries.length}건`}
+          colorScheme="parent"
+        />
+      <ScrollView
+        className="flex-1"
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
+      >
+        {/* 통계 카드 */}
+        <View className="px-5 pt-4">
             <View
               className="bg-white rounded-3xl p-5 mb-4"
               style={{
@@ -442,6 +428,6 @@ export default function InquiryScreen() {
           </View>
         </View>
       </Modal>
-    </View>
+    </>
   );
 }

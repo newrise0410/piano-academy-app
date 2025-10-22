@@ -199,9 +199,10 @@ export default function DashboardScreen({ navigation }) {
             try {
               await NoticeRepository.create({
                 title: '수강료 미납 안내',
-                content: '수강료가 미납 중입니다. 확인 부탁드립니다.',
+                content: '수강료가 미납 중입니다. 수강료 탭을 눌러 확인해주세요.',
                 recipients: [student.id],
                 type: 'payment',
+                navigateTo: 'Tuition', // 클릭 시 수강료 탭으로 이동
                 createdAt: new Date().toISOString(),
                 confirmed: 0,
                 total: 1,

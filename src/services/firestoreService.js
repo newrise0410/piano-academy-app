@@ -709,11 +709,11 @@ export const markNoticeAsRead = async (noticeId, studentId) => {
       return { success: true, message: '이미 읽음 처리되었습니다' };
     }
 
-    // 읽음 정보 추가
+    // 읽음 정보 추가 (배열 안에서는 serverTimestamp() 사용 불가)
     await updateDoc(docRef, {
       readBy: [...readBy, {
         studentId,
-        readAt: serverTimestamp(),
+        readAt: new Date().toISOString(),
       }],
       confirmed: (noticeData.confirmed || 0) + 1,
       updatedAt: serverTimestamp(),
@@ -2157,6 +2157,125 @@ export const deleteInquiry = async (inquiryId) => {
     return { success: true };
   } catch (error) {
     console.error('Delete inquiry error:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+/**
+ * ==========================================
+ * 교재 관리 (Materials Collection)
+ * ==========================================
+ */
+
+/**
+ * 교재 목록 가져오기
+ * @param {string} academyId - 학원 ID
+ * @returns {Promise<Object>} { success, data, error }
+ */
+export const getMaterials = async (academyId) => {
+  try {
+    const materialsRef = collection(db, 'materials');
+    const q = query(
+      materialsRef,
+      where('academyId', '==', academyId),
+      orderBy('createdAt', 'desc')
+    );
+    const querySnapshot = await getDocs(q);
+
+    const materials = [];
+    querySnapshot.forEach((doc) => {
+      materials.push({
+        id: doc.id,
+        ...doc.data(),
+      });
+    });
+
+    return { success: true, data: materials };
+  } catch (error) {
+    console.error('Get materials error:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+/**
+ * 교재 추가
+ * @param {Object} materialData - 교재 데이터
+ * @returns {Promise<Object>} { success, id, error }
+ */
+export const createMaterial = async (materialData) => {
+  try {
+    const materialsRef = collection(db, 'materials');
+    const docRef = await addDoc(materialsRef, {
+      ...materialData,
+      createdAt: serverTimestamp(),
+    });
+
+    return { success: true, id: docRef.id };
+  } catch (error) {
+    console.error('Create material error:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+/**
+ * 교재 수정
+ * @param {string} materialId - 교재 ID
+ * @param {Object} updateData - 수정할 데이터
+ * @returns {Promise<Object>} { success, error }
+ */
+export const updateMaterial = async (materialId, updateData) => {
+  try {
+    const materialRef = doc(db, 'materials', materialId);
+    await updateDoc(materialRef, {
+      ...updateData,
+      updatedAt: serverTimestamp(),
+    });
+
+    return { success: true };
+  } catch (error) {
+    console.error('Update material error:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+/**
+ * 교재 삭제
+ * @param {string} materialId - 교재 ID
+ * @returns {Promise<Object>} { success, error }
+ */
+export const deleteMaterial = async (materialId) => {
+  try {
+    await deleteDoc(doc(db, 'materials', materialId));
+    return { success: true };
+  } catch (error) {
+    console.error('Delete material error:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+/**
+ * 교재 ID로 교재 정보 가져오기
+ * @param {string} materialId - 교재 ID
+ * @returns {Promise<Object>} { success, data, error }
+ */
+export const getMaterialById = async (materialId) => {
+  try {
+    const materialRef = doc(db, 'materials', materialId);
+    const docSnap = await getDoc(materialRef);
+
+    if (!docSnap.exists()) {
+      return { success: false, error: '교재를 찾을 수 없습니다' };
+    }
+
+    return {
+      success: true,
+      data: {
+        id: docSnap.id,
+        ...docSnap.data(),
+      },
+    };
+  } catch (error) {
+    console.error('Get material by ID error:', error);
     return { success: false, error: error.message };
   }
 };

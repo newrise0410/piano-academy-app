@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import Text from './Text';
 import TEACHER_COLORS from '../../styles/teacher_colors';
+import PARENT_COLORS from '../../styles/parent_colors';
 
 /**
  * ScreenHeader - 화면 상단 헤더 컴포넌트
@@ -14,6 +15,7 @@ import TEACHER_COLORS from '../../styles/teacher_colors';
  * @param {function} onBackPress - 뒤로가기 버튼 클릭 핸들러 (기본: navigation.goBack())
  * @param {ReactNode} rightButton - 우측 버튼 (optional)
  * @param {string} subtitle - 부제목 (optional)
+ * @param {string} colorScheme - 색상 테마 ('teacher' | 'parent', 기본: 'teacher')
  */
 export default function ScreenHeader({
   title,
@@ -21,8 +23,12 @@ export default function ScreenHeader({
   onBackPress,
   rightButton,
   subtitle,
+  colorScheme = 'teacher',
 }) {
   const navigation = useNavigation();
+
+  // 색상 테마 선택
+  const COLORS = colorScheme === 'parent' ? PARENT_COLORS : TEACHER_COLORS;
 
   const handleBackPress = () => {
     if (onBackPress) {
@@ -37,7 +43,7 @@ export default function ScreenHeader({
       style={{
         backgroundColor: 'rgba(255, 255, 255, 0.95)',
         borderBottomWidth: 0.5,
-        borderBottomColor: TEACHER_COLORS.gray[200],
+        borderBottomColor: COLORS.gray[200],
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 1 },
         shadowOpacity: 0.08,
@@ -55,7 +61,7 @@ export default function ScreenHeader({
               style={{
                 width: 34,
                 height: 34,
-                backgroundColor: TEACHER_COLORS.gray[100],
+                backgroundColor: COLORS.gray[100],
                 alignItems: 'center',
                 justifyContent: 'center',
               }}
@@ -64,21 +70,21 @@ export default function ScreenHeader({
               <Ionicons
                 name="chevron-back"
                 size={24}
-                color={TEACHER_COLORS.primary.DEFAULT}
+                color={COLORS.primary.DEFAULT}
               />
             </TouchableOpacity>
           )}
           <View className="flex-1">
             <Text
               className="text-xl font-bold tracking-tight"
-              style={{ color: TEACHER_COLORS.gray[900] }}
+              style={{ color: COLORS.gray[900] }}
             >
               {title}
             </Text>
             {subtitle && (
               <Text
                 className="text-sm mt-0.5"
-                style={{ color: TEACHER_COLORS.gray[500] }}
+                style={{ color: COLORS.gray[500] }}
               >
                 {subtitle}
               </Text>

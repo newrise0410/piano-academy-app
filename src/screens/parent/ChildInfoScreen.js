@@ -3,9 +3,8 @@ import React, { useState, useEffect } from 'react';
 import { View, ScrollView, RefreshControl, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import { query, collection, where, getDocs } from 'firebase/firestore';
-import { Text } from '../../components/common';
+import { Text, ScreenHeader } from '../../components/common';
 import { useAuthStore } from '../../store';
 import { getStudentById } from '../../services/firestoreService';
 import PARENT_COLORS from '../../styles/parent_colors';
@@ -96,62 +95,8 @@ export default function ChildInfoScreen() {
 
   if (!studentData) {
     return (
-      <View className="flex-1 bg-gray-50">
-        <SafeAreaView className="flex-1">
-          <ScrollView
-            className="flex-1"
-            showsVerticalScrollIndicator={false}
-            refreshControl={
-              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-            }
-          >
-            {/* 그라디언트 헤더 */}
-            <LinearGradient
-              colors={['#EC4899', '#F97316']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={{ paddingTop: 50, paddingBottom: 80 }}
-            >
-              <View className="px-5">
-                <Text className="text-white text-3xl font-bold mb-2">우리 아이 정보</Text>
-                <Text className="text-white/80 text-sm">자녀의 학습 정보</Text>
-              </View>
-            </LinearGradient>
-
-            {/* 빈 상태 */}
-            <View className="px-5" style={{ marginTop: -60 }}>
-              <View
-                className="bg-white rounded-3xl p-8 items-center"
-                style={{
-                  shadowColor: '#000',
-                  shadowOffset: { width: 0, height: 4 },
-                  shadowOpacity: 0.1,
-                  shadowRadius: 12,
-                  elevation: 8,
-                }}
-              >
-                <View className="bg-gray-100 rounded-full p-6 mb-4">
-                  <Ionicons name="person-add-outline" size={48} color={PARENT_COLORS.gray[400]} />
-                </View>
-                <Text className="text-gray-800 font-bold text-lg mb-2 text-center">
-                  학생 정보가 없습니다
-                </Text>
-                <Text className="text-gray-500 text-center">
-                  선생님이 학생 정보를 등록하면{'\n'}자동으로 표시됩니다
-                </Text>
-              </View>
-            </View>
-          </ScrollView>
-        </SafeAreaView>
-      </View>
-    );
-  }
-
-  const levelColors = getLevelColor(studentData.level);
-
-  return (
-    <View className="flex-1 bg-gray-50">
-      <SafeAreaView className="flex-1">
+      <SafeAreaView className="flex-1 bg-gray-50">
+        <ScreenHeader title="우리 아이 정보" colorScheme="parent" />
         <ScrollView
           className="flex-1"
           showsVerticalScrollIndicator={false}
@@ -159,21 +104,48 @@ export default function ChildInfoScreen() {
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
           }
         >
-          {/* 그라디언트 헤더 */}
-          <LinearGradient
-            colors={['#EC4899', '#F97316']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={{ paddingTop: 50, paddingBottom: 100 }}
-          >
-            <View className="px-5">
-              <Text className="text-white text-3xl font-bold mb-2">우리 아이 정보</Text>
-              <Text className="text-white/80 text-sm">자녀의 학습 정보</Text>
+          {/* 빈 상태 */}
+          <View className="px-5 py-8">
+            <View
+              className="bg-white rounded-3xl p-8 items-center"
+              style={{
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.1,
+                shadowRadius: 12,
+                elevation: 8,
+              }}
+            >
+              <View className="bg-gray-100 rounded-full p-6 mb-4">
+                <Ionicons name="person-add-outline" size={48} color={PARENT_COLORS.gray[400]} />
+              </View>
+              <Text className="text-gray-800 font-bold text-lg mb-2 text-center">
+                학생 정보가 없습니다
+              </Text>
+              <Text className="text-gray-500 text-center">
+                선생님이 학생 정보를 등록하면{'\n'}자동으로 표시됩니다
+              </Text>
             </View>
-          </LinearGradient>
+          </View>
+        </ScrollView>
+      </SafeAreaView>
+    );
+  }
 
-          {/* 플로팅 프로필 카드 */}
-          <View className="px-5" style={{ marginTop: -80 }}>
+  const levelColors = getLevelColor(studentData.level);
+
+  return (
+    <SafeAreaView className="flex-1 bg-gray-50">
+      <ScreenHeader title="우리 아이 정보" subtitle="자녀의 학습 정보" colorScheme="parent" />
+      <ScrollView
+        className="flex-1"
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
+      >
+        {/* 프로필 카드 */}
+        <View className="px-5 pt-4">
             <View
               className="bg-white rounded-3xl p-6 mb-4"
               style={{
@@ -376,7 +348,6 @@ export default function ChildInfoScreen() {
           </View>
         </ScrollView>
       </SafeAreaView>
-    </View>
   );
 }
 

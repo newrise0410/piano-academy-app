@@ -14,7 +14,7 @@ import {
   AppSidebar,
 } from '../../components/common';
 import PARENT_COLORS, { PARENT_GRADIENTS } from '../../styles/parent_colors';
-import { useNotificationStore, useAuthStore } from '../../store';
+import { useAuthStore } from '../../store';
 import { getStudentById, getLessonNotesByStudent, getNoticesForStudent } from '../../services/firestoreService';
 import { getParentMenuSections } from '../../config/sidebarConfig';
 import { db } from '../../config/firebase';
@@ -22,7 +22,6 @@ import { updateUserProfile } from '../../services/authService';
 
 export default function HomeScreen({ navigation }) {
   const { user } = useAuthStore();
-  const { getUnreadCount } = useNotificationStore();
   const [notificationModalVisible, setNotificationModalVisible] = useState(false);
   const [sidebarVisible, setSidebarVisible] = useState(false);
   const [studentData, setStudentData] = useState(null);
@@ -148,9 +147,6 @@ export default function HomeScreen({ navigation }) {
     setRefreshing(false);
   };
 
-  // 읽지 않은 알림 수
-  const unreadCount = getUnreadCount();
-
   // 오늘 요일 확인
   const getTodaySchedule = () => {
     if (!studentData?.schedule) return { hasClass: false };
@@ -174,6 +170,47 @@ export default function HomeScreen({ navigation }) {
   };
 
   const todaySchedule = getTodaySchedule();
+
+  // 읽지 않은 알림장 개수 (학부모 알림)
+  const unreadCount = recentNotices.filter(n => !n.isRead).length;
+
+  // 날짜 형식 포맷 함수
+  const formatDate = (dateValue) => {
+    if (!dateValue) return '날짜 없음';
+
+    let date;
+    if (dateValue.toDate) {
+      date = dateValue.toDate();
+    } else if (typeof dateValue === 'string') {
+      date = new Date(dateValue);
+    } else {
+      date = dateValue;
+    }
+
+    const now = new Date();
+    const diffTime = Math.abs(now - date);
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffDays === 0) {
+      return '오늘';
+    } else if (diffDays === 1) {
+      return '1일 전';
+    } else if (diffDays < 7) {
+      return `${diffDays}일 전`;
+    } else if (diffDays < 30) {
+      const weeks = Math.floor(diffDays / 7);
+      return `${weeks}주 전`;
+    } else if (diffDays < 365) {
+      const months = Math.floor(diffDays / 30);
+      return `${months}개월 전`;
+    } else {
+      return date.toLocaleDateString('ko-KR', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+      });
+    }
+  };
 
   if (loading) {
     return (
@@ -310,6 +347,16 @@ export default function HomeScreen({ navigation }) {
         <NotificationModal
           visible={notificationModalVisible}
           onClose={() => setNotificationModalVisible(false)}
+          userType="parent"
+          customNotifications={recentNotices}
+          onNotificationPress={(notice) => {
+            setNotificationModalVisible(false);
+            if (notice.navigateTo) {
+              navigation.navigate(notice.navigateTo);
+            } else {
+              navigation.navigate('Notice');
+            }
+          }}
         />
 
         {/* 사이드바 */}
@@ -511,7 +558,13 @@ export default function HomeScreen({ navigation }) {
                 <TouchableOpacity
                   key={notice.id}
                   activeOpacity={0.8}
-                  onPress={() => navigation.navigate('Notice')}
+                  onPress={() => {
+                    if (notice.navigateTo) {
+                      navigation.navigate(notice.navigateTo);
+                    } else {
+                      navigation.navigate('Notice');
+                    }
+                  }}
                   className="rounded-2xl p-4 mb-3"
                   style={{
                     backgroundColor: notice.isRead ? '#ffffff' : PARENT_COLORS.primary[50],
@@ -546,9 +599,17 @@ export default function HomeScreen({ navigation }) {
                       <Text className="text-gray-500 text-sm mb-1" numberOfLines={2}>
                         {notice.content || '내용이 없습니다'}
                       </Text>
-                      <Text className="text-gray-400 text-xs">
-                        {notice.createdAt?.toDate?.()?.toLocaleDateString?.('ko-KR') || notice.date || '날짜 없음'}
-                      </Text>
+                      <View className="flex-row items-center">
+                        <Text className="text-gray-400 text-xs">
+                          {formatDate(notice.createdAt || notice.date)}
+                        </Text>
+                        {notice.navigateTo === 'Tuition' && (
+                          <View className="flex-row items-center ml-2 px-2 py-0.5 rounded-full" style={{ backgroundColor: PARENT_COLORS.warning[100] }}>
+                            <Ionicons name="card" size={10} color={PARENT_COLORS.warning[600]} />
+                            <Text className="text-xs font-bold ml-1" style={{ color: PARENT_COLORS.warning[600] }}>수강료</Text>
+                          </View>
+                        )}
+                      </View>
                     </View>
                     <Ionicons name="chevron-forward" size={20} color={PARENT_COLORS.gray[300]} />
                   </View>
@@ -636,6 +697,16 @@ export default function HomeScreen({ navigation }) {
       <NotificationModal
         visible={notificationModalVisible}
         onClose={() => setNotificationModalVisible(false)}
+        userType="parent"
+        customNotifications={recentNotices}
+        onNotificationPress={(notice) => {
+          setNotificationModalVisible(false);
+          if (notice.navigateTo) {
+            navigation.navigate(notice.navigateTo);
+          } else {
+            navigation.navigate('Notice');
+          }
+        }}
       />
 
       {/* 사이드바 */}

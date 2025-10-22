@@ -4,12 +4,14 @@ import { View, ScrollView, TouchableOpacity, RefreshControl, Modal, Image, Activ
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useNavigation } from '@react-navigation/native';
 import { Text, CommentSection } from '../../components/common';
 import { getNoticesForStudent, markNoticeAsRead } from '../../services/firestoreService';
 import { useToastStore, useAuthStore } from '../../store';
 import PARENT_COLORS from '../../styles/parent_colors';
 
 export default function NoticeScreen() {
+  const navigation = useNavigation();
   const [notices, setNotices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -69,14 +71,45 @@ export default function NoticeScreen() {
     }
   };
 
-  const formatDate = (dateStr) => {
-    if (!dateStr) return '';
-    const date = new Date(dateStr);
-    return date.toLocaleDateString('ko-KR', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    });
+  const formatDate = (dateValue) => {
+    if (!dateValue) return '';
+
+    // Firebase Timestamp, ISO string, Date 객체 모두 처리
+    let date;
+    if (dateValue.toDate) {
+      // Firebase Timestamp
+      date = dateValue.toDate();
+    } else if (typeof dateValue === 'string') {
+      // ISO string
+      date = new Date(dateValue);
+    } else {
+      // Date 객체
+      date = dateValue;
+    }
+
+    const now = new Date();
+    const diffTime = Math.abs(now - date);
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffDays === 0) {
+      return '오늘';
+    } else if (diffDays === 1) {
+      return '1일 전';
+    } else if (diffDays < 7) {
+      return `${diffDays}일 전`;
+    } else if (diffDays < 30) {
+      const weeks = Math.floor(diffDays / 7);
+      return `${weeks}주 전`;
+    } else if (diffDays < 365) {
+      const months = Math.floor(diffDays / 30);
+      return `${months}개월 전`;
+    } else {
+      return date.toLocaleDateString('ko-KR', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+      });
+    }
   };
 
   const unreadCount = notices.filter(n => !n.isRead).length;
@@ -237,9 +270,17 @@ export default function NoticeScreen() {
                         >
                           {notice.content}
                         </Text>
-                        <Text className="text-xs text-gray-400">
-                          {formatDate(notice.date)}
-                        </Text>
+                        <View className="flex-row items-center">
+                          <Text className="text-xs text-gray-400">
+                            {formatDate(notice.createdAt || notice.date)}
+                          </Text>
+                          {notice.navigateTo === 'Tuition' && (
+                            <View className="flex-row items-center ml-2 px-2 py-0.5 rounded-full" style={{ backgroundColor: PARENT_COLORS.warning[100] }}>
+                              <Ionicons name="card" size={10} color={PARENT_COLORS.warning[600]} />
+                              <Text className="text-xs font-bold ml-1" style={{ color: PARENT_COLORS.warning[600] }}>수강료</Text>
+                            </View>
+                          )}
+                        </View>
                       </View>
                       <Ionicons
                         name="chevron-forward"
@@ -283,7 +324,7 @@ export default function NoticeScreen() {
                 <View className="flex-row items-center mb-4">
                   <Ionicons name="calendar-outline" size={16} color={PARENT_COLORS.gray[500]} />
                   <Text className="text-sm text-gray-500 ml-2">
-                    {formatDate(selectedNotice.date)}
+                    {formatDate(selectedNotice.createdAt || selectedNotice.date)}
                   </Text>
                 </View>
 
@@ -349,6 +390,26 @@ export default function NoticeScreen() {
                       </Text>
                     </View>
                   </View>
+                )}
+
+                {/* 바로가기 버튼 */}
+                {selectedNotice.navigateTo && (
+                  <TouchableOpacity
+                    onPress={() => {
+                      setShowDetailModal(false);
+                      navigation.navigate(selectedNotice.navigateTo);
+                    }}
+                    className="rounded-2xl py-4 mb-4"
+                    style={{ backgroundColor: PARENT_COLORS.primary.DEFAULT }}
+                    activeOpacity={0.8}
+                  >
+                    <View className="flex-row items-center justify-center">
+                      <Ionicons name="arrow-forward-circle" size={20} color="white" />
+                      <Text className="text-white font-bold text-base ml-2">
+                        {selectedNotice.navigateTo === 'Tuition' ? '수강료 확인하기' : '바로가기'}
+                      </Text>
+                    </View>
+                  </TouchableOpacity>
                 )}
 
                 {/* 구분선 */}

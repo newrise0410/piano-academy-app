@@ -46,16 +46,28 @@ const formatTimestamp = (timestamp) => {
  *
  * @param {boolean} visible - 모달 표시 여부
  * @param {function} onClose - 모달 닫기 핸들러
+ * @param {string} userType - 'teacher' or 'parent'
+ * @param {Array} customNotifications - 학부모용 커스텀 알림 (알림장 목록)
+ * @param {function} onNotificationPress - 알림 클릭 핸들러
  */
-export default function NotificationModal({ visible, onClose }) {
-  const { notifications, markAsRead, markAllAsRead, deleteNotification } = useNotificationStore();
+export default function NotificationModal({ visible, onClose, userType = 'teacher', customNotifications = null, onNotificationPress = null }) {
+  const { notifications: storeNotifications, markAsRead, markAllAsRead, deleteNotification } = useNotificationStore();
   const user = useAuthStore((state) => state.user);
 
+  // 학부모는 customNotifications 사용, 선생님은 store의 notifications 사용
+  const notifications = userType === 'parent' && customNotifications ? customNotifications : storeNotifications;
+
   const handleNotificationPress = (notification) => {
-    if (!notification.isRead) {
-      markAsRead(notification.id);
+    if (userType === 'parent' && onNotificationPress) {
+      // 학부모용: 커스텀 핸들러 사용
+      onNotificationPress(notification);
+    } else {
+      // 선생님용: 기존 로직
+      if (!notification.isRead) {
+        markAsRead(notification.id);
+      }
+      // TODO: 알림 타입에 따라 해당 화면으로 네비게이션
     }
-    // TODO: 알림 타입에 따라 해당 화면으로 네비게이션
   };
 
   const unreadCount = notifications.filter(n => !n.isRead).length;
@@ -84,7 +96,7 @@ export default function NotificationModal({ visible, onClose }) {
                 )}
               </View>
             </View>
-            {unreadCount > 0 && (
+            {unreadCount > 0 && userType === 'teacher' && (
               <TouchableOpacity onPress={() => markAllAsRead(user?.uid)}>
                 <Text className="text-sm font-semibold text-primary">모두 읽음</Text>
               </TouchableOpacity>
@@ -137,23 +149,25 @@ export default function NotificationModal({ visible, onClose }) {
                       )}
                     </View>
                     <Text className="text-sm text-gray-600 mb-2">
-                      {notification.message}
+                      {userType === 'parent' ? notification.content : notification.message}
                     </Text>
                     <Text className="text-xs text-gray-400">
-                      {formatTimestamp(notification.timestamp)}
+                      {formatTimestamp(userType === 'parent' ? (notification.createdAt || notification.date) : notification.timestamp)}
                     </Text>
                   </View>
 
-                  {/* 삭제 버튼 */}
-                  <TouchableOpacity
-                    onPress={(e) => {
-                      e.stopPropagation();
-                      deleteNotification(notification.id);
-                    }}
-                    className="ml-2 p-2"
-                  >
-                    <Ionicons name="close-circle" size={20} color={TEACHER_COLORS.gray[400]} />
-                  </TouchableOpacity>
+                  {/* 삭제 버튼 (선생님만) */}
+                  {userType === 'teacher' && (
+                    <TouchableOpacity
+                      onPress={(e) => {
+                        e.stopPropagation();
+                        deleteNotification(notification.id);
+                      }}
+                      className="ml-2 p-2"
+                    >
+                      <Ionicons name="close-circle" size={20} color={TEACHER_COLORS.gray[400]} />
+                    </TouchableOpacity>
+                  )}
                 </TouchableOpacity>
               );
             })

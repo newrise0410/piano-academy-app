@@ -64,7 +64,7 @@ export default function GalleryScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-gray-50">
-      <ScreenHeader title="갤러리" />
+      <ScreenHeader title="갤러리" colorScheme="parent" />
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
         <View className="px-5 py-4">
           {/* 통계 */}
