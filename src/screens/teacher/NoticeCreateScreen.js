@@ -7,12 +7,15 @@ import {
   Card,
   FormInput,
   Button,
-  ScreenHeader
+  ScreenHeader,
+  MediaPicker
 } from '../../components/common';
 import TEACHER_COLORS from '../../styles/teacher_colors';
 import { useNoticeStore, useStudentStore, useNotificationStore, useAuthStore } from '../../store';
 import { useToastStore } from '../../store';
 import { generateNoticeContent, improveNoticeContent, isGeminiAvailable } from '../../services/geminiService';
+import { uploadMultipleMedia } from '../../services/firestoreService';
+import { sendNoticeNotification } from '../../services/pushNotificationService';
 import { ActivityRepository } from '../../repositories/ActivityRepository';
 import NoticeTemplateSelector from '../../components/teacher/NoticeTemplateSelector';
 import NoticeRecipientSelector from '../../components/teacher/NoticeRecipientSelector';
@@ -35,6 +38,8 @@ export default function NoticeCreateScreen({ navigation }) {
   const [selectedStudents, setSelectedStudents] = useState([]);
   const [categoryFilter, setCategoryFilter] = useState('전체');
   const [dayFilter, setDayFilter] = useState('전체');
+  const [selectedMedia, setSelectedMedia] = useState([]); // 미디어 첨부
+  const [uploadProgress, setUploadProgress] = useState(0);
 
   const fadeAnim = useRef(new Animated.Value(1)).current;
   const scaleAnim = useRef(new Animated.Value(1)).current;
@@ -219,6 +224,26 @@ export default function NoticeCreateScreen({ navigation }) {
       const dateStr = formatDate(now);
       const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
 
+      // 미디어 업로드 (있는 경우)
+      let uploadedMediaUrls = [];
+      if (selectedMedia.length > 0) {
+        toast.info('미디어 업로드 중...');
+        const uploadResult = await uploadMultipleMedia(
+          selectedMedia,
+          'notices',
+          (progress) => {
+            setUploadProgress(progress);
+          }
+        );
+
+        if (uploadResult.success) {
+          uploadedMediaUrls = uploadResult.uploadedMedia;
+          toast.success('미디어 업로드 완료');
+        } else {
+          throw new Error(uploadResult.error || '미디어 업로드 실패');
+        }
+      }
+
       // 알림장 저장 (Zustand Store 사용)
       await createNotice({
         title: previewTitle,
@@ -228,6 +253,7 @@ export default function NoticeCreateScreen({ navigation }) {
         confirmed: 0,
         total: selectedStudents.length,
         recipients: selectedStudents, // 학생 ID 배열 저장
+        media: uploadedMediaUrls, // 미디어 URL 배열 저장
       });
 
       // 활동 로그 추가 (대시보드 최근 활동용)
@@ -261,6 +287,15 @@ export default function NoticeCreateScreen({ navigation }) {
       } catch (notificationError) {
         console.error('알림 추가 실패:', notificationError);
         // 알림 추가 실패는 무시하고 계속 진행
+      }
+
+      // 푸시 알림 전송
+      try {
+        await sendNoticeNotification(selectedStudents, previewTitle);
+        console.log('푸시 알림 전송 완료');
+      } catch (pushError) {
+        console.error('푸시 알림 전송 실패:', pushError);
+        // 푸시 알림 실패는 무시하고 계속 진행
       }
 
       toast.success(`${selectedStudents.length}명의 학생에게 알림장이 발송되었습니다`);
@@ -590,6 +625,24 @@ export default function NoticeCreateScreen({ navigation }) {
                   </View>
                 )}
               </>
+            )}
+
+            {/* 미디어 첨부 */}
+            {selectedTemplate && (
+              <View className="mb-4">
+                <View className="flex-row items-center mb-3">
+                  <Ionicons name="images-outline" size={18} color={TEACHER_COLORS.primary.DEFAULT} />
+                  <Text className="text-sm font-bold text-gray-800 ml-2">
+                    사진/동영상 첨부 (선택)
+                  </Text>
+                </View>
+                <MediaPicker
+                  selectedMedia={selectedMedia}
+                  onMediaChange={setSelectedMedia}
+                  maxItems={5}
+                  allowVideo={true}
+                />
+              </View>
             )}
 
             {/* 액션 버튼 */}

@@ -21,6 +21,8 @@ import ProfileScreen from "../screens/teacher/ProfileScreen";
 import ProfileEditScreen from "../screens/teacher/ProfileEditScreen";
 import AcademyInfoScreen from "../screens/teacher/AcademyInfoScreen";
 import AcademyEditScreen from "../screens/teacher/AcademyEditScreen";
+import LessonNoteScreen from "../screens/teacher/LessonNoteScreen";
+import InquiryManagementScreen from "../screens/teacher/InquiryManagementScreen";
 import FirebaseTestScreen from "../screens/FirebaseTestScreen";
 
 const Tab = createBottomTabNavigator();
@@ -37,6 +39,8 @@ function DashboardStack() {
       <Stack.Screen name="AcademyEditScreen" component={AcademyEditScreen} />
       <Stack.Screen name="StatisticsScreen" component={StatisticsScreen} />
       <Stack.Screen name="GalleryScreen" component={GalleryScreen} />
+      <Stack.Screen name="LessonNoteScreen" component={LessonNoteScreen} />
+      <Stack.Screen name="InquiryManagementScreen" component={InquiryManagementScreen} />
       <Stack.Screen name="FirebaseTestScreen" component={FirebaseTestScreen} />
       <Stack.Screen name="TodayClassesScreen" component={TodayClassesScreen} />
       <Stack.Screen name="UnpaidStudentsScreen" component={UnpaidStudentsScreen} />

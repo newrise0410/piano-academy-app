@@ -9,6 +9,8 @@ export { default as ListItem } from './ListItem';
 
 // Form Components
 export { default as FormInput } from './FormInput';
+export { default as MediaPicker } from './MediaPicker';
+export { default as CommentSection } from './CommentSection';
 
 // Filter & Selection
 export { default as FilterChip } from './FilterChip';

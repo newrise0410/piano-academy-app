@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { View, ScrollView, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
+import { View, ScrollView, TouchableOpacity, Alert, ActivityIndicator, Modal } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import {
@@ -10,13 +10,16 @@ import {
   AttendanceStatusBadge,
   PaymentStatusBadge,
   SectionCard,
-  ScreenHeader
+  ScreenHeader,
+  SegmentedControl
 } from '../../components/common';
 import TEACHER_COLORS, { TEACHER_SHADOW_COLORS, TEACHER_OVERLAY_COLORS } from '../../styles/teacher_colors';
-import { useStudentStore, usePaymentStore, useAttendanceStore } from '../../store';
+import { useStudentStore, usePaymentStore, useAttendanceStore, useLessonNoteStore } from '../../store';
 import { useToastStore } from '../../store';
 import { formatDate, formatCurrency } from '../../utils';
 import AiMemoEditor from '../../components/teacher/AiMemoEditor';
+import LessonNoteCard from '../../components/common/LessonNoteCard';
+import LessonNoteModal from '../../components/teacher/LessonNoteModal';
 
 export default function StudentDetailScreen({ route, navigation }) {
   const { studentId } = route?.params || {};
@@ -25,11 +28,21 @@ export default function StudentDetailScreen({ route, navigation }) {
   const { students, deleteStudent, loading: studentLoading } = useStudentStore();
   const { payments, fetchAllPayments } = usePaymentStore();
   const { records, fetchAllRecords } = useAttendanceStore();
+  const { lessonNotes, fetchStudentNotes, deleteLessonNote } = useLessonNoteStore();
   const toast = useToastStore();
 
   const [activeTab, setActiveTab] = useState('정보');
   const [memo, setMemo] = useState('');
   const [loading, setLoading] = useState(true);
+  const [showTicketModal, setShowTicketModal] = useState(false);
+  const [showLessonNoteModal, setShowLessonNoteModal] = useState(false);
+  const [selectedLessonNote, setSelectedLessonNote] = useState(null);
+  const [ticketFormData, setTicketFormData] = useState({
+    ticketType: 'count',
+    ticketCount: 8,
+    ticketPeriodStart: '',
+    ticketPeriodEnd: '',
+  });
 
   // 학생 정보 가져오기
   const student = useMemo(() => {
@@ -49,6 +62,14 @@ export default function StudentDetailScreen({ route, navigation }) {
       .filter(p => p.studentId === studentId)
       .sort((a, b) => new Date(b.date) - new Date(a.date));
   }, [payments, studentId]);
+
+  // 학생의 수업 일지 가져오기
+  const studentLessonNotes = useMemo(() => {
+    return lessonNotes
+      .filter(note => note.studentId === studentId)
+      .sort((a, b) => new Date(b.date) - new Date(a.date))
+      .slice(0, 5); // 최근 5개만
+  }, [lessonNotes, studentId]);
 
   // 출석 통계 계산
   const attendanceStats = useMemo(() => {
@@ -74,7 +95,11 @@ export default function StudentDetailScreen({ route, navigation }) {
 
   const loadData = async () => {
     setLoading(true);
-    await Promise.all([fetchAllPayments(), fetchAllRecords()]);
+    await Promise.all([
+      fetchAllPayments(),
+      fetchAllRecords(),
+      fetchStudentNotes(studentId),
+    ]);
     setLoading(false);
   };
 
@@ -149,6 +174,111 @@ export default function StudentDetailScreen({ route, navigation }) {
   // 새 결제 추가
   const handleAddPayment = () => {
     toast.info('결제 등록 기능은 수강료 탭에서 사용할 수 있습니다');
+  };
+
+  const handleRechargeTicket = () => {
+    if (!student || student.ticketType !== 'count') return;
+
+    Alert.alert(
+      '회차권 충전',
+      '충전할 횟수를 선택해주세요',
+      [
+        {
+          text: '+4회',
+          onPress: async () => {
+            try {
+              const { updateStudent } = useStudentStore.getState();
+              const newCount = (student.ticketCount || 0) + 4;
+              await updateStudent(student.id, { ticketCount: newCount });
+              toast.success(`회차권 4회 충전 완료 (총 ${newCount}회)`);
+            } catch (error) {
+              toast.error('충전에 실패했습니다');
+              console.error('회차권 충전 오류:', error);
+            }
+          }
+        },
+        {
+          text: '+8회',
+          onPress: async () => {
+            try {
+              const { updateStudent } = useStudentStore.getState();
+              const newCount = (student.ticketCount || 0) + 8;
+              await updateStudent(student.id, { ticketCount: newCount });
+              toast.success(`회차권 8회 충전 완료 (총 ${newCount}회)`);
+            } catch (error) {
+              toast.error('충전에 실패했습니다');
+              console.error('회차권 충전 오류:', error);
+            }
+          },
+          style: 'default'
+        },
+        {
+          text: '+12회',
+          onPress: async () => {
+            try {
+              const { updateStudent } = useStudentStore.getState();
+              const newCount = (student.ticketCount || 0) + 12;
+              await updateStudent(student.id, { ticketCount: newCount });
+              toast.success(`회차권 12회 충전 완료 (총 ${newCount}회)`);
+            } catch (error) {
+              toast.error('충전에 실패했습니다');
+              console.error('회차권 충전 오류:', error);
+            }
+          }
+        },
+        {
+          text: '취소',
+          style: 'cancel'
+        }
+      ]
+    );
+  };
+
+  const handleOpenTicketModal = () => {
+    if (!student) return;
+
+    setTicketFormData({
+      ticketType: student.ticketType || 'count',
+      ticketCount: student.ticketCount || 8,
+      ticketPeriodStart: student.ticketPeriod?.start || '',
+      ticketPeriodEnd: student.ticketPeriod?.end || '',
+    });
+    setShowTicketModal(true);
+  };
+
+  const handleSaveTicket = async () => {
+    try {
+      const { updateStudent } = useStudentStore.getState();
+
+      const updateData = {
+        ticketType: ticketFormData.ticketType,
+      };
+
+      if (ticketFormData.ticketType === 'count') {
+        if (!ticketFormData.ticketCount || ticketFormData.ticketCount < 0) {
+          toast.warning('회차권 횟수를 입력해주세요');
+          return;
+        }
+        updateData.ticketCount = ticketFormData.ticketCount;
+        updateData.ticketPeriod = null;
+      } else {
+        if (!ticketFormData.ticketPeriodStart || !ticketFormData.ticketPeriodEnd) {
+          toast.warning('수강 기간을 입력해주세요');
+          return;
+        }
+        updateData.ticketPeriod = {
+          start: ticketFormData.ticketPeriodStart,
+          end: ticketFormData.ticketPeriodEnd,
+        };
+      }
+
+      await updateStudent(student.id, updateData);
+      toast.success('수강권 정보가 변경되었습니다');
+      setShowTicketModal(false);
+    } catch (error) {
+      toast.error('변경에 실패했습니다');
+      console.error('수강권 변경 오류:', error);
+    }
   };
 
   // 날짜 포맷 함수
@@ -233,9 +363,93 @@ export default function StudentDetailScreen({ route, navigation }) {
               </View>
             )}
 
+            {/* 최근 수업 일지 */}
+            <View className="bg-white rounded-2xl p-4 mb-4">
+              <View className="flex-row items-center justify-between mb-3">
+                <Text className="text-base font-bold text-gray-800">최근 수업 일지</Text>
+                <View className="flex-row gap-2">
+                  <TouchableOpacity
+                    className="flex-row items-center rounded-lg px-3 py-1.5"
+                    style={{ backgroundColor: TEACHER_COLORS.purple[50] }}
+                    onPress={() => {
+                      setSelectedLessonNote(null);
+                      setShowLessonNoteModal(true);
+                    }}
+                    activeOpacity={0.7}
+                  >
+                    <Ionicons name="add" size={16} color={TEACHER_COLORS.purple[600]} />
+                    <Text className="text-xs font-semibold ml-1" style={{ color: TEACHER_COLORS.purple[600] }}>
+                      작성
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    className="flex-row items-center rounded-lg px-3 py-1.5"
+                    style={{ backgroundColor: TEACHER_COLORS.gray[100] }}
+                    onPress={() => navigation.navigate('LessonNoteScreen')}
+                    activeOpacity={0.7}
+                  >
+                    <Ionicons name="list" size={16} color={TEACHER_COLORS.gray[700]} />
+                    <Text className="text-xs font-semibold text-gray-700 ml-1">전체</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              {studentLessonNotes.length > 0 ? (
+                studentLessonNotes.map((note) => (
+                  <View key={note.id} className="mb-2">
+                    <LessonNoteCard
+                      lessonNote={note}
+                      student={student}
+                      onEdit={() => {
+                        setSelectedLessonNote(note);
+                        setShowLessonNoteModal(true);
+                      }}
+                      onDelete={async () => {
+                        Alert.alert(
+                          '수업 일지 삭제',
+                          '이 수업 일지를 삭제하시겠습니까?',
+                          [
+                            { text: '취소', style: 'cancel' },
+                            {
+                              text: '삭제',
+                              style: 'destructive',
+                              onPress: async () => {
+                                try {
+                                  await deleteLessonNote(note.id);
+                                  toast.success('수업 일지가 삭제되었습니다');
+                                } catch (error) {
+                                  toast.error('삭제에 실패했습니다');
+                                }
+                              }
+                            }
+                          ]
+                        );
+                      }}
+                    />
+                  </View>
+                ))
+              ) : (
+                <View className="items-center py-8">
+                  <Ionicons name="document-text-outline" size={48} color={TEACHER_COLORS.gray[300]} />
+                  <Text className="text-gray-400 mt-2">작성된 수업 일지가 없습니다</Text>
+                  <TouchableOpacity
+                    className="mt-3 rounded-lg px-4 py-2"
+                    style={{ backgroundColor: TEACHER_COLORS.purple[500] }}
+                    onPress={() => {
+                      setSelectedLessonNote(null);
+                      setShowLessonNoteModal(true);
+                    }}
+                    activeOpacity={0.7}
+                  >
+                    <Text className="text-white text-sm font-semibold">첫 수업 일지 작성하기</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+            </View>
+
             {/* 메모 */}
             <View className="bg-white rounded-2xl p-4 mb-4">
-              <Text className="text-base font-bold text-gray-800 mb-3">메모</Text>
+              <Text className="text-base font-bold text-gray-800 mb-3">학생 전반 메모</Text>
 
               <AiMemoEditor
                 value={memo}
@@ -246,7 +460,7 @@ export default function StudentDetailScreen({ route, navigation }) {
                   book: student?.book || '바이엘',
                   recentProgress: student?.progress,
                 }}
-                placeholder="학생에 대한 메모를 입력하세요..."
+                placeholder="학생에 대한 전반적인 메모를 입력하세요..."
                 enableAttachments={true}
                 enableHomeworkGenerator={true}
               />
@@ -353,7 +567,19 @@ export default function StudentDetailScreen({ route, navigation }) {
           <View className="p-5">
             {/* 수강권 정보 */}
             <View className="bg-white rounded-2xl p-4 mb-4">
-              <Text className="text-base font-bold text-gray-800 mb-3">현재 수강권</Text>
+              <View className="flex-row items-center justify-between mb-3">
+                <Text className="text-base font-bold text-gray-800">현재 수강권</Text>
+                <TouchableOpacity
+                  className="flex-row items-center rounded-lg px-3 py-1.5"
+                  style={{ backgroundColor: TEACHER_COLORS.gray[100] }}
+                  onPress={handleOpenTicketModal}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons name="settings-outline" size={16} color={TEACHER_COLORS.gray[700]} />
+                  <Text className="text-xs font-semibold text-gray-700 ml-1">변경</Text>
+                </TouchableOpacity>
+              </View>
+
               <View className="rounded-xl p-4" style={{ backgroundColor: TEACHER_COLORS.purple[50] }}>
                 <View className="flex-row items-center justify-between mb-2">
                   <View className="flex-row items-center">
@@ -367,8 +593,20 @@ export default function StudentDetailScreen({ route, navigation }) {
                     </Text>
                   </View>
                   {student?.ticketType === 'count' && (
-                    <View className="bg-white rounded-full px-3 py-1">
-                      <Text className="text-xs font-bold" style={{ color: TEACHER_COLORS.purple[600] }}>
+                    <View
+                      className="rounded-full px-3 py-1"
+                      style={{
+                        backgroundColor: (student?.ticketCount || 0) <= 2 ? TEACHER_COLORS.red[50] : TEACHER_COLORS.white
+                      }}
+                    >
+                      <Text
+                        className="text-xs font-bold"
+                        style={{
+                          color: (student?.ticketCount || 0) <= 2
+                            ? TEACHER_COLORS.red[600]
+                            : TEACHER_COLORS.purple[600]
+                        }}
+                      >
                         {student?.ticketCount || 0}회 남음
                       </Text>
                     </View>
@@ -380,6 +618,19 @@ export default function StudentDetailScreen({ route, navigation }) {
                   </Text>
                 )}
               </View>
+
+              {/* 회차권 충전 버튼 */}
+              {student?.ticketType === 'count' && (
+                <TouchableOpacity
+                  className="rounded-xl py-3 mt-2 flex-row items-center justify-center"
+                  style={{ backgroundColor: TEACHER_COLORS.purple[500] }}
+                  onPress={handleRechargeTicket}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons name="add-circle" size={18} color="white" />
+                  <Text className="text-white text-sm font-bold ml-2">회차권 충전</Text>
+                </TouchableOpacity>
+              )}
             </View>
 
             {/* 결제 내역 */}
@@ -526,6 +777,113 @@ export default function StudentDetailScreen({ route, navigation }) {
       <ScrollView className="flex-1">
         {renderTabContent()}
       </ScrollView>
+
+      {/* 수강권 설정 모달 */}
+      <Modal
+        visible={showTicketModal}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setShowTicketModal(false)}
+      >
+        <View className="flex-1 justify-end" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+          <View className="bg-white rounded-t-3xl p-6" style={{ maxHeight: '80%' }}>
+            <View className="flex-row items-center justify-between mb-4">
+              <Text className="text-xl font-bold text-gray-800">수강권 설정</Text>
+              <TouchableOpacity onPress={() => setShowTicketModal(false)}>
+                <Ionicons name="close" size={28} color={TEACHER_COLORS.gray[600]} />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView>
+              {/* 수강권 타입 선택 */}
+              <View className="mb-4">
+                <Text className="text-sm font-semibold text-gray-700 mb-2">수강권 타입</Text>
+                <SegmentedControl
+                  options={[
+                    { value: 'count', label: '회차권' },
+                    { value: 'period', label: '기간 정액권' }
+                  ]}
+                  value={ticketFormData.ticketType}
+                  onChange={(value) => setTicketFormData({ ...ticketFormData, ticketType: value })}
+                />
+              </View>
+
+              {/* 회차권일 때 */}
+              {ticketFormData.ticketType === 'count' && (
+                <View className="mb-4">
+                  <FormInput
+                    label="남은 횟수"
+                    placeholder="예: 8"
+                    value={String(ticketFormData.ticketCount)}
+                    onChangeText={(text) => setTicketFormData({ ...ticketFormData, ticketCount: parseInt(text) || 0 })}
+                    type="numeric"
+                    iconName="ticket-outline"
+                    required
+                  />
+                </View>
+              )}
+
+              {/* 기간 정액권일 때 */}
+              {ticketFormData.ticketType === 'period' && (
+                <View className="mb-4">
+                  <Text className="text-sm font-semibold text-gray-700 mb-2">수강 기간 *</Text>
+                  <View className="flex-row items-center gap-2">
+                    <FormInput
+                      placeholder="2025.01"
+                      value={ticketFormData.ticketPeriodStart}
+                      onChangeText={(text) => setTicketFormData({ ...ticketFormData, ticketPeriodStart: text })}
+                      style={{ flex: 1 }}
+                    />
+                    <Text className="text-gray-600">~</Text>
+                    <FormInput
+                      placeholder="2025.03"
+                      value={ticketFormData.ticketPeriodEnd}
+                      onChangeText={(text) => setTicketFormData({ ...ticketFormData, ticketPeriodEnd: text })}
+                      style={{ flex: 1 }}
+                    />
+                  </View>
+                  <Text className="text-xs text-gray-500 mt-1">
+                    형식: YYYY.MM (예: 2025.01)
+                  </Text>
+                </View>
+              )}
+            </ScrollView>
+
+            {/* 저장 버튼 */}
+            <View className="flex-row gap-2 mt-4">
+              <TouchableOpacity
+                className="flex-1 rounded-xl py-3 items-center justify-center"
+                style={{ backgroundColor: TEACHER_COLORS.gray[200] }}
+                onPress={() => setShowTicketModal(false)}
+                activeOpacity={0.7}
+              >
+                <Text className="text-gray-700 text-sm font-bold">취소</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                className="flex-1 rounded-xl py-3 items-center justify-center"
+                style={{ backgroundColor: TEACHER_COLORS.primary[600] }}
+                onPress={handleSaveTicket}
+                activeOpacity={0.7}
+              >
+                <Text className="text-white text-sm font-bold">저장</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* 수업 일지 모달 */}
+      <LessonNoteModal
+        visible={showLessonNoteModal}
+        onClose={() => {
+          setShowLessonNoteModal(false);
+          setSelectedLessonNote(null);
+          fetchStudentNotes(studentId);
+        }}
+        student={student}
+        date={new Date().toISOString().split('T')[0]}
+        existingNote={selectedLessonNote}
+      />
     </SafeAreaView>
   );
 }

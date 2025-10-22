@@ -2,7 +2,7 @@
 import { create } from 'zustand';
 import { AttendanceRepository } from '../repositories/AttendanceRepository';
 import { calculateAttendanceRate, getMonthlyStats } from '../utils';
-import { useNotificationStore } from './notificationStore';
+import useNotificationStore from './notificationStore';
 import { useAuthStore } from './authStore';
 
 /**

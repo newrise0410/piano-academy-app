@@ -3,21 +3,104 @@ import { View, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Text, ScreenHeader, DatePickerModal } from '../../components/common';
+import LessonNoteModal from '../../components/teacher/LessonNoteModal';
 import TEACHER_COLORS from '../../styles/teacher_colors';
 import { getMonthName, getDayOfWeek } from '../../utils';
 import { getLevelColors, getAttendanceStatusColors } from '../../utils/styleHelpers';
-import { useStudentStore } from '../../store';
+import { useStudentStore, useAuthStore, useToastStore } from '../../store';
+import { getMakeupLessons, saveMakeupLesson, updateMakeupLesson } from '../../services/firestoreService';
+import { AttendanceRepository } from '../../repositories/AttendanceRepository';
 
 export default function AttendanceScreen() {
   const { students, fetchStudents } = useStudentStore();
+  const user = useAuthStore((state) => state.user);
+  const toast = useToastStore();
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [collapsedGroups, setCollapsedGroups] = useState({}); // 접힌 그룹 관리
+  const [makeupLessons, setMakeupLessons] = useState([]);
+  const [loadingMakeup, setLoadingMakeup] = useState(false);
+  const [showLessonNoteModal, setShowLessonNoteModal] = useState(false);
+  const [selectedStudentForNote, setSelectedStudentForNote] = useState(null);
 
   // 초기 데이터 로드
   useEffect(() => {
-    fetchStudents();
+    const loadData = async () => {
+      await fetchStudents();
+      fetchMakeupLessons();
+    };
+    loadData();
   }, [fetchStudents]);
+
+  // students가 로드된 후 출석 기록 로드
+  useEffect(() => {
+    if (students.length > 0) {
+      loadTodayAttendance();
+    }
+  }, [students.length, selectedDate]);
+
+  // 오늘 날짜 출석 기록 로드
+  const loadTodayAttendance = async () => {
+    if (!user?.uid) return;
+
+    try {
+      const formatDate = (d) => {
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+      };
+
+      const records = await AttendanceRepository.getByDate(formatDate(selectedDate));
+
+      // 기존 출석 기록을 반영
+      setAttendanceData(prev =>
+        prev.map(student => {
+          const record = records.find(r => r.studentId === student.id);
+          return record ? { ...student, status: record.status } : student;
+        })
+      );
+    } catch (error) {
+      console.error('출석 기록 로드 실패:', error);
+    }
+  };
+
+  // 보강 수업 데이터 가져오기
+  const fetchMakeupLessons = async () => {
+    if (!user?.uid) return;
+
+    setLoadingMakeup(true);
+    try {
+      // 이번 주 보강 예정만 가져오기
+      const today = new Date();
+      const startOfWeek = new Date(today);
+      startOfWeek.setDate(today.getDate() - today.getDay()); // 이번 주 일요일
+      const endOfWeek = new Date(startOfWeek);
+      endOfWeek.setDate(startOfWeek.getDate() + 6); // 이번 주 토요일
+
+      const formatDate = (date) => {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+      };
+
+      const result = await getMakeupLessons(user.uid, {
+        startDate: formatDate(startOfWeek),
+        endDate: formatDate(endOfWeek),
+      });
+
+      if (result.success) {
+        // pending 상태인 것만 필터링
+        const pendingLessons = result.data.filter(lesson => lesson.status === 'pending');
+        setMakeupLessons(pendingLessons);
+      }
+    } catch (error) {
+      console.error('보강 수업 로드 실패:', error);
+    } finally {
+      setLoadingMakeup(false);
+    }
+  };
 
   // 선택한 날짜의 요일 구하기
   const getSelectedDayOfWeek = () => {
@@ -41,6 +124,7 @@ export default function AttendanceScreen() {
     // 선택한 요일에 수업이 있는 학생만 필터링
     return students
       .filter(student => {
+        if (!student.schedule) return false;
         const scheduleDays = student.schedule.split(' ')[0].split('/');
         return scheduleDays.includes(selectedDay);
       })
@@ -54,6 +138,24 @@ export default function AttendanceScreen() {
   }, [selectedDate, students]);
 
   const [attendanceData, setAttendanceData] = useState(initialAttendance);
+  const [lastSelectedDate, setLastSelectedDate] = useState(selectedDate);
+
+  // selectedDate가 변경될 때만 attendanceData 리셋
+  useEffect(() => {
+    if (lastSelectedDate.getTime() !== selectedDate.getTime()) {
+      console.log('날짜 변경됨 - 출석 데이터 리셋');
+      setAttendanceData(initialAttendance);
+      setLastSelectedDate(selectedDate);
+    }
+  }, [selectedDate]);
+
+  // students가 로드되었을 때 초기 데이터 설정 (첫 로드만)
+  useEffect(() => {
+    if (students.length > 0 && attendanceData.length === 0) {
+      console.log('학생 데이터 첫 로드');
+      setAttendanceData(initialAttendance);
+    }
+  }, [students.length]);
 
   // 시간대별 그룹핑
   const groupedByTime = useMemo(() => {
@@ -86,22 +188,67 @@ export default function AttendanceScreen() {
     };
   }, [attendanceData]);
 
-  const [makeupLessons, setMakeupLessons] = useState([
-    {
-      id: '1',
-      name: '이준호',
-      date: '10/17 (목)',
-      time: '15:00',
-    },
-  ]);
-
-  // 출석 상태 변경
-  const handleStatusChange = (studentId, status) => {
+  // 출석 상태 변경 및 Firebase 저장
+  const handleStatusChange = async (studentId, status) => {
+    // 로컬 상태 업데이트
     setAttendanceData(prev =>
       prev.map(student =>
         student.id === studentId ? { ...student, status } : student
       )
     );
+
+    // Firebase에 저장
+    if (user?.uid) {
+      try {
+        const student = attendanceData.find(s => s.id === studentId);
+        const fullStudent = students.find(s => s.id === studentId);
+
+        const formatDate = (date) => {
+          const year = date.getFullYear();
+          const month = String(date.getMonth() + 1).padStart(2, '0');
+          const day = String(date.getDate()).padStart(2, '0');
+          return `${year}-${month}-${day}`;
+        };
+
+        await AttendanceRepository.create({
+          studentId,
+          studentName: student?.name,
+          date: formatDate(selectedDate),
+          status,
+          note: '',
+        });
+
+        // 회차권 학생일 경우 출석 시 횟수 차감
+        if (status === 'present' && fullStudent?.ticketType === 'count') {
+          const currentCount = fullStudent.ticketCount || 0;
+
+          if (currentCount <= 0) {
+            toast.warning(`${fullStudent.name} 학생의 회차권이 모두 소진되었습니다!`);
+          } else {
+            const newCount = currentCount - 1;
+            const { updateStudent } = useStudentStore.getState();
+            await updateStudent(studentId, { ticketCount: newCount });
+
+            if (newCount === 0) {
+              toast.warning(`${fullStudent.name} 학생의 회차권이 모두 소진되었습니다!`);
+            } else if (newCount <= 2) {
+              toast.warning(`${fullStudent.name} 학생의 남은 횟수: ${newCount}회`);
+            } else {
+              toast.success(`출석 체크 완료 (남은 횟수: ${newCount}회)`);
+            }
+          }
+        }
+
+        // 출석 처리 후 수업 일지 모달 열기
+        if (status === 'present') {
+          setSelectedStudentForNote(fullStudent);
+          setShowLessonNoteModal(true);
+        }
+      } catch (error) {
+        console.error('출석 데이터 저장 실패:', error);
+        toast.error('출석 저장에 실패했습니다.');
+      }
+    }
   };
 
   // 전체 출석 처리
@@ -134,7 +281,7 @@ export default function AttendanceScreen() {
   };
 
   // 날짜 선택 완료
-  const onDateChange = (event, date) => {
+  const onDateChange = async (event, date) => {
     if (date) {
       setSelectedDate(date);
       // 날짜가 변경되면 출석 데이터 리셋
@@ -153,7 +300,49 @@ export default function AttendanceScreen() {
           status: null,
         }));
 
-      setAttendanceData(newAttendance);
+      // Firebase에서 해당 날짜의 출석 기록 가져오기
+      if (user?.uid) {
+        try {
+          const formatDate = (d) => {
+            const year = d.getFullYear();
+            const month = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+          };
+
+          const records = await AttendanceRepository.getByDate(formatDate(date));
+
+          // 기존 출석 기록을 반영
+          const attendanceWithRecords = newAttendance.map(student => {
+            const record = records.find(r => r.studentId === student.id);
+            return record ? { ...student, status: record.status } : student;
+          });
+
+          setAttendanceData(attendanceWithRecords);
+        } catch (error) {
+          console.error('출석 기록 로드 실패:', error);
+          setAttendanceData(newAttendance);
+        }
+      } else {
+        setAttendanceData(newAttendance);
+      }
+    }
+  };
+
+  // 보강 완료 처리
+  const handleCompleteMakeup = async (makeupId) => {
+    if (!user?.uid) return;
+
+    try {
+      await updateMakeupLesson(makeupId, { status: 'completed' });
+
+      // 로컬 상태 업데이트
+      setMakeupLessons(prev => prev.filter(lesson => lesson.id !== makeupId));
+
+      toast.success('보강 수업이 완료 처리되었습니다.');
+    } catch (error) {
+      console.error('보강 완료 처리 실패:', error);
+      toast.error('보강 완료 처리에 실패했습니다.');
     }
   };
 
@@ -251,9 +440,20 @@ export default function AttendanceScreen() {
 
         {/* 시간대별 출석 카드 목록 */}
         <View className="px-5">
-          {Object.entries(groupedByTime)
-            .sort(([timeA], [timeB]) => timeA.localeCompare(timeB))
-            .map(([timeSlot, students]) => {
+          {Object.keys(groupedByTime).length === 0 ? (
+            <View className="bg-white rounded-2xl p-8 items-center">
+              <Ionicons name="people-outline" size={64} color={TEACHER_COLORS.gray[300]} />
+              <Text className="text-gray-500 mt-4 text-center">
+                선택한 날짜에 수업이 있는 학생이 없습니다
+              </Text>
+              <Text className="text-gray-400 text-sm mt-2 text-center">
+                다른 날짜를 선택해주세요
+              </Text>
+            </View>
+          ) : (
+            Object.entries(groupedByTime)
+              .sort(([timeA], [timeB]) => timeA.localeCompare(timeB))
+              .map(([timeSlot, students]) => {
               const isCollapsed = collapsedGroups[timeSlot];
               const groupChecked = students.filter(s => s.status !== null).length;
               const groupTotal = students.length;
@@ -416,29 +616,56 @@ export default function AttendanceScreen() {
                   })}
                 </View>
               );
-            })}
+            })
+          )}
         </View>
 
         {/* 이번 주 보강 예정 */}
         <View className="px-5 mt-4 mb-20">
           <View className="rounded-2xl p-4 border" style={{ backgroundColor: TEACHER_COLORS.blue[50], borderColor: TEACHER_COLORS.blue[200] }}>
             <Text className="text-base font-bold text-gray-800 mb-3">이번 주 보강 예정</Text>
-            {makeupLessons.map((lesson) => (
-              <View
-                key={lesson.id}
-                className="bg-white rounded-xl p-3 mb-2 flex-row items-center justify-between"
-              >
-                <View>
-                  <Text className="text-sm font-bold text-gray-800">{lesson.name}</Text>
-                  <Text className="text-xs text-gray-600 mt-0.5">
-                    {lesson.date} {lesson.time}
-                  </Text>
-                </View>
-                <TouchableOpacity className="rounded-lg px-3 py-1" style={{ backgroundColor: TEACHER_COLORS.blue[100] }}>
-                  <Text className="text-xs font-semibold" style={{ color: TEACHER_COLORS.blue[600] }}>완료 처리</Text>
-                </TouchableOpacity>
+            {makeupLessons.length === 0 ? (
+              <View className="py-8 items-center">
+                <Ionicons name="calendar-outline" size={32} color={TEACHER_COLORS.gray[400]} />
+                <Text className="text-sm text-gray-500 mt-2">예정된 보강 수업이 없습니다</Text>
               </View>
-            ))}
+            ) : (
+              makeupLessons.map((lesson) => {
+                // 날짜 포맷팅 (YYYY-MM-DD -> MM/DD (요일))
+                const formatDisplayDate = (dateStr) => {
+                  const date = new Date(dateStr);
+                  const month = date.getMonth() + 1;
+                  const day = date.getDate();
+                  const weekDay = getDayOfWeek(date);
+                  return `${month}/${day} (${weekDay})`;
+                };
+
+                return (
+                  <View
+                    key={lesson.id}
+                    className="bg-white rounded-xl p-3 mb-2 flex-row items-center justify-between"
+                  >
+                    <View>
+                      <Text className="text-sm font-bold text-gray-800">{lesson.studentName}</Text>
+                      <Text className="text-xs text-gray-600 mt-0.5">
+                        {formatDisplayDate(lesson.date)} {lesson.time}
+                      </Text>
+                      {lesson.reason && (
+                        <Text className="text-xs text-gray-500 mt-1">사유: {lesson.reason}</Text>
+                      )}
+                    </View>
+                    <TouchableOpacity
+                      className="rounded-lg px-3 py-1"
+                      style={{ backgroundColor: TEACHER_COLORS.blue[100] }}
+                      onPress={() => handleCompleteMakeup(lesson.id)}
+                      activeOpacity={0.7}
+                    >
+                      <Text className="text-xs font-semibold" style={{ color: TEACHER_COLORS.blue[600] }}>완료 처리</Text>
+                    </TouchableOpacity>
+                  </View>
+                );
+              })
+            )}
           </View>
         </View>
       </ScrollView>
@@ -452,6 +679,24 @@ export default function AttendanceScreen() {
         onClose={() => setShowDatePicker(false)}
         title="날짜 선택"
       />
+
+      {/* 수업 일지 모달 */}
+      {selectedStudentForNote && (
+        <LessonNoteModal
+          visible={showLessonNoteModal}
+          onClose={() => {
+            setShowLessonNoteModal(false);
+            setSelectedStudentForNote(null);
+          }}
+          student={selectedStudentForNote}
+          date={(() => {
+            const year = selectedDate.getFullYear();
+            const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
+            const day = String(selectedDate.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+          })()}
+        />
+      )}
     </SafeAreaView>
   );
 }

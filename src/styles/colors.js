@@ -26,6 +26,11 @@ const COLORS = {
     50: "#FEF2F2",
     500: "#EF4444",
   },
+  info: {
+    DEFAULT: "#3B82F6",
+    50: "#EFF6FF",
+    500: "#3B82F6",
+  },
   orange: {
     50: "#FFF7ED",
     500: "#F97316",

@@ -1,11 +1,13 @@
 // src/screens/auth/SignupParentScreen.js
 import React, { useState } from 'react';
-import { View, ScrollView, TouchableOpacity, TextInput, Alert } from 'react-native';
+import { View, ScrollView, TouchableOpacity, TextInput, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import Text from '../../components/common/Text';
 import AUTH_COLORS, { AUTH_GRADIENTS, AUTH_SHADOW_COLORS } from '../../styles/auth_colors';
+import { registerWithEmail } from '../../services/authService';
+import { useAuthStore, useToastStore } from '../../store';
 
 export default function SignupParentScreen({ navigation }) {
   const [formData, setFormData] = useState({
@@ -20,21 +22,98 @@ export default function SignupParentScreen({ navigation }) {
   const [showPassword, setShowPassword] = useState(false);
   const [showPasswordConfirm, setShowPasswordConfirm] = useState(false);
   const [agreedTerms, setAgreedTerms] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const handleSignup = () => {
+  const { login } = useAuthStore();
+  const toast = useToastStore();
+
+  const handleSignup = async () => {
+    // 검증
     if (!formData.parentName || !formData.childName || !formData.academyCode || !formData.phone || !formData.email || !formData.password) {
-      Alert.alert('필수 항목을 확인해주세요', '모든 항목을 입력해주세요.');
+      toast.error('모든 항목을 입력해주세요');
       return;
     }
+
+    // 학원 코드 형식 검증
+    const { validateAcademyCode } = require('../../utils/academyUtils');
+    if (!validateAcademyCode(formData.academyCode.toUpperCase())) {
+      toast.error('올바른 학원 코드 형식이 아닙니다 (6자리 영문/숫자)');
+      return;
+    }
+
+    if (formData.password.length < 6) {
+      toast.error('비밀번호는 최소 6자 이상이어야 합니다');
+      return;
+    }
+
     if (formData.password !== formData.passwordConfirm) {
-      Alert.alert('비밀번호가 다릅니다', '비밀번호를 다시 확인해주세요.');
+      toast.error('비밀번호가 일치하지 않습니다');
       return;
     }
+
     if (!agreedTerms) {
-      Alert.alert('약관 동의가 필요해요', '이용약관에 동의해주세요.');
+      toast.error('이용약관에 동의해주세요');
       return;
     }
-    Alert.alert('조금만 기다려주세요', '회원가입 기능은 준비 중입니다.');
+
+    setLoading(true);
+    try {
+      // 1. 학원 코드로 학원 존재 여부 확인
+      const { getAcademyByCode } = await import('../../services/firestoreService');
+      const academyResult = await getAcademyByCode(formData.academyCode);
+
+      if (!academyResult.success) {
+        toast.error(academyResult.error || '존재하지 않는 학원 코드입니다');
+        return;
+      }
+
+      // 2. Firebase 회원가입
+      const registerResult = await registerWithEmail(formData.email, formData.password, {
+        name: formData.parentName,
+        role: 'parent',
+        childName: formData.childName,
+        academyCode: formData.academyCode.toUpperCase(),
+        academyId: academyResult.academy.id,
+        academyName: academyResult.academy.name,
+        phone: formData.phone,
+      });
+
+      if (!registerResult.success) {
+        toast.error(registerResult.error || '회원가입에 실패했습니다');
+        return;
+      }
+
+      // 3. 사용자 정보에 학원 정보 추가 (학생 ID는 나중에 등록 요청 후 추가됨)
+      const { updateUserProfile } = await import('../../services/authService');
+      await updateUserProfile(registerResult.user.uid, {
+        academyId: academyResult.academy.id,
+        academyCode: formData.academyCode.toUpperCase(),
+        academyName: academyResult.academy.name,
+        childName: formData.childName,
+      });
+
+      // 4. AuthStore에 사용자 정보 저장
+      login({
+        uid: registerResult.user.uid,
+        email: registerResult.user.email,
+        displayName: registerResult.user.displayName,
+        role: 'parent',
+        childName: formData.childName,
+        academyId: academyResult.academy.id,
+        academyCode: formData.academyCode.toUpperCase(),
+        academyName: academyResult.academy.name,
+        phone: formData.phone,
+      });
+
+      toast.success(`회원가입 완료! ${academyResult.academy.name}에 연결되었습니다`);
+
+      // 메인 화면은 AppNavigator에서 자동으로 전환됨
+    } catch (error) {
+      console.error('Signup error:', error);
+      toast.error('회원가입 중 오류가 발생했습니다');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -131,7 +210,7 @@ export default function SignupParentScreen({ navigation }) {
             <Text className="text-sm font-semibold text-gray-700 mb-2">비밀번호</Text>
             <View className="relative">
               <Ionicons name="lock-closed-outline" size={20} color={AUTH_COLORS.gray[400]} style={{ position: 'absolute', left: 12, top: 12, zIndex: 1 }} />
-              <TextInput className="w-full border-2 border-gray-200 rounded-xl pl-11 pr-11 py-3 text-sm bg-white" placeholder="6자 이상 입력해주세요" placeholderTextColor={AUTH_COLORS.gray[400]} value={formData.password} onChangeText={(text) => setFormData({...formData, password: text})} secureTextEntry={!showPassword} style={{ fontFamily: 'MaruBuri-Regular' }} />
+              <TextInput className="w-full border-2 border-gray-200 rounded-xl pl-11 pr-11 py-3 text-sm bg-white" placeholder="6자 이상 입력해주세요" placeholderTextColor={AUTH_COLORS.gray[400]} value={formData.password} onChangeText={(text) => setFormData({...formData, password: text})} secureTextEntry={!showPassword} autoCorrect={false} autoCapitalize="none" style={{ fontFamily: 'MaruBuri-Regular' }} />
               <TouchableOpacity onPress={() => setShowPassword(!showPassword)} className="absolute right-3 top-3" activeOpacity={0.7}>
                 <Ionicons name={showPassword ? 'eye-off-outline' : 'eye-outline'} size={20} color={AUTH_COLORS.gray[400]} />
               </TouchableOpacity>
@@ -142,7 +221,7 @@ export default function SignupParentScreen({ navigation }) {
             <Text className="text-sm font-semibold text-gray-700 mb-2">비밀번호 확인</Text>
             <View className="relative">
               <Ionicons name="lock-closed-outline" size={20} color={AUTH_COLORS.gray[400]} style={{ position: 'absolute', left: 12, top: 12, zIndex: 1 }} />
-              <TextInput className="w-full border-2 border-gray-200 rounded-xl pl-11 pr-11 py-3 text-sm bg-white" placeholder="한번 더 입력해주세요" placeholderTextColor={AUTH_COLORS.gray[400]} value={formData.passwordConfirm} onChangeText={(text) => setFormData({...formData, passwordConfirm: text})} secureTextEntry={!showPasswordConfirm} style={{ fontFamily: 'MaruBuri-Regular' }} />
+              <TextInput className="w-full border-2 border-gray-200 rounded-xl pl-11 pr-11 py-3 text-sm bg-white" placeholder="한번 더 입력해주세요" placeholderTextColor={AUTH_COLORS.gray[400]} value={formData.passwordConfirm} onChangeText={(text) => setFormData({...formData, passwordConfirm: text})} secureTextEntry={!showPasswordConfirm} autoCorrect={false} autoCapitalize="none" style={{ fontFamily: 'MaruBuri-Regular' }} />
               <TouchableOpacity onPress={() => setShowPasswordConfirm(!showPasswordConfirm)} className="absolute right-3 top-3" activeOpacity={0.7}>
                 <Ionicons name={showPasswordConfirm ? 'eye-off-outline' : 'eye-outline'} size={20} color={AUTH_COLORS.gray[400]} />
               </TouchableOpacity>
@@ -163,14 +242,24 @@ export default function SignupParentScreen({ navigation }) {
           <TouchableOpacity
             onPress={handleSignup}
             activeOpacity={0.7}
+            disabled={loading}
             className="rounded-xl py-4 items-center mt-2"
             style={{
-              backgroundColor: AUTH_COLORS.black,
+              backgroundColor: loading ? AUTH_COLORS.gray[400] : AUTH_COLORS.black,
             }}
           >
-            <Text className="text-lg font-semibold" style={{ color: AUTH_COLORS.white }}>
-              시작하기
-            </Text>
+            {loading ? (
+              <View className="flex-row items-center">
+                <ActivityIndicator color={AUTH_COLORS.white} size="small" />
+                <Text className="text-lg font-semibold ml-2" style={{ color: AUTH_COLORS.white }}>
+                  가입 중...
+                </Text>
+              </View>
+            ) : (
+              <Text className="text-lg font-semibold" style={{ color: AUTH_COLORS.white }}>
+                시작하기
+              </Text>
+            )}
           </TouchableOpacity>
             </View>
           </View>

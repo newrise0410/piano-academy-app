@@ -495,6 +495,195 @@ ${studentInfo.strengths ? `- 강점: ${studentInfo.strengths}` : ''}
 };
 
 /**
+ * 수업 일지 메모 자동 생성 (AI)
+ * @param {Object} lessonInfo - { studentName, progress, homework, strengths, improvements }
+ * @returns {Promise<Object>} { success, memo }
+ */
+export const generateLessonNoteMemo = async (lessonInfo) => {
+  try {
+    const genAI = initGeminiAI();
+
+    if (!genAI) {
+      throw new Error('Gemini API가 초기화되지 않았습니다');
+    }
+
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+
+    const systemPrompt = `당신은 피아노 학원 선생님의 수업 일지 작성을 도와주는 AI 비서입니다.
+
+역할:
+- 오늘 수업에서 학생의 진도, 숙제, 특이사항을 바탕으로 학부모님께 전달할 수업 메모를 작성합니다
+- 학생의 발전과 노력을 긍정적으로 표현합니다
+- 간결하면서도 구체적으로 작성합니다
+- 학부모님이 이해하기 쉬운 표현을 사용합니다
+
+작성 규칙:
+1. 2-3문장으로 간결하게 작성
+2. 학생의 긍정적인 면을 먼저 언급
+3. 개선이 필요한 부분은 부드럽게 표현
+4. 다음 수업에 대한 기대감 표현
+5. 이모지 사용 금지 (전문적인 톤 유지)
+
+주의사항:
+- 존댓말 사용 (학부모님께 전달)
+- 구체적인 예시 포함
+- 격려와 동기부여 포함`;
+
+    const userPrompt = `학생 이름: ${lessonInfo.studentName || '학생'}
+
+오늘 진도:
+${lessonInfo.progress || '정보 없음'}
+
+숙제:
+${lessonInfo.homework || '정보 없음'}
+
+${lessonInfo.strengths ? `잘한 점:\n${lessonInfo.strengths}` : ''}
+${lessonInfo.improvements ? `개선할 점:\n${lessonInfo.improvements}` : ''}
+
+위 정보를 바탕으로 학부모님께 전달할 수업 메모를 작성해주세요.`;
+
+    const result = await model.generateContent([systemPrompt, userPrompt]);
+    const response = await result.response;
+    const memo = response.text().trim();
+
+    return {
+      success: true,
+      memo,
+    };
+
+  } catch (error) {
+    console.error('Gemini API 호출 오류:', error);
+
+    return {
+      success: false,
+      error: error.message,
+      memo: `${lessonInfo.studentName || '학생'}이(가) 오늘 수업에서 ${lessonInfo.progress || '새로운 내용'}을 배웠습니다.`,
+    };
+  }
+};
+
+/**
+ * 수업 일지 메모 개선 (AI)
+ * @param {string} currentMemo - 현재 작성된 메모
+ * @param {Object} lessonInfo - { studentName, progress, homework }
+ * @returns {Promise<Object>} { success, improvedMemo }
+ */
+export const improveLessonNoteMemo = async (currentMemo, lessonInfo = {}) => {
+  try {
+    const genAI = initGeminiAI();
+
+    if (!genAI) {
+      throw new Error('Gemini API가 초기화되지 않았습니다');
+    }
+
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+
+    const systemPrompt = `당신은 피아노 학원 선생님의 수업 일지 개선을 도와주는 AI 비서입니다.
+
+역할:
+- 선생님이 작성한 메모를 더 전문적이고 명확하게 다듬습니다
+- 학부모님이 이해하기 쉽도록 표현을 개선합니다
+- 내용의 핵심은 유지하되, 표현을 부드럽고 긍정적으로 개선합니다
+
+개선 방향:
+1. 문장을 자연스럽게 다듬기
+2. 구체성 추가
+3. 긍정적인 표현으로 전환
+4. 맞춤법과 띄어쓰기 교정
+5. 2-3문장으로 간결하게 정리
+
+주의사항:
+- 원본 내용의 의미를 유지
+- 이모지 사용 금지
+- 존댓말 사용`;
+
+    const userPrompt = `학생 이름: ${lessonInfo.studentName || '학생'}
+${lessonInfo.progress ? `진도: ${lessonInfo.progress}` : ''}
+${lessonInfo.homework ? `숙제: ${lessonInfo.homework}` : ''}
+
+현재 메모:
+${currentMemo}
+
+위 메모를 개선해주세요.`;
+
+    const result = await model.generateContent([systemPrompt, userPrompt]);
+    const response = await result.response;
+    const improvedMemo = response.text().trim();
+
+    return {
+      success: true,
+      improvedMemo,
+    };
+
+  } catch (error) {
+    console.error('Gemini API 호출 오류:', error);
+
+    return {
+      success: false,
+      error: error.message,
+      improvedMemo: currentMemo,
+    };
+  }
+};
+
+/**
+ * 문의 답변 개선
+ * @param {string} originalAnswer - 원본 답변 내용
+ * @param {string} inquiryContent - 문의 내용 (참고용)
+ * @returns {Promise<Object>} { success, content, error }
+ */
+export const improveInquiryAnswer = async (originalAnswer, inquiryContent = '') => {
+  try {
+    const genAI = initGeminiAI();
+
+    if (!genAI) {
+      throw new Error('Gemini API가 초기화되지 않았습니다');
+    }
+
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+
+    const systemPrompt = `당신은 피아노 학원 선생님으로, 학부모님의 문의에 답변하는 전문가입니다.
+아래 답변을 더 정중하고 친절하며 전문적인 답변으로 개선해주세요.
+
+개선 방향:
+- 학부모님을 존중하는 표현 사용
+- 친절하고 따뜻한 어조
+- 구체적이고 명확한 설명
+- 필요시 추가 안내나 격려의 말 포함
+- 적절한 이모지 사용 (과하지 않게)
+
+출력 형식: 개선된 답변만 반환해주세요. (JSON이 아닌 텍스트로)`;
+
+    let prompt = `원본 답변:\n${originalAnswer}`;
+
+    if (inquiryContent) {
+      prompt = `문의 내용:\n${inquiryContent}\n\n${prompt}`;
+    }
+
+    const result = await model.generateContent([
+      systemPrompt,
+      prompt
+    ]);
+
+    const response = await result.response;
+    const improvedContent = response.text().trim();
+
+    return {
+      success: true,
+      content: improvedContent,
+    };
+
+  } catch (error) {
+    console.error('Gemini API 호출 오류:', error);
+    return {
+      success: false,
+      error: error.message,
+      content: originalAnswer, // 실패시 원본 반환
+    };
+  }
+};
+
+/**
  * Gemini API 사용 가능 여부 확인
  */
 export const isGeminiAvailable = () => {
@@ -508,5 +697,8 @@ export default {
   generateParentContactMessage,
   improveStudentMemo,
   generateStudentHomework,
+  generateLessonNoteMemo,
+  improveLessonNoteMemo,
+  improveInquiryAnswer,
   isGeminiAvailable,
 };

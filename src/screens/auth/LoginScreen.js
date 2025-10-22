@@ -81,12 +81,26 @@ export default function LoginScreen({ navigation }) {
         const result = await loginWithEmail(email, password);
 
         if (result.success) {
+          // role이 없는 경우 기본값 설정 (임시 해결책)
+          let userData = result.user;
+          if (!userData.role) {
+            // 기본값: teacher (원하면 parent로 변경 가능)
+            userData = { ...userData, role: 'teacher' };
+
+            // Firestore에 role 업데이트
+            const { updateUserProfile } = await import('../../services/authService');
+            await updateUserProfile(userData.uid, { role: 'teacher' });
+
+            toast.warning('역할 설정이 완료되었습니다.');
+          }
+
           // AuthStore에 사용자 정보 저장
-          login(result.user);
+          login(userData);
+
           toast.success('로그인 성공!');
 
           // 역할에 따라 화면 이동
-          // navigation.replace는 RootNavigator에서 자동으로 처리됨
+          // navigation.replace는 AppNavigator에서 자동으로 처리됨
         } else {
           toast.error(result.error || '로그인에 실패했습니다');
         }
@@ -286,7 +300,6 @@ export default function LoginScreen({ navigation }) {
                   if (passwordError) setPasswordError('');
                 }}
                 onBlur={() => validatePassword(password)}
-                type="password"
                 iconName="lock-closed-outline"
                 rightIconName={showPassword ? 'eye-off-outline' : 'eye-outline'}
                 onRightIconPress={() => setShowPassword(!showPassword)}

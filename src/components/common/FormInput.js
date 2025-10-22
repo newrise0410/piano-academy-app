@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { forwardRef } from 'react';
 import { View, TextInput, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Text from './Text';
@@ -23,7 +23,7 @@ import Text from './Text';
  * @param {object} style - 추가 스타일
  * @param {object} inputStyle - TextInput 추가 스타일
  */
-export default function FormInput({
+const FormInput = forwardRef(({
   label,
   value,
   onChangeText,
@@ -33,6 +33,7 @@ export default function FormInput({
   rightIconName,
   onRightIconPress,
   type = 'text',
+  secureTextEntry,
   disabled = false,
   required = false,
   maxLength,
@@ -41,7 +42,7 @@ export default function FormInput({
   style,
   inputStyle,
   ...props
-}) {
+}, ref) => {
   // 타입별 키보드 설정
   const getKeyboardType = () => {
     switch (type) {
@@ -95,59 +96,61 @@ export default function FormInput({
       {/* 입력 필드 */}
       <View
         className={`
-          bg-gray-50 rounded-xl border
+          bg-gray-50 rounded-xl border flex-row items-center
           ${error ? 'border-red-500' : 'border-gray-200'}
           ${disabled ? 'bg-gray-100 opacity-60' : ''}
           ${currentSize.container}
-          ${isMultiline ? 'min-h-[100px]' : ''}
+          ${isMultiline ? 'min-h-[100px] items-start' : ''}
         `}
       >
-        <View className={`flex-row items-${isMultiline ? 'start' : 'center'}`}>
-          {/* 왼쪽 아이콘 */}
-          {iconName && (
-            <Ionicons
-              name={iconName}
-              size={currentSize.icon}
-              color={error ? '#EF4444' : '#9CA3AF'}
-              style={{ marginRight: 12 }}
-            />
-          )}
-
-          {/* TextInput */}
-          <TextInput
-            value={value}
-            onChangeText={onChangeText}
-            placeholder={placeholder}
-            placeholderTextColor="#9CA3AF"
-            keyboardType={getKeyboardType()}
-            secureTextEntry={type === 'password'}
-            editable={!disabled}
-            maxLength={maxLength}
-            multiline={isMultiline}
-            numberOfLines={isMultiline ? numberOfLines : 1}
-            textAlignVertical={isMultiline ? 'top' : 'center'}
-            className={`
-              flex-1 ${currentSize.text} text-gray-800
-              ${Platform.OS === 'ios' ? 'py-0' : ''}
-            `}
-            style={[
-              { fontFamily: 'MaruBuri-Regular' },
-              inputStyle,
-            ]}
-            {...props}
+        {/* 왼쪽 아이콘 */}
+        {iconName && (
+          <Ionicons
+            name={iconName}
+            size={currentSize.icon}
+            color={error ? '#EF4444' : '#9CA3AF'}
+            style={{ marginRight: 12 }}
           />
+        )}
 
-          {/* 오른쪽 아이콘 */}
-          {rightIconName && (
-            <Ionicons
-              name={rightIconName}
-              size={currentSize.icon}
-              color={error ? '#EF4444' : '#9CA3AF'}
-              style={{ marginLeft: 12 }}
-              onPress={onRightIconPress}
-            />
-          )}
-        </View>
+        {/* TextInput */}
+        <TextInput
+          ref={ref}
+          value={value}
+          onChangeText={onChangeText}
+          placeholder={placeholder}
+          placeholderTextColor="#9CA3AF"
+          keyboardType={getKeyboardType()}
+          secureTextEntry={secureTextEntry !== undefined ? secureTextEntry : type === 'password'}
+          editable={!disabled}
+          maxLength={maxLength}
+          multiline={isMultiline}
+          numberOfLines={isMultiline ? numberOfLines : 1}
+          className={`flex-1 ${currentSize.text} text-gray-800`}
+          style={[
+            {
+              fontFamily: 'MaruBuri-Regular',
+              paddingVertical: 0,
+              paddingHorizontal: 0,
+              margin: 0,
+              includeFontPadding: false,
+              textAlignVertical: 'center',
+            },
+            inputStyle,
+          ]}
+          {...props}
+        />
+
+        {/* 오른쪽 아이콘 */}
+        {rightIconName && (
+          <Ionicons
+            name={rightIconName}
+            size={currentSize.icon}
+            color={error ? '#EF4444' : '#9CA3AF'}
+            style={{ marginLeft: 12 }}
+            onPress={onRightIconPress}
+          />
+        )}
       </View>
 
       {/* 에러 메시지 */}
@@ -168,4 +171,8 @@ export default function FormInput({
       )}
     </View>
   );
-}
+});
+
+FormInput.displayName = 'FormInput';
+
+export default FormInput;

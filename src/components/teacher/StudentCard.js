@@ -45,7 +45,8 @@ const StudentCard = React.memo(({ student, onPress }) => {
   // 수강권 표시 (useMemo로 최적화)
   const ticketDisplay = useMemo(() => {
     if (student.ticketType === 'count') {
-      return `${student.ticketCount}회`;
+      const count = student.ticketCount || 0;
+      return `${count}회 남음`;
     } else if (student.ticketType === 'period') {
       return `${student.ticketPeriod.start}~${student.ticketPeriod.end}`;
     }
@@ -164,12 +165,28 @@ const StudentCard = React.memo(({ student, onPress }) => {
               </Text>
             </View>
           )}
-          <View className="flex-1 bg-green-50 rounded-lg p-2 ml-1">
+          <View
+            className="flex-1 rounded-lg p-2 ml-1"
+            style={{
+              backgroundColor: student.ticketType === 'count' && student.ticketCount <= 2
+                ? '#FEF2F2'
+                : '#F0FDF4'
+            }}
+          >
             <View className="flex-row items-center mb-0.5">
-              <Ionicons name={student.ticketType === 'period' ? 'calendar' : 'ticket'} size={12} color={ticketColorValue} />
+              <Ionicons
+                name={student.ticketType === 'period' ? 'calendar' : 'ticket'}
+                size={12}
+                color={ticketColorValue}
+              />
               <Text className="text-xs text-gray-600 ml-1 font-semibold">
-                {student.ticketType === 'period' ? '기간' : '권'}
+                {student.ticketType === 'period' ? '기간' : '회차'}
               </Text>
+              {student.ticketType === 'count' && student.ticketCount === 0 && (
+                <View className="bg-red-500 rounded-full px-1.5 py-0.5 ml-1">
+                  <Text className="text-xs font-bold text-white" style={{ fontSize: 9 }}>소진</Text>
+                </View>
+              )}
             </View>
             <Text
               className="text-xs font-bold"

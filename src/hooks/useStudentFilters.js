@@ -19,7 +19,7 @@ export const useStudentFilters = (students) => {
   const filteredStudents = useMemo(() => {
     return students.filter((student) => {
       // 검색어 필터
-      const matchesSearch = student.name.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesSearch = (student.name || '').toLowerCase().includes(searchQuery.toLowerCase());
 
       // 카테고리 필터
       let matchesCategory = true;

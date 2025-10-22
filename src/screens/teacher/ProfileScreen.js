@@ -3,8 +3,9 @@ import React, { useState, useEffect } from 'react';
 import { View, ScrollView, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import * as Clipboard from 'expo-clipboard';
 import { Text, Card, ScreenHeader } from '../../components/common';
-import { useAuthStore } from '../../store';
+import { useAuthStore, useToastStore } from '../../store';
 import { getUserData } from '../../services/authService';
 import TEACHER_COLORS from '../../styles/teacher_colors';
 
@@ -96,6 +97,12 @@ export default function ProfileScreen({ navigation }) {
                 label="학원명"
                 value={userData?.academyName || '-'}
               />
+              <InfoRow
+                icon="key-outline"
+                label="학원 코드"
+                value={userData?.academyCode || '-'}
+                isCopyable
+              />
             </View>
           </Card>
 
@@ -127,7 +134,16 @@ export default function ProfileScreen({ navigation }) {
 }
 
 // 정보 행 컴포넌트
-function InfoRow({ icon, label, value }) {
+function InfoRow({ icon, label, value, isCopyable = false }) {
+  const toast = useToastStore();
+
+  const handleCopy = async () => {
+    if (value && value !== '-') {
+      await Clipboard.setStringAsync(value);
+      toast.success('클립보드에 복사되었습니다');
+    }
+  };
+
   return (
     <View className="flex-row items-center py-3 border-b border-gray-100">
       <View
@@ -140,6 +156,15 @@ function InfoRow({ icon, label, value }) {
         <Text className="text-sm text-gray-500 mb-1">{label}</Text>
         <Text className="text-base font-medium text-gray-800">{value}</Text>
       </View>
+      {isCopyable && value !== '-' && (
+        <TouchableOpacity
+          onPress={handleCopy}
+          className="ml-2 p-2"
+          activeOpacity={0.7}
+        >
+          <Ionicons name="copy-outline" size={20} color={TEACHER_COLORS.primary.DEFAULT} />
+        </TouchableOpacity>
+      )}
     </View>
   );
 }

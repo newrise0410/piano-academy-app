@@ -233,7 +233,7 @@ export default function UnpaidStudentsScreen({ navigation }) {
       {/* 안내 메시지 */}
       {unpaidStudents.length > 0 && (
         <View className="bg-yellow-50 border-t border-yellow-200 px-5 py-4">
-          <View className="flex-row items-start">
+          <View className="flex-row items-start"> 
             <Ionicons name="alert-circle" size={20} color={TEACHER_COLORS.warning[600]} />
             <View className="flex-1 ml-2">
               <Text className="text-sm text-gray-700 leading-5">

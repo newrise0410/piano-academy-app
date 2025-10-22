@@ -29,6 +29,8 @@ export const useAuthStore = create((set, get) => ({
     set({
       user: userData,
       isAuthenticated: true,
+      loading: false,
+      authInitialized: true,
       error: null
     });
   },
@@ -60,12 +62,16 @@ export const useAuthStore = create((set, get) => ({
     // Firebase 인증 상태 리스너 설정
     const unsubscribe = onAuthStateChange((user) => {
       if (user) {
+        // Firestore에서 가져온 데이터에 role이 포함되어 있음
         set({
           user: {
             uid: user.uid,
             email: user.email,
-            name: user.displayName || user.name,
-            role: user.role || 'teacher',
+            displayName: user.displayName || user.name,
+            name: user.name || user.displayName,
+            role: user.role, // Firestore에서 가져온 role 사용
+            phone: user.phone,
+            academyName: user.academyName,
             ...user,
           },
           isAuthenticated: true,

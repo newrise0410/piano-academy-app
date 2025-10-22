@@ -38,6 +38,7 @@ import {
 } from '../../store';
 import { getParentContactNeeds } from '../../services/dashboardService';
 import { getTeacherMenuSections } from '../../config/sidebarConfig';
+import { NoticeRepository } from '../../repositories/NoticeRepository';
 
 export default function DashboardScreen({ navigation }) {
   const { stats, loading: statsLoading, refresh: refreshStats } = useDashboard();
@@ -196,8 +197,6 @@ export default function DashboardScreen({ navigation }) {
           text: '전송',
           onPress: async () => {
             try {
-              const { NoticeRepository } = await import('../repositories/NoticeRepository');
-
               await NoticeRepository.create({
                 title: '수강료 미납 안내',
                 content: '수강료가 미납 중입니다. 확인 부탁드립니다.',

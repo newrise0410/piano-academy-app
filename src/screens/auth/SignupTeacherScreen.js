@@ -1,15 +1,18 @@
 // src/screens/auth/SignupTeacherScreen.js
 import React, { useState } from 'react';
-import { View, ScrollView, TouchableOpacity, TextInput, Alert } from 'react-native';
+import { View, ScrollView, TouchableOpacity, TextInput, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import Text from '../../components/common/Text';
 import AUTH_COLORS, { AUTH_GRADIENTS, AUTH_SEMANTIC_COLORS, AUTH_INPUT_COLORS, AUTH_OVERLAY_COLORS, AUTH_SHADOW_COLORS } from '../../styles/auth_colors';
+import { registerWithEmail } from '../../services/authService';
+import { useAuthStore, useToastStore } from '../../store';
 
 export default function SignupTeacherScreen({ navigation }) {
   const [formData, setFormData] = useState({
     academyName: '',
+    businessNumber: '',
     name: '',
     phone: '',
     email: '',
@@ -20,22 +23,100 @@ export default function SignupTeacherScreen({ navigation }) {
   const [showPasswordConfirm, setShowPasswordConfirm] = useState(false);
   const [agreedTerms, setAgreedTerms] = useState(false);
   const [agreedMarketing, setAgreedMarketing] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const handleSignup = () => {
-    if (!formData.academyName || !formData.name || !formData.phone || !formData.email || !formData.password) {
-      Alert.alert('필수 항목을 확인해주세요', '모든 항목을 입력해주세요.');
+  const { login } = useAuthStore();
+  const toast = useToastStore();
+
+  const handleSignup = async () => {
+    // 검증
+    if (!formData.academyName || !formData.businessNumber || !formData.name || !formData.phone || !formData.email || !formData.password) {
+      toast.error('모든 항목을 입력해주세요');
       return;
     }
+
+    // 사업자등록번호 검증
+    const { validateBusinessNumber } = require('../../utils/academyUtils');
+    if (!validateBusinessNumber(formData.businessNumber)) {
+      toast.error('올바른 사업자등록번호를 입력해주세요');
+      return;
+    }
+
+    if (formData.password.length < 6) {
+      toast.error('비밀번호는 최소 6자 이상이어야 합니다');
+      return;
+    }
+
     if (formData.password !== formData.passwordConfirm) {
-      Alert.alert('비밀번호가 다릅니다', '비밀번호를 다시 확인해주세요.');
+      toast.error('비밀번호가 일치하지 않습니다');
       return;
     }
+
     if (!agreedTerms) {
-      Alert.alert('약관 동의가 필요해요', '이용약관에 동의해주세요.');
+      toast.error('이용약관에 동의해주세요');
       return;
     }
-    // TODO: 실제 회원가입 로직 구현
-    Alert.alert('조금만 기다려주세요', '회원가입 기능은 준비 중입니다.');
+
+    setLoading(true);
+    try {
+      // 1. Firebase 회원가입
+      const registerResult = await registerWithEmail(formData.email, formData.password, {
+        name: formData.name,
+        role: 'teacher',
+        phone: formData.phone,
+        agreedMarketing,
+      });
+
+      if (!registerResult.success) {
+        toast.error(registerResult.error || '회원가입에 실패했습니다');
+        return;
+      }
+
+      // 2. 학원 생성
+      const { createAcademy } = await import('../../services/firestoreService');
+      const academyResult = await createAcademy({
+        name: formData.academyName,
+        businessNumber: formData.businessNumber,
+        ownerId: registerResult.user.uid,
+        ownerName: formData.name,
+        ownerPhone: formData.phone,
+        ownerEmail: formData.email,
+      });
+
+      if (!academyResult.success) {
+        toast.error('학원 생성에 실패했습니다');
+        return;
+      }
+
+      // 3. 사용자 정보에 학원 정보 추가
+      const { updateUserProfile } = await import('../../services/authService');
+      await updateUserProfile(registerResult.user.uid, {
+        academyId: academyResult.academyId,
+        academyCode: academyResult.code,
+        academyName: formData.academyName,
+      });
+
+      // 4. AuthStore에 사용자 정보 저장
+      login({
+        uid: registerResult.user.uid,
+        email: registerResult.user.email,
+        displayName: registerResult.user.displayName,
+        role: 'teacher',
+        academyId: academyResult.academyId,
+        academyCode: academyResult.code,
+        academyName: formData.academyName,
+        phone: formData.phone,
+      });
+
+      toast.success(`회원가입 완료! 학원 코드: ${academyResult.code}`);
+
+      // 메인 화면은 AppNavigator에서 자동으로 전환됨
+    } catch (error) {
+      console.error('Signup error:', error);
+      toast.error('회원가입 중 오류가 발생했습니다');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -103,6 +184,29 @@ export default function SignupTeacherScreen({ navigation }) {
             </View>
           </View>
 
+          {/* 사업자등록번호 */}
+          <View>
+            <Text className="text-sm font-semibold text-gray-700 mb-2">사업자등록번호</Text>
+            <View className="relative">
+              <Ionicons name="document-text" size={20} color={AUTH_COLORS.gray[400]} style={{ position: 'absolute', left: 12, top: 12, zIndex: 1 }} />
+              <TextInput
+                className="w-full border-2 border-gray-200 rounded-xl pl-11 pr-4 py-3 text-sm bg-white"
+                placeholder="000-00-00000"
+                placeholderTextColor={AUTH_COLORS.gray[400]}
+                value={formData.businessNumber}
+                onChangeText={(text) => {
+                  const { formatBusinessNumber } = require('../../utils/academyUtils');
+                  const formatted = formatBusinessNumber(text);
+                  setFormData({...formData, businessNumber: formatted});
+                }}
+                keyboardType="number-pad"
+                maxLength={12}
+                style={{ fontFamily: 'MaruBuri-Regular' }}
+              />
+            </View>
+            <Text className="text-xs text-gray-500 mt-1.5 ml-1">학원 코드 생성에 사용됩니다</Text>
+          </View>
+
           {/* 원장님 이름 */}
           <View>
             <Text className="text-sm font-semibold text-gray-700 mb-2">이름</Text>
@@ -166,6 +270,8 @@ export default function SignupTeacherScreen({ navigation }) {
                 value={formData.password}
                 onChangeText={(text) => setFormData({...formData, password: text})}
                 secureTextEntry={!showPassword}
+                autoCorrect={false}
+                autoCapitalize="none"
                 style={{ fontFamily: 'MaruBuri-Regular' }}
               />
               <TouchableOpacity onPress={() => setShowPassword(!showPassword)} className="absolute right-3 top-3" activeOpacity={0.7}>
@@ -186,6 +292,8 @@ export default function SignupTeacherScreen({ navigation }) {
                 value={formData.passwordConfirm}
                 onChangeText={(text) => setFormData({...formData, passwordConfirm: text})}
                 secureTextEntry={!showPasswordConfirm}
+                autoCorrect={false}
+                autoCapitalize="none"
                 style={{ fontFamily: 'MaruBuri-Regular' }}
               />
               <TouchableOpacity onPress={() => setShowPasswordConfirm(!showPasswordConfirm)} className="absolute right-3 top-3" activeOpacity={0.7}>
@@ -219,14 +327,24 @@ export default function SignupTeacherScreen({ navigation }) {
           <TouchableOpacity
             onPress={handleSignup}
             activeOpacity={0.7}
+            disabled={loading}
             className="rounded-xl py-4 items-center mt-2"
             style={{
-              backgroundColor: AUTH_COLORS.black,
+              backgroundColor: loading ? AUTH_COLORS.gray[400] : AUTH_COLORS.black,
             }}
           >
-            <Text className="text-lg font-semibold" style={{ color: AUTH_COLORS.white }}>
-              시작하기
-            </Text>
+            {loading ? (
+              <View className="flex-row items-center">
+                <ActivityIndicator color={AUTH_COLORS.white} size="small" />
+                <Text className="text-lg font-semibold ml-2" style={{ color: AUTH_COLORS.white }}>
+                  가입 중...
+                </Text>
+              </View>
+            ) : (
+              <Text className="text-lg font-semibold" style={{ color: AUTH_COLORS.white }}>
+                시작하기
+              </Text>
+            )}
           </TouchableOpacity>
             </View>
           </View>
