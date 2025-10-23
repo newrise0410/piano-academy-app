@@ -18,12 +18,13 @@ import { useAuthStore } from '../../store';
 import { getStudentById, getLessonNotesByStudent, getNoticesForStudent } from '../../services/firestoreService';
 import { getParentMenuSections } from '../../config/sidebarConfig';
 import { db } from '../../config/firebase';
-import { updateUserProfile } from '../../services/authService';
+import { updateUserProfile, getUserData } from '../../services/authService';
 
 export default function HomeScreen({ navigation }) {
   const { user } = useAuthStore();
   const [notificationModalVisible, setNotificationModalVisible] = useState(false);
   const [sidebarVisible, setSidebarVisible] = useState(false);
+  const [userData, setUserData] = useState(null);
   const [studentData, setStudentData] = useState(null);
   const [recentNotes, setRecentNotes] = useState([]);
   const [recentNotices, setRecentNotices] = useState([]);
@@ -55,6 +56,19 @@ export default function HomeScreen({ navigation }) {
     console.log('👤 User:', user);
     console.log('🆔 StudentId:', user?.studentId);
     console.log('👶 ChildName:', user?.childName);
+
+    try {
+      // 학부모 정보 로드
+      if (user?.uid) {
+        const userResult = await getUserData(user.uid);
+        if (userResult.success) {
+          setUserData(userResult.data);
+          console.log('✅ 학부모 정보 로드 완료:', userResult.data);
+        }
+      }
+    } catch (error) {
+      console.error('❌ 학부모 정보 로드 실패:', error);
+    }
 
     // studentId가 없으면 childName으로 찾기
     let studentId = user?.studentId;
@@ -243,7 +257,7 @@ export default function HomeScreen({ navigation }) {
               <TouchableOpacity onPress={handleOpenSidebar} activeOpacity={0.7}>
                 <View>
                   <Text className="text-white text-sm opacity-90">안녕하세요 👋</Text>
-                  <Text className="text-white text-2xl font-bold mt-1">{user?.displayName || user?.name}님</Text>
+                  <Text className="text-white text-2xl font-bold mt-1">{userData?.name || user?.name} 님</Text>
                 </View>
               </TouchableOpacity>
               <NotificationBadge
@@ -391,7 +405,7 @@ export default function HomeScreen({ navigation }) {
             <TouchableOpacity onPress={handleOpenSidebar} activeOpacity={0.7}>
               <View>
                 <Text className="text-white text-sm opacity-90">안녕하세요 👋</Text>
-                <Text className="text-white text-2xl font-bold mt-1">{studentData.name} 학부모님</Text>
+                <Text className="text-white text-2xl font-bold mt-1">{userData?.name || user?.name} 님</Text>
               </View>
             </TouchableOpacity>
             <NotificationBadge
@@ -689,6 +703,177 @@ export default function HomeScreen({ navigation }) {
                 <Text className="text-gray-500 font-medium">아직 작성된 수업 일지가 없어요</Text>
               </View>
             )}
+          </View>
+
+          {/* 학습 관리 메뉴 */}
+          <View className="mb-6">
+            <View className="flex-row items-center mb-3">
+              <Ionicons name="school" size={22} color={PARENT_COLORS.primary.DEFAULT} />
+              <Text className="text-lg font-bold text-gray-800 ml-2">학습 관리</Text>
+            </View>
+
+            <View className="flex-row flex-wrap">
+              {/* 학습 진도 */}
+              <TouchableOpacity
+                onPress={() => navigation.navigate('LearningProgress')}
+                activeOpacity={0.7}
+                className="bg-white rounded-2xl p-4 mb-3"
+                style={{
+                  width: '31%',
+                  marginRight: '3.5%',
+                  shadowColor: '#000',
+                  shadowOffset: { width: 0, height: 2 },
+                  shadowOpacity: 0.05,
+                  shadowRadius: 8,
+                  elevation: 3,
+                }}
+              >
+                <View className="bg-purple-100 rounded-full w-12 h-12 items-center justify-center mb-3">
+                  <Ionicons name="trending-up" size={24} color={PARENT_COLORS.purple[600]} />
+                </View>
+                <Text className="text-gray-900 font-bold text-sm mb-1">학습 진도</Text>
+                <Text className="text-gray-500 text-xs">그래프 확인</Text>
+              </TouchableOpacity>
+
+              {/* 완료한 곡 */}
+              <TouchableOpacity
+                onPress={() => navigation.navigate('CompletedSongs')}
+                activeOpacity={0.7}
+                className="bg-white rounded-2xl p-4 mb-3"
+                style={{
+                  width: '31%',
+                  marginRight: '3.5%',
+                  shadowColor: '#000',
+                  shadowOffset: { width: 0, height: 2 },
+                  shadowOpacity: 0.05,
+                  shadowRadius: 8,
+                  elevation: 3,
+                }}
+              >
+                <View className="bg-green-100 rounded-full w-12 h-12 items-center justify-center mb-3">
+                  <Ionicons name="musical-notes" size={24} color={PARENT_COLORS.green[600]} />
+                </View>
+                <Text className="text-gray-900 font-bold text-sm mb-1">완료한 곡</Text>
+                <Text className="text-gray-500 text-xs">목록 보기</Text>
+              </TouchableOpacity>
+
+              {/* 주간 과제 */}
+              <TouchableOpacity
+                onPress={() => navigation.navigate('WeeklyHomework')}
+                activeOpacity={0.7}
+                className="bg-white rounded-2xl p-4 mb-3"
+                style={{
+                  width: '31%',
+                  shadowColor: '#000',
+                  shadowOffset: { width: 0, height: 2 },
+                  shadowOpacity: 0.05,
+                  shadowRadius: 8,
+                  elevation: 3,
+                }}
+              >
+                <View className="bg-blue-100 rounded-full w-12 h-12 items-center justify-center mb-3">
+                  <Ionicons name="checkbox" size={24} color={PARENT_COLORS.blue[600]} />
+                </View>
+                <Text className="text-gray-900 font-bold text-sm mb-1">주간 과제</Text>
+                <Text className="text-gray-500 text-xs">체크리스트</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          {/* 커뮤니케이션 */}
+          <View className="mb-6">
+            <View className="flex-row items-center mb-3">
+              <Ionicons name="chatbubbles" size={22} color={PARENT_COLORS.primary.DEFAULT} />
+              <Text className="text-lg font-bold text-gray-800 ml-2">커뮤니케이션</Text>
+            </View>
+
+            <View className="flex-row flex-wrap">
+              {/* 선생님 채팅 */}
+              <TouchableOpacity
+                onPress={() => navigation.navigate('Chat')}
+                activeOpacity={0.7}
+                className="bg-white rounded-2xl p-4 mb-3"
+                style={{
+                  width: '48%',
+                  marginRight: '4%',
+                  shadowColor: '#000',
+                  shadowOffset: { width: 0, height: 2 },
+                  shadowOpacity: 0.05,
+                  shadowRadius: 8,
+                  elevation: 3,
+                }}
+              >
+                <View className="bg-blue-100 rounded-full w-12 h-12 items-center justify-center mb-3">
+                  <Ionicons name="chatbox" size={24} color={PARENT_COLORS.blue[600]} />
+                </View>
+                <Text className="text-gray-900 font-bold text-sm mb-1">선생님 채팅</Text>
+                <Text className="text-gray-500 text-xs">1:1 대화</Text>
+              </TouchableOpacity>
+
+              {/* 보강 예약 */}
+              <TouchableOpacity
+                onPress={() => navigation.navigate('MakeupBooking')}
+                activeOpacity={0.7}
+                className="bg-white rounded-2xl p-4 mb-3"
+                style={{
+                  width: '48%',
+                  shadowColor: '#000',
+                  shadowOffset: { width: 0, height: 2 },
+                  shadowOpacity: 0.05,
+                  shadowRadius: 8,
+                  elevation: 3,
+                }}
+              >
+                <View className="bg-amber-100 rounded-full w-12 h-12 items-center justify-center mb-3">
+                  <Ionicons name="calendar" size={24} color={PARENT_COLORS.amber[600]} />
+                </View>
+                <Text className="text-gray-900 font-bold text-sm mb-1">보강 예약</Text>
+                <Text className="text-gray-500 text-xs">일정 선택</Text>
+              </TouchableOpacity>
+
+              {/* 발표회 */}
+              <TouchableOpacity
+                onPress={() => navigation.navigate('Recital')}
+                activeOpacity={0.7}
+                className="bg-white rounded-2xl p-4 mb-3"
+                style={{
+                  width: '48%',
+                  marginRight: '4%',
+                  shadowColor: '#000',
+                  shadowOffset: { width: 0, height: 2 },
+                  shadowOpacity: 0.05,
+                  shadowRadius: 8,
+                  elevation: 3,
+                }}
+              >
+                <View className="bg-pink-100 rounded-full w-12 h-12 items-center justify-center mb-3">
+                  <Ionicons name="musical-notes" size={24} color={PARENT_COLORS.pink[600]} />
+                </View>
+                <Text className="text-gray-900 font-bold text-sm mb-1">발표회</Text>
+                <Text className="text-gray-500 text-xs">일정 확인</Text>
+              </TouchableOpacity>
+
+              {/* 수업 영상 */}
+              <TouchableOpacity
+                onPress={() => navigation.navigate('LessonVideos')}
+                activeOpacity={0.7}
+                className="bg-white rounded-2xl p-4 mb-3"
+                style={{
+                  width: '48%',
+                  shadowColor: '#000',
+                  shadowOffset: { width: 0, height: 2 },
+                  shadowOpacity: 0.05,
+                  shadowRadius: 8,
+                  elevation: 3,
+                }}
+              >
+                <View className="bg-purple-100 rounded-full w-12 h-12 items-center justify-center mb-3">
+                  <Ionicons name="videocam" size={24} color={PARENT_COLORS.purple[600]} />
+                </View>
+                <Text className="text-gray-900 font-bold text-sm mb-1">수업 영상</Text>
+                <Text className="text-gray-500 text-xs">복습하기</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       </ScrollView>

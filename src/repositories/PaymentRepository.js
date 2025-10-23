@@ -90,13 +90,33 @@ export const PaymentRepository = {
       if (!currentUser) {
         throw new Error('로그인이 필요합니다');
       }
-      // Firebase에서는 월별로 조회하므로 현재 월 데이터 반환
-      const currentMonth = new Date().toISOString().slice(0, 7); // YYYY-MM
-      const result = await getTuitionRecords(currentUser.uid, currentMonth);
-      if (!result.success) {
-        throw new Error(result.error);
+      // 최근 12개월 + 미래 1개월 데이터 조회 (타임존 문제 대응)
+      const allPayments = [];
+      const now = new Date();
+
+      console.log('[PaymentRepository.getAll] Fetching payments for 13 months (current +1 to -11)');
+
+      // i = -1부터 시작하여 미래 1개월도 포함
+      for (let i = -1; i < 12; i++) {
+        const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        const month = date.toISOString().slice(0, 7); // YYYY-MM
+        const result = await getTuitionRecords(currentUser.uid, month);
+        if (result.success && result.data) {
+          console.log(`[PaymentRepository.getAll] Month ${month}: Found ${result.data.length} payments`);
+          // Firebase 데이터를 앱 형식으로 변환
+          const convertedData = result.data.map(payment => ({
+            ...payment,
+            status: payment.isPaid ? 'paid' : 'unpaid',
+            date: payment.paidDate || payment.date,
+          }));
+          allPayments.push(...convertedData);
+        }
       }
-      return result.data;
+
+      console.log(`[PaymentRepository.getAll] Total payments fetched: ${allPayments.length}`);
+      console.log('[PaymentRepository.getAll] Sample payment:', allPayments[0]);
+
+      return allPayments;
     }
 
     try {
@@ -134,7 +154,13 @@ export const PaymentRepository = {
       if (!result.success) {
         throw new Error(result.error);
       }
-      return result.data.filter(p => p.studentId === studentId);
+      // Firebase 데이터를 앱 형식으로 변환
+      const convertedData = result.data.map(payment => ({
+        ...payment,
+        status: payment.isPaid ? 'paid' : 'unpaid',
+        date: payment.paidDate || payment.date,
+      }));
+      return convertedData.filter(p => p.studentId === studentId);
     }
 
     try {
@@ -175,11 +201,27 @@ export const PaymentRepository = {
       if (!currentUser) {
         throw new Error('로그인이 필요합니다');
       }
-      const result = await saveTuitionRecord(paymentData, currentUser.uid);
+      // 앱 형식을 Firebase 형식으로 변환
+      const paymentDate = paymentData.date instanceof Date
+        ? paymentData.date
+        : new Date(paymentData.date);
+      const month = paymentDate.toISOString().slice(0, 7); // YYYY-MM
+
+      const firebaseData = {
+        ...paymentData,
+        isPaid: paymentData.status === 'paid',
+        paidDate: paymentDate.toISOString(),
+        month: month,
+      };
+      // status와 date 필드 제거 (Firebase에서는 isPaid와 paidDate 사용)
+      delete firebaseData.status;
+      delete firebaseData.date;
+
+      const result = await saveTuitionRecord(firebaseData, currentUser.uid);
       if (!result.success) {
         throw new Error(result.error);
       }
-      return { ...paymentData, id: result.id, status: 'paid' };
+      return { ...paymentData, id: result.id };
     }
 
     try {
@@ -221,14 +263,66 @@ export const PaymentRepository = {
 
     if (isFirebaseMode()) {
       // Firebase에서는 주로 결제 상태만 업데이트
-      if (updates.status || updates.isPaid !== undefined) {
+      if (updates.status || updates.isPaid !== undefined || updates.date) {
         const isPaid = updates.isPaid !== undefined ? updates.isPaid : updates.status === 'paid';
-        const paidDate = updates.paidDate || (isPaid ? new Date().toISOString() : null);
+
+        // date를 ISO 문자열로 변환
+        let paidDate;
+        if (updates.date) {
+          paidDate = updates.date instanceof Date
+            ? updates.date.toISOString()
+            : new Date(updates.date).toISOString();
+        } else if (updates.paidDate) {
+          paidDate = updates.paidDate instanceof Date
+            ? updates.paidDate.toISOString()
+            : updates.paidDate;
+        } else {
+          paidDate = isPaid ? new Date().toISOString() : null;
+        }
+
+        console.log('[PaymentRepository.update] Updating payment:', {
+          id,
+          isPaid,
+          paidDate,
+          month: paidDate?.slice(0, 7)
+        });
+
         const result = await updateTuitionStatus(id, isPaid, paidDate);
         if (!result.success) {
+          console.error('[PaymentRepository.update] Update failed:', result.error);
           throw new Error(result.error);
         }
-        return { id, ...updates };
+        console.log('[PaymentRepository.update] Update successful');
+
+        // Firebase에서 업데이트된 문서를 다시 가져와서 전체 데이터 반환
+        const currentUser = getCurrentUser();
+        if (!currentUser) {
+          throw new Error('로그인이 필요합니다');
+        }
+
+        // paidDate에서 month 추출
+        const month = paidDate ? paidDate.slice(0, 7) : new Date().toISOString().slice(0, 7);
+        const getResult = await getTuitionRecords(currentUser.uid, month);
+
+        if (getResult.success) {
+          const updatedDoc = getResult.data.find(doc => doc.id === id);
+          if (updatedDoc) {
+            // Firebase 형식을 앱 형식으로 변환
+            return {
+              ...updatedDoc,
+              status: updatedDoc.isPaid ? 'paid' : 'unpaid',
+              date: updatedDoc.paidDate || updatedDoc.date,
+            };
+          }
+        }
+
+        // 만약 문서를 찾지 못했다면 기본 응답 반환
+        return {
+          id,
+          status: isPaid ? 'paid' : 'unpaid',
+          date: paidDate,
+          ...updates
+        };
       }
       // 다른 필드 업데이트는 지원하지 않음
       throw new Error('Firebase 모드에서는 결제 상태만 수정할 수 있습니다');
@@ -310,7 +404,13 @@ export const PaymentRepository = {
       if (!result.success) {
         throw new Error(result.error);
       }
-      return result.data.filter(p => !p.isPaid);
+      // Firebase 데이터를 앱 형식으로 변환
+      const convertedData = result.data.map(payment => ({
+        ...payment,
+        status: payment.isPaid ? 'paid' : 'unpaid',
+        date: payment.paidDate || payment.date,
+      }));
+      return convertedData.filter(p => p.status === 'unpaid');
     }
 
     try {
@@ -358,8 +458,14 @@ export const PaymentRepository = {
       if (!result.success) {
         throw new Error(result.error);
       }
+      // Firebase 데이터를 앱 형식으로 변환
+      const convertedData = result.data.map(payment => ({
+        ...payment,
+        status: payment.isPaid ? 'paid' : 'unpaid',
+        date: payment.paidDate || payment.date,
+      }));
       // 날짜 범위로 필터링
-      return result.data.filter(p => {
+      return convertedData.filter(p => {
         const paymentDate = new Date(p.date);
         const start = new Date(startDate);
         const end = new Date(endDate);

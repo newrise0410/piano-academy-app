@@ -33,11 +33,29 @@ export const getTeacherMenuSections = (navigation, closeSidebar) => [
         },
       },
       {
+        icon: 'calendar-outline',
+        label: '수업 일정',
+        onPress: () => {
+          closeSidebar();
+          navigation.navigate('ScheduleScreen');
+        },
+      },
+      {
         icon: 'book-outline',
         label: '교재 관리',
         onPress: () => {
           closeSidebar();
           navigation.navigate('MaterialManagementScreen');
+        },
+      },
+      {
+        icon: 'stats-chart-outline',
+        label: '재정 관리',
+        onPress: () => {
+          closeSidebar();
+          navigation.navigate('Tuition', {
+            screen: 'FinanceManagement',
+          });
         },
       },
     ],
@@ -46,11 +64,32 @@ export const getTeacherMenuSections = (navigation, closeSidebar) => [
     title: '소통',
     items: [
       {
+        icon: 'chatbubble-ellipses-outline',
+        label: '학부모 채팅',
+        onPress: () => {
+          closeSidebar();
+          navigation.navigate('ChatList');
+        },
+      },
+      {
         icon: 'chatbubbles-outline',
         label: '문의 관리',
         onPress: () => {
           closeSidebar();
           navigation.navigate('InquiryManagementScreen');
+        },
+      },
+    ],
+  },
+  {
+    title: '이벤트',
+    items: [
+      {
+        icon: 'musical-notes-outline',
+        label: '발표회 관리',
+        onPress: () => {
+          closeSidebar();
+          navigation.navigate('RecitalManagement');
         },
       },
     ],
@@ -76,6 +115,19 @@ export const getTeacherMenuSections = (navigation, closeSidebar) => [
  */
 export const getParentMenuSections = (navigation, closeSidebar) => [
   {
+    title: '사용자',
+    items: [
+      {
+        icon: 'person-outline',
+        label: '내 정보',
+        onPress: () => {
+          closeSidebar();
+          navigation.navigate('Profile');
+        },
+      },
+    ],
+  },
+  {
     title: '자녀',
     items: [
       {
@@ -86,19 +138,64 @@ export const getParentMenuSections = (navigation, closeSidebar) => [
           navigation.navigate('ChildInfo');
         },
       },
-      {
-        icon: 'add-circle-outline',
-        label: '자녀 등록 요청',
-        onPress: () => {
-          closeSidebar();
-          navigation.navigate('ChildRegistrationRequest');
-        },
-      },
     ],
   },
   {
     title: '학습',
     items: [
+      {
+        icon: 'calendar-outline',
+        label: '수업 일정',
+        onPress: () => {
+          closeSidebar();
+          navigation.navigate('Schedule');
+        },
+      },
+      {
+        icon: 'trending-up-outline',
+        label: '학습 진도',
+        onPress: () => {
+          closeSidebar();
+          navigation.navigate('LearningProgress');
+        },
+      },
+      {
+        icon: 'musical-note-outline',
+        label: '완료한 곡',
+        onPress: () => {
+          closeSidebar();
+          navigation.navigate('CompletedSongs');
+        },
+      },
+      {
+        icon: 'checkbox-outline',
+        label: '주간 과제',
+        onPress: () => {
+          closeSidebar();
+          navigation.navigate('WeeklyHomework');
+        },
+      },
+      {
+        icon: 'videocam-outline',
+        label: '수업 영상',
+        onPress: () => {
+          closeSidebar();
+          navigation.navigate('LessonVideos');
+        },
+      },
+    ],
+  },
+  {
+    title: '소통',
+    items: [
+      {
+        icon: 'chatbubble-ellipses-outline',
+        label: '선생님 채팅',
+        onPress: () => {
+          closeSidebar();
+          navigation.navigate('Chat');
+        },
+      },
       {
         icon: 'chatbubbles-outline',
         label: '문의하기',
@@ -107,11 +204,27 @@ export const getParentMenuSections = (navigation, closeSidebar) => [
           navigation.navigate('Inquiry');
         },
       },
+      {
+        icon: 'calendar-number-outline',
+        label: '보강 예약',
+        onPress: () => {
+          closeSidebar();
+          navigation.navigate('MakeupBooking');
+        },
+      },
     ],
   },
   {
-    title: '기타',
+    title: '이벤트',
     items: [
+      {
+        icon: 'musical-notes-outline',
+        label: '발표회',
+        onPress: () => {
+          closeSidebar();
+          navigation.navigate('Recital');
+        },
+      },
       {
         icon: 'trophy-outline',
         label: '갤러리',

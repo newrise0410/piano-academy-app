@@ -838,6 +838,8 @@ export const getNoticesForStudent = async (studentId, teacherId = null) => {
  */
 export const getTuitionRecords = async (teacherId, month) => {
   try {
+    console.log(`[getTuitionRecords] Querying - teacherId: ${teacherId}, month: ${month}`);
+
     const tuitionRef = collection(db, 'tuition');
     const q = query(
       tuitionRef,
@@ -848,8 +850,12 @@ export const getTuitionRecords = async (teacherId, month) => {
     const querySnapshot = await getDocs(q);
     const tuition = [];
     querySnapshot.forEach((doc) => {
-      tuition.push({ id: doc.id, ...doc.data() });
+      const data = doc.data();
+      console.log(`[getTuitionRecords] Found document:`, { id: doc.id, month: data.month, isPaid: data.isPaid, studentName: data.studentName });
+      tuition.push({ id: doc.id, ...data });
     });
+
+    console.log(`[getTuitionRecords] Total documents found: ${tuition.length}`);
 
     return { success: true, data: tuition };
   } catch (error) {
@@ -866,6 +872,15 @@ export const getTuitionRecords = async (teacherId, month) => {
  */
 export const saveTuitionRecord = async (tuitionData, teacherId) => {
   try {
+    console.log('[saveTuitionRecord] Saving tuition:', {
+      teacherId,
+      studentName: tuitionData.studentName,
+      month: tuitionData.month,
+      isPaid: tuitionData.isPaid,
+      paidDate: tuitionData.paidDate,
+      amount: tuitionData.amount
+    });
+
     const tuitionRef = collection(db, 'tuition');
     const docRef = await addDoc(tuitionRef, {
       ...tuitionData,
@@ -873,6 +888,8 @@ export const saveTuitionRecord = async (tuitionData, teacherId) => {
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     });
+
+    console.log('[saveTuitionRecord] Document created with ID:', docRef.id);
 
     return { success: true, id: docRef.id };
   } catch (error) {
@@ -918,11 +935,29 @@ export const getTuitionByStudentId = async (studentId) => {
 export const updateTuitionStatus = async (tuitionId, isPaid, paidDate = null) => {
   try {
     const docRef = doc(db, 'tuition', tuitionId);
-    await updateDoc(docRef, {
+
+    // paidDate에서 month 추출 (YYYY-MM 형식)
+    const month = paidDate ? paidDate.slice(0, 7) : null;
+
+    const updateData = {
       isPaid,
       paidDate,
       updatedAt: serverTimestamp(),
+    };
+
+    // month 필드도 함께 업데이트 (paidDate가 있는 경우)
+    if (month) {
+      updateData.month = month;
+    }
+
+    console.log('[updateTuitionStatus] Updating document:', {
+      tuitionId,
+      updateData: { ...updateData, updatedAt: 'serverTimestamp()' }
     });
+
+    await updateDoc(docRef, updateData);
+
+    console.log('[updateTuitionStatus] Document updated successfully');
 
     return { success: true };
   } catch (error) {

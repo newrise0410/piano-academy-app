@@ -1,13 +1,12 @@
 // src/screens/teacher/DashboardScreen.js
 import React, { useState, useEffect } from 'react';
 import { View, ScrollView, RefreshControl, TouchableOpacity, Linking, Alert } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import TEACHER_COLORS from '../../styles/teacher_colors';
+import { LinearGradient } from 'expo-linear-gradient';
+import TEACHER_COLORS, { TEACHER_GRADIENTS } from '../../styles/teacher_colors';
 
 import {
   Text,
-  Card,
   Button,
   StatBox,
   ActivityItem,
@@ -227,26 +226,7 @@ export default function DashboardScreen({ navigation }) {
   const teacherMenuSections = getTeacherMenuSections(navigation, () => setSidebarVisible(false));
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-50">
-      {/* 헤더 */}
-      <View className="bg-primary px-5 pb-8 pt-2">
-        <View className="flex-row justify-between items-center">
-          <TouchableOpacity onPress={() => setSidebarVisible(true)} activeOpacity={0.7}>
-            <View>
-              <Text className="text-white text-sm opacity-90">안녕하세요 👋</Text>
-              <Text className="text-white text-xl font-bold mt-1">
-                {user?.displayName || user?.email?.split('@')[0] || ''} 선생님
-              </Text>
-            </View>
-          </TouchableOpacity>
-          <NotificationBadge
-            count={unreadCount}
-            onPress={() => setNotificationModalVisible(true)}
-            iconColor={TEACHER_COLORS.white}
-          />
-        </View>
-      </View>
-
+    <View className="flex-1 bg-gray-50">
       <ScrollView
         className="flex-1"
         showsVerticalScrollIndicator={false}
@@ -254,11 +234,44 @@ export default function DashboardScreen({ navigation }) {
           <RefreshControl refreshing={isLoading} onRefresh={onRefresh} />
         }
       >
+        {/* 그라디언트 헤더 */}
+        <LinearGradient
+          colors={TEACHER_GRADIENTS.primaryGradient}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={{ paddingTop: 50, paddingBottom: 80 }}
+        >
+          <View className="px-5 flex-row justify-between items-center">
+            <TouchableOpacity onPress={() => setSidebarVisible(true)} activeOpacity={0.7}>
+              <View>
+                <Text className="text-white text-sm opacity-90">안녕하세요 👋</Text>
+                <Text className="text-white text-2xl font-bold mt-1">
+                  {user?.displayName || user?.email?.split('@')[0] || ''} 선생님
+                </Text>
+              </View>
+            </TouchableOpacity>
+            <NotificationBadge
+              count={unreadCount}
+              onPress={() => setNotificationModalVisible(true)}
+              iconColor="white"
+            />
+          </View>
+        </LinearGradient>
+
         {/* 컨텐츠 */}
-        <View className="px-5 pt-4">
+        <View className="px-5" style={{ marginTop: -60 }}>
           {/* 오늘 연락할 학부모 - 최우선 섹션 */}
           {contactNeeds && contactNeeds.length > 0 && (
-            <Card className="mb-4">
+            <View
+              className="bg-white rounded-3xl p-6 mb-4"
+              style={{
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.1,
+                shadowRadius: 12,
+                elevation: 8,
+              }}
+            >
               <View className="flex-row items-center justify-between mb-4">
                 <View className="flex-row items-center">
                   <Ionicons name="call" size={22} color={TEACHER_COLORS.primary.DEFAULT} />
@@ -296,11 +309,20 @@ export default function DashboardScreen({ navigation }) {
                   <Ionicons name="chevron-forward" size={16} color={TEACHER_COLORS.primary.DEFAULT} />
                 </TouchableOpacity>
               )}
-            </Card>
+            </View>
           )}
 
           {/* 오늘의 현황 */}
-          <Card>
+          <View
+            className="bg-white rounded-3xl p-6 mb-4"
+            style={{
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.1,
+              shadowRadius: 12,
+              elevation: 8,
+            }}
+          >
             <Text className="text-lg font-bold text-gray-800 mb-4">오늘의 현황</Text>
             <View style={{ flexDirection: 'row' }}>
               <View style={{ flex: 1, paddingRight: 4 }}>
@@ -341,10 +363,19 @@ export default function DashboardScreen({ navigation }) {
                 </TouchableOpacity>
               </View>
             </View>
-          </Card>
+          </View>
 
           {/* 빠른 작업 */}
-          <Card className="mt-4">
+          <View
+            className="bg-white rounded-3xl p-6 mb-4"
+            style={{
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.05,
+              shadowRadius: 8,
+              elevation: 3,
+            }}
+          >
             <Text className="text-lg font-bold text-gray-800 mb-4">빠른 작업</Text>
 
             <Button
@@ -377,10 +408,77 @@ export default function DashboardScreen({ navigation }) {
               onPress={() => navigation.navigate('GalleryScreen')}
               className="mt-3"
             />
-          </Card>
+          </View>
+
+          {/* 추가 기능 */}
+          <View
+            className="bg-white rounded-3xl p-6 mb-4"
+            style={{
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.05,
+              shadowRadius: 8,
+              elevation: 3,
+            }}
+          >
+            <Text className="text-lg font-bold text-gray-800 mb-4">추가 기능</Text>
+
+            <View className="flex-row flex-wrap -mx-1">
+              {/* 학부모 채팅 */}
+              <View className="w-1/2 px-1 mb-2">
+                <TouchableOpacity
+                  onPress={() => navigation.navigate('ChatList')}
+                  activeOpacity={0.7}
+                  className="bg-gray-50 rounded-xl p-4"
+                >
+                  <View className="flex-row items-center">
+                    <View
+                      className="w-10 h-10 rounded-full items-center justify-center mr-3"
+                      style={{ backgroundColor: TEACHER_COLORS.blue[100] }}
+                    >
+                      <Ionicons name="chatbubbles" size={20} color={TEACHER_COLORS.blue[600]} />
+                    </View>
+                    <Text className="text-gray-900 font-bold text-sm flex-1">
+                      학부모 채팅
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+              </View>
+
+              {/* 발표회 관리 */}
+              <View className="w-1/2 px-1 mb-2">
+                <TouchableOpacity
+                  onPress={() => navigation.navigate('RecitalManagement')}
+                  activeOpacity={0.7}
+                  className="bg-gray-50 rounded-xl p-4"
+                >
+                  <View className="flex-row items-center">
+                    <View
+                      className="w-10 h-10 rounded-full items-center justify-center mr-3"
+                      style={{ backgroundColor: TEACHER_COLORS.purple[100] }}
+                    >
+                      <Ionicons name="musical-notes" size={20} color={TEACHER_COLORS.purple[600]} />
+                    </View>
+                    <Text className="text-gray-900 font-bold text-sm flex-1">
+                      발표회 관리
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
 
           {/* 최근 활동 */}
-          <Card className="mt-4 mb-5">
+          <View
+            className="bg-white rounded-3xl p-6 mb-6"
+            style={{
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.05,
+              shadowRadius: 8,
+              elevation: 3,
+            }}
+          >
             <Text className="text-lg font-bold text-gray-800 mb-4">최근 활동</Text>
 
             {(activities || []).map((activity, index) => (
@@ -393,7 +491,7 @@ export default function DashboardScreen({ navigation }) {
                 isLast={index === (activities || []).length - 1}
               />
             ))}
-          </Card>
+          </View>
         </View>
       </ScrollView>
 
@@ -458,6 +556,6 @@ export default function DashboardScreen({ navigation }) {
         theme={TEACHER_COLORS}
         userRole="teacher"
       />
-    </SafeAreaView>
+    </View>
   );
 }

@@ -24,6 +24,18 @@ import AcademyEditScreen from "../screens/teacher/AcademyEditScreen";
 import LessonNoteScreen from "../screens/teacher/LessonNoteScreen";
 import InquiryManagementScreen from "../screens/teacher/InquiryManagementScreen";
 import MaterialManagementScreen from "../screens/teacher/MaterialManagementScreen";
+import ScheduleScreen from "../screens/teacher/ScheduleScreen";
+import FinanceManagementScreen from "../screens/teacher/FinanceManagementScreen";
+import IncomeListScreen from "../screens/teacher/IncomeListScreen";
+import ExpenseListScreen from "../screens/teacher/ExpenseListScreen";
+import PaymentStatisticsScreen from "../screens/teacher/PaymentStatisticsScreen";
+import StudentPaymentHistoryScreen from "../screens/teacher/StudentPaymentHistoryScreen";
+import DiscountManagementScreen from "../screens/teacher/DiscountManagementScreen";
+import ReceiptScreen from "../screens/teacher/ReceiptScreen";
+import RefundScreen from "../screens/teacher/RefundScreen";
+import ChatListScreen from "../screens/teacher/ChatListScreen";
+import ChatRoomScreen from "../screens/teacher/ChatRoomScreen";
+import RecitalManagementScreen from "../screens/teacher/RecitalManagementScreen";
 import FirebaseTestScreen from "../screens/FirebaseTestScreen";
 
 const Tab = createBottomTabNavigator();
@@ -43,11 +55,15 @@ function DashboardStack() {
       <Stack.Screen name="LessonNoteScreen" component={LessonNoteScreen} />
       <Stack.Screen name="InquiryManagementScreen" component={InquiryManagementScreen} />
       <Stack.Screen name="MaterialManagementScreen" component={MaterialManagementScreen} />
+      <Stack.Screen name="ScheduleScreen" component={ScheduleScreen} />
       <Stack.Screen name="FirebaseTestScreen" component={FirebaseTestScreen} />
       <Stack.Screen name="TodayClassesScreen" component={TodayClassesScreen} />
       <Stack.Screen name="UnpaidStudentsScreen" component={UnpaidStudentsScreen} />
       <Stack.Screen name="MakeupClassesScreen" component={MakeupClassesScreen} />
       <Stack.Screen name="StudentDetail" component={StudentDetailScreen} />
+      <Stack.Screen name="ChatList" component={ChatListScreen} />
+      <Stack.Screen name="ChatRoom" component={ChatRoomScreen} />
+      <Stack.Screen name="RecitalManagement" component={RecitalManagementScreen} />
     </Stack.Navigator>
   );
 }
@@ -59,6 +75,24 @@ function StudentStack() {
       <Stack.Screen name="StudentList" component={StudentListScreen} />
       <Stack.Screen name="StudentForm" component={StudentFormScreen} />
       <Stack.Screen name="StudentDetail" component={StudentDetailScreen} />
+    </Stack.Navigator>
+  );
+}
+
+// 수강료 관리 Stack Navigator
+function TuitionStack() {
+  return (
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="TuitionMain" component={TuitionScreen} />
+      <Stack.Screen name="UnpaidStudentsScreen" component={UnpaidStudentsScreen} />
+      <Stack.Screen name="FinanceManagement" component={FinanceManagementScreen} />
+      <Stack.Screen name="IncomeList" component={IncomeListScreen} />
+      <Stack.Screen name="ExpenseList" component={ExpenseListScreen} />
+      <Stack.Screen name="PaymentStatistics" component={PaymentStatisticsScreen} />
+      <Stack.Screen name="StudentPaymentHistory" component={StudentPaymentHistoryScreen} />
+      <Stack.Screen name="DiscountManagement" component={DiscountManagementScreen} />
+      <Stack.Screen name="Receipt" component={ReceiptScreen} />
+      <Stack.Screen name="Refund" component={RefundScreen} />
     </Stack.Navigator>
   );
 }
@@ -126,7 +160,7 @@ export default function TeacherNavigator() {
       />
       <Tab.Screen
         name="Tuition"
-        component={TuitionScreen}
+        component={TuitionStack}
         options={{ tabBarLabel: "수강료" }}
       />
     </Tab.Navigator>

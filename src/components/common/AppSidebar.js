@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { Text } from './index';
+import Text from './Text';
 import { useAuthStore } from '../../store';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;

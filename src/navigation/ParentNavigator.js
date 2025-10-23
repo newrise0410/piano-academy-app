@@ -13,7 +13,17 @@ import NoticeScreen from '../screens/parent/NoticeScreen';
 import InquiryScreen from '../screens/parent/InquiryScreen';
 import LessonNoteScreen from '../screens/parent/LessonNoteScreen';
 import ChildInfoScreen from '../screens/parent/ChildInfoScreen';
+import ChildDetailScreen from '../screens/parent/ChildDetailScreen';
 import ChildRegistrationRequestScreen from '../screens/parent/ChildRegistrationRequestScreen';
+import ProfileScreen from '../screens/parent/ProfileScreen';
+import ScheduleScreen from '../screens/parent/ScheduleScreen';
+import LearningProgressScreen from '../screens/parent/LearningProgressScreen';
+import CompletedSongsScreen from '../screens/parent/CompletedSongsScreen';
+import WeeklyHomeworkScreen from '../screens/parent/WeeklyHomeworkScreen';
+import ChatScreen from '../screens/parent/ChatScreen';
+import MakeupBookingScreen from '../screens/parent/MakeupBookingScreen';
+import RecitalScreen from '../screens/parent/RecitalScreen';
+import LessonVideosScreen from '../screens/parent/LessonVideosScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -24,9 +34,19 @@ function HomeStack() {
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name="HomeMain" component={HomeScreen} />
       <Stack.Screen name="ChildInfo" component={ChildInfoScreen} />
+      <Stack.Screen name="ChildDetail" component={ChildDetailScreen} />
       <Stack.Screen name="ChildRegistrationRequest" component={ChildRegistrationRequestScreen} />
       <Stack.Screen name="Inquiry" component={InquiryScreen} />
       <Stack.Screen name="Gallery" component={GalleryScreen} />
+      <Stack.Screen name="Profile" component={ProfileScreen} />
+      <Stack.Screen name="Schedule" component={ScheduleScreen} />
+      <Stack.Screen name="LearningProgress" component={LearningProgressScreen} />
+      <Stack.Screen name="CompletedSongs" component={CompletedSongsScreen} />
+      <Stack.Screen name="WeeklyHomework" component={WeeklyHomeworkScreen} />
+      <Stack.Screen name="Chat" component={ChatScreen} />
+      <Stack.Screen name="MakeupBooking" component={MakeupBookingScreen} />
+      <Stack.Screen name="Recital" component={RecitalScreen} />
+      <Stack.Screen name="LessonVideos" component={LessonVideosScreen} />
     </Stack.Navigator>
   );
 }

@@ -1,18 +1,30 @@
 // src/screens/teacher/ProfileScreen.js
 import React, { useState, useEffect } from 'react';
-import { View, ScrollView, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
+import { View, ScrollView, TouchableOpacity, ActivityIndicator, Alert, Modal, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
 import { Text, Card, ScreenHeader } from '../../components/common';
 import { useAuthStore, useToastStore } from '../../store';
-import { getUserData } from '../../services/authService';
+import { getUserData, changePassword, logout } from '../../services/authService';
 import TEACHER_COLORS from '../../styles/teacher_colors';
 
 export default function ProfileScreen({ navigation }) {
   const [loading, setLoading] = useState(true);
   const [userData, setUserData] = useState(null);
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [passwordLoading, setPasswordLoading] = useState(false);
+
   const user = useAuthStore((state) => state.user);
+  const clearUser = useAuthStore((state) => state.clearUser);
+  const toast = useToastStore();
+
+  // 비밀번호 변경 상태
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: '',
+  });
 
   useEffect(() => {
     loadUserData();
@@ -35,6 +47,69 @@ export default function ProfileScreen({ navigation }) {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleChangePassword = async () => {
+    if (!passwordData.currentPassword || !passwordData.newPassword || !passwordData.confirmPassword) {
+      toast.warning('모든 필드를 입력해주세요');
+      return;
+    }
+
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      toast.error('새 비밀번호가 일치하지 않습니다');
+      return;
+    }
+
+    if (passwordData.newPassword.length < 6) {
+      toast.error('비밀번호는 최소 6자 이상이어야 합니다');
+      return;
+    }
+
+    setPasswordLoading(true);
+    try {
+      const result = await changePassword(passwordData.currentPassword, passwordData.newPassword);
+
+      if (result.success) {
+        toast.success('비밀번호가 변경되었습니다');
+        setShowPasswordModal(false);
+        setPasswordData({
+          currentPassword: '',
+          newPassword: '',
+          confirmPassword: '',
+        });
+      } else {
+        toast.error(result.error || '비밀번호 변경에 실패했습니다');
+      }
+    } catch (error) {
+      console.error('비밀번호 변경 오류:', error);
+      toast.error('비밀번호 변경 중 오류가 발생했습니다');
+    } finally {
+      setPasswordLoading(false);
+    }
+  };
+
+  const handleLogout = () => {
+    Alert.alert(
+      '로그아웃',
+      '정말 로그아웃하시겠습니까?',
+      [
+        { text: '취소', style: 'cancel' },
+        {
+          text: '로그아웃',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await logout();
+              clearUser();
+              toast.success('로그아웃되었습니다');
+            } catch (error) {
+              console.error('로그아웃 오류:', error);
+              toast.error('로그아웃에 실패했습니다');
+            }
+          },
+        },
+      ]
+    );
   };
 
   if (loading) {
@@ -118,17 +193,89 @@ export default function ProfileScreen({ navigation }) {
             <MenuButton
               icon="key-outline"
               label="비밀번호 변경"
-              onPress={() => Alert.alert('준비중', '비밀번호 변경 기능은 준비 중입니다.')}
+              onPress={() => setShowPasswordModal(true)}
             />
             <MenuButton
-              icon="notifications-outline"
-              label="알림 설정"
-              onPress={() => Alert.alert('준비중', '알림 설정 기능은 준비 중입니다.')}
+              icon="log-out-outline"
+              label="로그아웃"
+              onPress={handleLogout}
               showDivider={false}
             />
           </Card>
         </View>
       </ScrollView>
+
+      {/* 비밀번호 변경 모달 */}
+      <Modal
+        visible={showPasswordModal}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setShowPasswordModal(false)}
+      >
+        <View className="flex-1 justify-end" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+          <View className="bg-white rounded-t-3xl" style={{ maxHeight: '80%' }}>
+            {/* 헤더 */}
+            <View className="flex-row items-center justify-between p-5 border-b border-gray-100">
+              <Text className="text-xl font-bold text-gray-900">비밀번호 변경</Text>
+              <TouchableOpacity onPress={() => setShowPasswordModal(false)}>
+                <Ionicons name="close" size={28} color={TEACHER_COLORS.gray[600]} />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView className="p-5">
+              {/* 현재 비밀번호 */}
+              <View className="mb-4">
+                <Text className="text-gray-700 font-semibold mb-2">현재 비밀번호</Text>
+                <TextInput
+                  className="bg-gray-50 rounded-2xl p-4 text-base"
+                  placeholder="현재 비밀번호를 입력하세요"
+                  value={passwordData.currentPassword}
+                  onChangeText={(text) => setPasswordData({ ...passwordData, currentPassword: text })}
+                  secureTextEntry
+                />
+              </View>
+
+              {/* 새 비밀번호 */}
+              <View className="mb-4">
+                <Text className="text-gray-700 font-semibold mb-2">새 비밀번호</Text>
+                <TextInput
+                  className="bg-gray-50 rounded-2xl p-4 text-base"
+                  placeholder="새 비밀번호 (최소 6자)"
+                  value={passwordData.newPassword}
+                  onChangeText={(text) => setPasswordData({ ...passwordData, newPassword: text })}
+                  secureTextEntry
+                />
+              </View>
+
+              {/* 비밀번호 확인 */}
+              <View className="mb-6">
+                <Text className="text-gray-700 font-semibold mb-2">새 비밀번호 확인</Text>
+                <TextInput
+                  className="bg-gray-50 rounded-2xl p-4 text-base"
+                  placeholder="새 비밀번호를 다시 입력하세요"
+                  value={passwordData.confirmPassword}
+                  onChangeText={(text) => setPasswordData({ ...passwordData, confirmPassword: text })}
+                  secureTextEntry
+                />
+              </View>
+
+              {/* 버튼 */}
+              <TouchableOpacity
+                onPress={handleChangePassword}
+                disabled={passwordLoading}
+                className="py-4 rounded-2xl"
+                style={{ backgroundColor: TEACHER_COLORS.primary.DEFAULT }}
+              >
+                {passwordLoading ? (
+                  <ActivityIndicator color="white" />
+                ) : (
+                  <Text className="text-center font-bold text-white text-base">변경하기</Text>
+                )}
+              </TouchableOpacity>
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }

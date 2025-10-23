@@ -2,8 +2,9 @@
 import { create } from 'zustand';
 import { PaymentRepository } from '../repositories/PaymentRepository';
 import { getTicketStatus, getDaysUntilExpiry } from '../utils';
-import { useNotificationStore } from './notificationStore';
+import useNotificationStore from './notificationStore';
 import { useAuthStore } from './authStore';
+import { addActivity } from '../services/firestoreService';
 
 /**
  * 결제 및 수강권 데이터 관리 Store
@@ -119,12 +120,14 @@ export const usePaymentStore = create((set, get) => ({
       // 통계 재계산
       get().calculateStats();
 
-      // 알림 추가 (결제 완료 시)
+      // 알림 및 활동 추가 (결제 완료 시)
       try {
         const user = useAuthStore.getState().user;
         if (user?.uid) {
           const { addNotification } = useNotificationStore.getState();
           const formattedAmount = new Intl.NumberFormat('ko-KR').format(paymentData.amount);
+
+          // 알림 추가
           await addNotification(
             {
               type: 'payment_received',
@@ -134,10 +137,24 @@ export const usePaymentStore = create((set, get) => ({
             },
             user.uid
           );
+
+          // 활동 로그 추가
+          await addActivity(
+            {
+              type: 'payment',
+              action: 'add',
+              title: '수강료 결제',
+              description: `${paymentData.studentName || '학생'} - ${formattedAmount}원 (${paymentData.type || '수강료'})`,
+              studentId: paymentData.studentId,
+              studentName: paymentData.studentName,
+              relatedId: newPayment.id,
+            },
+            user.uid
+          );
         }
-      } catch (notificationError) {
-        console.error('알림 추가 실패:', notificationError);
-        // 알림 추가 실패는 무시하고 계속 진행
+      } catch (error) {
+        console.error('알림/활동 추가 실패:', error);
+        // 알림/활동 추가 실패는 무시하고 계속 진행
       }
 
       return newPayment;
@@ -178,10 +195,100 @@ export const usePaymentStore = create((set, get) => ({
       }
 
       get().calculateStats();
+
+      // 납부 처리 시 활동 로그 추가
+      if (updates.status === 'paid') {
+        try {
+          const user = useAuthStore.getState().user;
+          if (user?.uid) {
+            const formattedAmount = new Intl.NumberFormat('ko-KR').format(updatedPayment.amount || 0);
+            await addActivity(
+              {
+                type: 'payment',
+                action: 'update',
+                title: '수강료 납부 처리',
+                description: `${updatedPayment.studentName || '학생'} - ${formattedAmount}원 납부 완료`,
+                studentId: updatedPayment.studentId,
+                studentName: updatedPayment.studentName,
+                relatedId: paymentId,
+              },
+              user.uid
+            );
+          }
+        } catch (error) {
+          console.error('활동 추가 실패:', error);
+          // 활동 추가 실패는 무시하고 계속 진행
+        }
+      }
+
       return updatedPayment;
     } catch (error) {
       set({
         error: error.message || '결제 정보 수정에 실패했습니다.',
+        loading: false
+      });
+      throw error;
+    }
+  },
+
+  /**
+   * 결제 삭제
+   * @param {string} paymentId - 결제 ID
+   */
+  deletePayment: async (paymentId) => {
+    set({ loading: true, error: null });
+    try {
+      // 삭제 전 payment 정보 가져오기 (activity 로그용)
+      const paymentToDelete = get().payments.find(p => p.id === paymentId);
+
+      await PaymentRepository.delete(paymentId);
+      set((state) => ({
+        payments: state.payments.filter(p => p.id !== paymentId),
+        loading: false
+      }));
+
+      // 학생별 내역에서도 삭제
+      set((state) => {
+        const updatedStudentPayments = { ...state.studentPayments };
+        Object.keys(updatedStudentPayments).forEach(studentId => {
+          updatedStudentPayments[studentId] = updatedStudentPayments[studentId].filter(
+            p => p.id !== paymentId
+          );
+        });
+        return { studentPayments: updatedStudentPayments };
+      });
+
+      get().calculateStats();
+
+      // 활동 로그 추가
+      if (paymentToDelete) {
+        try {
+          const user = useAuthStore.getState().user;
+          if (user?.uid) {
+            const formattedAmount = new Intl.NumberFormat('ko-KR').format(paymentToDelete.amount || 0);
+            await addActivity(
+              {
+                type: 'payment',
+                action: 'delete',
+                title: '수강료 삭제',
+                description: `${paymentToDelete.studentName || '학생'} - ${formattedAmount}원 삭제됨`,
+                studentId: paymentToDelete.studentId,
+                studentName: paymentToDelete.studentName,
+                relatedId: paymentId,
+              },
+              user.uid
+            );
+          }
+        } catch (error) {
+          console.error('활동 추가 실패:', error);
+          // 활동 추가 실패는 무시하고 계속 진행
+        }
+      }
+
+      return { success: true };
+    } catch (error) {
+      set({
+        error: error.message || '결제 삭제에 실패했습니다.',
         loading: false
       });
       throw error;
