@@ -21,11 +21,22 @@ export default function App() {
     async function loadFonts() {
       try {
         await Font.loadAsync({
+          // MaruBuri fonts
           'MaruBuri-Regular': require('./assets/fonts/MaruBuri-Regular.ttf'),
           'MaruBuri-Light': require('./assets/fonts/MaruBuri-Light.ttf'),
           'MaruBuri-ExtraLight': require('./assets/fonts/MaruBuri-ExtraLight.ttf'),
           'MaruBuri-SemiBold': require('./assets/fonts/MaruBuri-SemiBold.ttf'),
           'MaruBuri-Bold': require('./assets/fonts/MaruBuri-Bold.ttf'),
+          // Pretendard fonts
+          'Pretendard-Thin': require('./assets/fonts/Pretendard-Thin.otf'),
+          'Pretendard-ExtraLight': require('./assets/fonts/Pretendard-ExtraLight.otf'),
+          'Pretendard-Light': require('./assets/fonts/Pretendard-Light.otf'),
+          'Pretendard-Regular': require('./assets/fonts/Pretendard-Regular.otf'),
+          'Pretendard-Medium': require('./assets/fonts/Pretendard-Medium.otf'),
+          'Pretendard-SemiBold': require('./assets/fonts/Pretendard-SemiBold.otf'),
+          'Pretendard-Bold': require('./assets/fonts/Pretendard-Bold.otf'),
+          'Pretendard-ExtraBold': require('./assets/fonts/Pretendard-ExtraBold.otf'),
+          'Pretendard-Black': require('./assets/fonts/Pretendard-Black.otf'),
         });
         setFontsLoaded(true);
       } catch (e) {

@@ -499,7 +499,7 @@ ${studentInfo.strengths ? `- 강점: ${studentInfo.strengths}` : ''}
  * @param {Object} lessonInfo - { studentName, progress, homework, strengths, improvements }
  * @returns {Promise<Object>} { success, memo }
  */
-export const generateLessonNoteMemo = async (lessonInfo) => {
+export const generateLessonNoteMemo = async (lessonInfo, tone = 'friendly') => {
   try {
     const genAI = initGeminiAI();
 
@@ -509,20 +509,46 @@ export const generateLessonNoteMemo = async (lessonInfo) => {
 
     const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
+    // 문체별 프롬프트
+    const tonePrompts = {
+      formal: `문체: 공식적이고 전문적인 톤
+- 정중하고 격식있는 표현 사용
+- 3-4문장으로 상세하게 작성
+- 교육 용어를 적절히 사용
+- 학생의 학습 성취를 전문적으로 분석`,
+
+      friendly: `문체: 친근하고 따뜻한 톤
+- 학부모님과 가까운 거리감 유지
+- 2-3문장으로 간결하게 작성
+- 긍정적이고 격려하는 표현 사용
+- 편안하고 자연스러운 대화체`,
+
+      concise: `문체: 핵심만 간단명료하게
+- 1-2문장으로 매우 짧게 작성
+- 불필요한 수식어 제거
+- 사실 중심으로 전달
+- 진도와 특이사항만 간략히`,
+
+      detailed: `문체: 구체적이고 상세한 톤
+- 4-5문장으로 자세하게 작성
+- 학생의 학습 과정과 변화를 구체적으로 설명
+- 다음 학습 방향과 목표 제시
+- 학부모가 집에서 도울 수 있는 부분 포함`,
+    };
+
     const systemPrompt = `당신은 피아노 학원 선생님의 수업 일지 작성을 도와주는 AI 비서입니다.
 
 역할:
 - 오늘 수업에서 학생의 진도, 숙제, 특이사항을 바탕으로 학부모님께 전달할 수업 메모를 작성합니다
 - 학생의 발전과 노력을 긍정적으로 표현합니다
-- 간결하면서도 구체적으로 작성합니다
 - 학부모님이 이해하기 쉬운 표현을 사용합니다
 
+${tonePrompts[tone] || tonePrompts.friendly}
+
 작성 규칙:
-1. 2-3문장으로 간결하게 작성
-2. 학생의 긍정적인 면을 먼저 언급
-3. 개선이 필요한 부분은 부드럽게 표현
-4. 다음 수업에 대한 기대감 표현
-5. 이모지 사용 금지 (전문적인 톤 유지)
+1. 학생의 긍정적인 면을 먼저 언급
+2. 개선이 필요한 부분은 부드럽게 표현
+3. 이모지 사용 금지 (전문적인 톤 유지)
 
 주의사항:
 - 존댓말 사용 (학부모님께 전달)
@@ -684,6 +710,75 @@ export const improveInquiryAnswer = async (originalAnswer, inquiryContent = '') 
 };
 
 /**
+ * 학습 단계 정보를 자연스러운 문장으로 개선
+ * @param {Object} learningStepData - { songNumber, songTitle, currentStep, completedSteps, subItems, specialNotes }
+ * @param {string} existingNotes - 기존 메모
+ * @returns {Promise<Object>} { success: boolean, improvedMemo: string, error?: string }
+ */
+export const improveLearningStepMemo = async (learningStepData, existingNotes = '') => {
+  try {
+    const genAI = initGeminiAI();
+
+    if (!genAI) {
+      throw new Error('Gemini API가 초기화되지 않았습니다');
+    }
+
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+
+    // LEARNING_STEPS 정보 가져오기
+    const { LEARNING_STEPS } = require('../constants/learningSteps');
+
+    const currentStepInfo = LEARNING_STEPS.find(s => s.id === learningStepData.currentStep);
+    const completedStepsInfo = learningStepData.completedSteps?.map(stepId =>
+      LEARNING_STEPS.find(s => s.id === stepId)?.name
+    ).filter(Boolean) || [];
+
+    const currentSubItems = learningStepData.subItems?.[learningStepData.currentStep] || [];
+
+    // 프롬프트 구성
+    const prompt = `당신은 피아노 학원 선생님입니다. 학생의 연습 상황을 학부모님께 간결하고 명확하게 전달하는 진도 기록을 작성해주세요.
+
+<학생 연습 정보>
+${learningStepData.songNumber || learningStepData.songTitle ? `- 곡: ${learningStepData.songTitle || ''} ${learningStepData.songNumber ? `(${learningStepData.songNumber}번)` : ''}` : ''}
+${completedStepsInfo.length > 0 ? `- 완료한 학습 단계: ${completedStepsInfo.join(', ')}` : ''}
+${currentStepInfo ? `- 현재 학습 단계: ${currentStepInfo.name}` : ''}
+${currentSubItems.length > 0 ? `- 완료한 연습: ${currentSubItems.join(', ')}` : ''}
+${learningStepData.specialNotes ? `- 특이사항: ${learningStepData.specialNotes}` : ''}
+
+<작성 원칙>
+1. **간결함**: 2-3문장으로 핵심만 전달
+2. **명확한 정보**: 곡 이름, 현재 진행 상황, 다음 목표 포함
+3. **긍정적 톤**: 학생의 진전을 격려하는 표현 사용
+4. **구체적 피드백**: 특이사항이 있다면 자연스럽게 포함
+5. **존댓말 사용**, 이모지 사용 안 함
+
+<예시>
+"체르니 30-1번 곡의 분리 연습을 완료했습니다. 현재 양손 합주 연습 중이며 천천히 합치는 연습을 마쳤습니다. 다음 시간에는 부분별로 붙이는 연습을 진행할 예정입니다."
+
+위 정보를 바탕으로 학부모님께 전달할 진도 기록을 작성해주세요.`;
+
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    const improvedMemo = response.text().trim();
+
+    console.log('✅ 학습 단계 메모 AI 개선 완료');
+
+    return {
+      success: true,
+      improvedMemo,
+    };
+
+  } catch (error) {
+    console.error('❌ 학습 단계 메모 AI 개선 실패:', error);
+    return {
+      success: false,
+      error: error.message,
+      improvedMemo: existingNotes, // 실패 시 기존 메모 반환
+    };
+  }
+};
+
+/**
  * Gemini API 사용 가능 여부 확인
  */
 export const isGeminiAvailable = () => {
@@ -699,6 +794,7 @@ export default {
   generateStudentHomework,
   generateLessonNoteMemo,
   improveLessonNoteMemo,
+  improveLearningStepMemo,
   improveInquiryAnswer,
   isGeminiAvailable,
 };

@@ -61,6 +61,7 @@ function DashboardStack() {
       <Stack.Screen name="UnpaidStudentsScreen" component={UnpaidStudentsScreen} />
       <Stack.Screen name="MakeupClassesScreen" component={MakeupClassesScreen} />
       <Stack.Screen name="StudentDetail" component={StudentDetailScreen} />
+      <Stack.Screen name="StudentForm" component={StudentFormScreen} />
       <Stack.Screen name="ChatList" component={ChatListScreen} />
       <Stack.Screen name="ChatRoom" component={ChatRoomScreen} />
       <Stack.Screen name="RecitalManagement" component={RecitalManagementScreen} />

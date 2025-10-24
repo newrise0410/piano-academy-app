@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Text } from '../common';
 import BottomSheet from '../common/BottomSheet';
 import TEACHER_COLORS from '../../styles/teacher_colors';
+import { SHADOWS, RADIUS, SPACING, TYPOGRAPHY, CARD_STYLES, BADGE_STYLES, ICON_CONTAINER } from '../../styles/commonStyles';
 import { formatCurrency } from '../../utils';
 
 /**
@@ -31,11 +32,16 @@ export default function UnpaidStudentsModal({ visible, onClose, students = [], o
       onViewAll={onViewAll}
     >
       {safeStudents.length === 0 ? (
-        <View className="py-12 items-center">
-          <View className="w-20 h-20 bg-green-100 rounded-full items-center justify-center mb-4">
+        <View style={{ paddingVertical: SPACING['5xl'], alignItems: 'center' }}>
+          <View
+            style={{
+              ...ICON_CONTAINER.round(TEACHER_COLORS.success[100], 80),
+              marginBottom: SPACING.lg,
+            }}
+          >
             <Ionicons name="checkmark-circle" size={40} color={TEACHER_COLORS.success[600]} />
           </View>
-          <Text className="text-gray-500 text-center">
+          <Text style={{ fontSize: TYPOGRAPHY.fontSize.base, color: TEACHER_COLORS.gray[500], textAlign: 'center' }}>
             미납 학생이 없습니다
           </Text>
         </View>
@@ -45,30 +51,41 @@ export default function UnpaidStudentsModal({ visible, onClose, students = [], o
           {sortedStudents.map((student, idx) => (
             <View
               key={student.id}
-              className={`bg-white rounded-xl p-4 flex-row items-center justify-between ${
-                idx > 0 ? 'mt-2' : ''
-              }`}
+              style={{
+                ...CARD_STYLES.default,
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                marginTop: idx > 0 ? SPACING.sm : 0,
+              }}
             >
-              <View className="flex-1">
+              <View style={{ flex: 1 }}>
                 {/* 학생 정보 */}
-                <View className="flex-row items-center mb-1">
-                  <Text className="text-base font-bold text-gray-800">
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: SPACING.xs }}>
+                  <Text style={{ fontSize: TYPOGRAPHY.fontSize.base, fontWeight: TYPOGRAPHY.fontWeight.bold, color: TEACHER_COLORS.gray[800] }}>
                     {student.name}
                   </Text>
-                  <View className="rounded-full px-2 py-0.5 ml-2" style={{ backgroundColor: TEACHER_COLORS.purple[100] }}>
-                    <Text className="text-xs font-bold text-primary">{student.level}</Text>
+                  <View
+                    style={{
+                      ...BADGE_STYLES.default(TEACHER_COLORS.purple[100]),
+                      marginLeft: SPACING.sm,
+                    }}
+                  >
+                    <Text style={{ fontSize: TYPOGRAPHY.fontSize.xs, fontWeight: TYPOGRAPHY.fontWeight.bold, color: TEACHER_COLORS.primary.DEFAULT }}>
+                      {student.level}
+                    </Text>
                   </View>
                 </View>
 
                 {/* 마지막 납부일 */}
-                <Text className="text-xs text-gray-600 mb-1">
+                <Text style={{ fontSize: TYPOGRAPHY.fontSize.xs, color: TEACHER_COLORS.gray[600], marginBottom: SPACING.xs }}>
                   마지막 결제: {student.lastPaymentDate || '정보 없음'}
                 </Text>
 
                 {/* 미납 금액 */}
-                <View className="flex-row items-center">
-                  <Text className="text-xs text-gray-500">미납 금액: </Text>
-                  <Text className="text-xs font-semibold" style={{ color: TEACHER_COLORS.red[600] }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <Text style={{ fontSize: TYPOGRAPHY.fontSize.xs, color: TEACHER_COLORS.gray[500] }}>미납 금액: </Text>
+                  <Text style={{ fontSize: TYPOGRAPHY.fontSize.xs, fontWeight: TYPOGRAPHY.fontWeight.semibold, color: TEACHER_COLORS.danger[600] }}>
                     {formatCurrency(student.unpaidAmount || 280000)}
                   </Text>
                 </View>
@@ -77,35 +94,59 @@ export default function UnpaidStudentsModal({ visible, onClose, students = [], o
               {/* 알림 버튼 */}
               <TouchableOpacity
                 onPress={() => onSendNotice?.(student)}
-                className="rounded-lg px-4 py-2.5"
-                style={{ backgroundColor: TEACHER_COLORS.red[500] }}
+                style={{
+                  borderRadius: RADIUS.lg,
+                  paddingHorizontal: SPACING.lg,
+                  paddingVertical: SPACING.sm + 2,
+                  backgroundColor: TEACHER_COLORS.danger[500],
+                }}
                 activeOpacity={0.7}
               >
-                <Text className="text-sm font-bold text-white">알림</Text>
+                <Text style={{ fontSize: TYPOGRAPHY.fontSize.sm, fontWeight: TYPOGRAPHY.fontWeight.bold, color: TEACHER_COLORS.white }}>
+                  알림
+                </Text>
               </TouchableOpacity>
             </View>
           ))}
 
           {/* 요약 정보 */}
-          <View className="mt-6 bg-red-50 rounded-xl p-4">
-            <View className="flex-row items-center justify-between mb-2">
-              <Text className="text-sm text-gray-700">총 미납 학생</Text>
-              <Text className="text-sm font-bold text-gray-800">{safeStudents.length}명</Text>
+          <View
+            style={{
+              marginTop: SPACING['2xl'] + SPACING.sm,
+              backgroundColor: TEACHER_COLORS.danger[50],
+              borderRadius: RADIUS.xl,
+              padding: SPACING.lg,
+            }}
+          >
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: SPACING.sm }}>
+              <Text style={{ fontSize: TYPOGRAPHY.fontSize.sm, color: TEACHER_COLORS.gray[700] }}>총 미납 학생</Text>
+              <Text style={{ fontSize: TYPOGRAPHY.fontSize.sm, fontWeight: TYPOGRAPHY.fontWeight.bold, color: TEACHER_COLORS.gray[800] }}>
+                {safeStudents.length}명
+              </Text>
             </View>
-            <View className="flex-row items-center justify-between">
-              <Text className="text-sm text-gray-700">총 미납 금액</Text>
-              <Text className="text-base font-bold text-red-600">
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+              <Text style={{ fontSize: TYPOGRAPHY.fontSize.sm, color: TEACHER_COLORS.gray[700] }}>총 미납 금액</Text>
+              <Text style={{ fontSize: TYPOGRAPHY.fontSize.base, fontWeight: TYPOGRAPHY.fontWeight.bold, color: TEACHER_COLORS.danger[600] }}>
                 {formatCurrency(totalUnpaid)}
               </Text>
             </View>
           </View>
 
           {/* 안내 메시지 */}
-          <View className="mt-4 bg-yellow-50 border border-yellow-200 rounded-xl p-4">
-            <View className="flex-row items-start">
+          <View
+            style={{
+              marginTop: SPACING.lg,
+              backgroundColor: TEACHER_COLORS.warning[50],
+              borderWidth: 1,
+              borderColor: TEACHER_COLORS.warning[200],
+              borderRadius: RADIUS.xl,
+              padding: SPACING.lg,
+            }}
+          >
+            <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
               <Ionicons name="alert-circle" size={20} color={TEACHER_COLORS.warning[600]} />
-              <View className="flex-1 ml-2">
-                <Text className="text-sm text-gray-700 leading-5">
+              <View style={{ flex: 1, marginLeft: SPACING.sm }}>
+                <Text style={{ fontSize: TYPOGRAPHY.fontSize.sm, color: TEACHER_COLORS.gray[700], lineHeight: 20 }}>
                   메시지 아이콘을 눌러 학부모님께 수강료 안내 알림장을 보내세요. 정기적인 안내가 중요합니다.
                 </Text>
               </View>

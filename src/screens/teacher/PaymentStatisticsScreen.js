@@ -120,7 +120,7 @@ export default function PaymentStatisticsScreen({ navigation }) {
       {
         name: '미납',
         count: paymentRateStats.unpaid,
-        color: TEACHER_COLORS.red[500],
+        color: TEACHER_COLORS.danger[500],
         legendFontColor: TEACHER_COLORS.gray[600],
         legendFontSize: 12,
       },

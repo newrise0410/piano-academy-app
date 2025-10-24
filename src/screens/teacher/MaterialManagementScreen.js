@@ -25,6 +25,7 @@ export default function MaterialManagementScreen({ navigation }) {
     level: '초급',
     category: '피아노',
     description: '',
+    totalSongs: '',
   });
 
   const levels = ['초급', '중급', '고급'];
@@ -70,6 +71,7 @@ export default function MaterialManagementScreen({ navigation }) {
         level: material.level || '초급',
         category: material.category || '피아노',
         description: material.description || '',
+        totalSongs: material.totalSongs ? String(material.totalSongs) : '',
       });
     } else {
       setEditingMaterial(null);
@@ -79,6 +81,7 @@ export default function MaterialManagementScreen({ navigation }) {
         level: '초급',
         category: '피아노',
         description: '',
+        totalSongs: '',
       });
     }
     setShowModal(true);
@@ -93,6 +96,7 @@ export default function MaterialManagementScreen({ navigation }) {
       level: '초급',
       category: '피아노',
       description: '',
+      totalSongs: '',
     });
   };
 
@@ -106,13 +110,18 @@ export default function MaterialManagementScreen({ navigation }) {
     try {
       const materialData = {
         ...formData,
+        totalSongs: formData.totalSongs ? parseInt(formData.totalSongs) : null,
         teacherId: user.uid,
         academyId: user.academyId,
       };
 
       let result;
       if (editingMaterial) {
-        result = await updateMaterial(editingMaterial.id, formData);
+        const updateData = {
+          ...formData,
+          totalSongs: formData.totalSongs ? parseInt(formData.totalSongs) : null,
+        };
+        result = await updateMaterial(editingMaterial.id, updateData);
         if (result.success) {
           toast.success('교재가 수정되었습니다');
         }
@@ -318,6 +327,13 @@ export default function MaterialManagementScreen({ navigation }) {
                       <View className="px-3 py-1 rounded-full" style={{ backgroundColor: TEACHER_COLORS.gray[100] }}>
                         <Text className="text-xs font-bold text-gray-600">{material.category}</Text>
                       </View>
+                      {material.totalSongs && (
+                        <View className="px-3 py-1 rounded-full" style={{ backgroundColor: TEACHER_COLORS.primary[50] }}>
+                          <Text className="text-xs font-bold" style={{ color: TEACHER_COLORS.primary.DEFAULT }}>
+                            총 {material.totalSongs}곡
+                          </Text>
+                        </View>
+                      )}
                     </View>
 
                     {material.description && (
@@ -340,7 +356,7 @@ export default function MaterialManagementScreen({ navigation }) {
                       className="p-2 ml-1"
                       activeOpacity={0.7}
                     >
-                      <Ionicons name="trash-outline" size={22} color={TEACHER_COLORS.red[600]} />
+                      <Ionicons name="trash-outline" size={22} color={TEACHER_COLORS.danger[600]} />
                     </TouchableOpacity>
                   </View>
                 </View>
@@ -451,6 +467,22 @@ export default function MaterialManagementScreen({ navigation }) {
                     </TouchableOpacity>
                   ))}
                 </View>
+              </View>
+
+              {/* 총 곡 수 */}
+              <View className="mb-4">
+                <Text className="text-sm font-bold text-gray-700 mb-2">총 곡 수 (선택)</Text>
+                <TextInput
+                  className="bg-gray-50 rounded-xl px-4 py-3 text-base"
+                  placeholder="예: 30 (체르니 30번까지), 106 (바이엘 106번까지)"
+                  value={formData.totalSongs}
+                  onChangeText={(text) => setFormData({ ...formData, totalSongs: text })}
+                  keyboardType="number-pad"
+                  style={{ fontFamily: 'MaruBuri-Regular' }}
+                />
+                <Text className="text-xs text-gray-500 mt-1">
+                  교재의 총 곡 수 또는 페이지 수를 입력하세요 (진도율 계산에 사용됩니다)
+                </Text>
               </View>
 
               {/* 설명 */}

@@ -3,7 +3,8 @@ import React, { useState, useEffect } from 'react';
 import { View, ScrollView, RefreshControl, TouchableOpacity, Linking, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import TEACHER_COLORS, { TEACHER_GRADIENTS } from '../../styles/teacher_colors';
+import TEACHER_COLORS, { TEACHER_GRADIENTS, TEACHER_SEMANTIC_COLORS } from '../../styles/teacher_colors';
+import { SHADOWS, RADIUS, SPACING, TYPOGRAPHY, CARD_STYLES } from '../../styles/commonStyles';
 
 import {
   Text,
@@ -236,7 +237,7 @@ export default function DashboardScreen({ navigation }) {
       >
         {/* 그라디언트 헤더 */}
         <LinearGradient
-          colors={TEACHER_GRADIENTS.primaryGradient}
+          colors={TEACHER_GRADIENTS.primary}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={{ paddingTop: 50, paddingBottom: 80 }}
@@ -263,24 +264,20 @@ export default function DashboardScreen({ navigation }) {
           {/* 오늘 연락할 학부모 - 최우선 섹션 */}
           {contactNeeds && contactNeeds.length > 0 && (
             <View
-              className="bg-white rounded-3xl p-6 mb-4"
               style={{
-                shadowColor: '#000',
-                shadowOffset: { width: 0, height: 4 },
-                shadowOpacity: 0.1,
-                shadowRadius: 12,
-                elevation: 8,
+                ...CARD_STYLES.large,
+                marginBottom: SPACING.lg,
               }}
             >
-              <View className="flex-row items-center justify-between mb-4">
-                <View className="flex-row items-center">
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: SPACING.lg }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                   <Ionicons name="call" size={22} color={TEACHER_COLORS.primary.DEFAULT} />
-                  <Text className="ml-2 text-lg font-bold text-gray-800">
+                  <Text style={{ marginLeft: SPACING.sm, fontSize: TYPOGRAPHY.fontSize.lg, fontWeight: TYPOGRAPHY.fontWeight.bold, color: TEACHER_SEMANTIC_COLORS.textPrimary }}>
                     오늘 연락할 학부모
                   </Text>
                 </View>
-                <View className="bg-red-100 px-2 py-1 rounded-full">
-                  <Text className="text-red-700 text-xs font-bold">
+                <View style={{ backgroundColor: TEACHER_COLORS.danger[100], paddingHorizontal: SPACING.sm, paddingVertical: SPACING.xs, borderRadius: RADIUS.full }}>
+                  <Text style={{ color: TEACHER_COLORS.danger[700], fontSize: TYPOGRAPHY.fontSize.xs, fontWeight: TYPOGRAPHY.fontWeight.bold }}>
                     {contactNeeds.length}건
                   </Text>
                 </View>
@@ -314,16 +311,14 @@ export default function DashboardScreen({ navigation }) {
 
           {/* 오늘의 현황 */}
           <View
-            className="bg-white rounded-3xl p-6 mb-4"
             style={{
-              shadowColor: '#000',
-              shadowOffset: { width: 0, height: 4 },
-              shadowOpacity: 0.1,
-              shadowRadius: 12,
-              elevation: 8,
+              ...CARD_STYLES.large,
+              marginBottom: SPACING.lg,
             }}
           >
-            <Text className="text-lg font-bold text-gray-800 mb-4">오늘의 현황</Text>
+            <Text style={{ fontSize: TYPOGRAPHY.fontSize.lg, fontWeight: TYPOGRAPHY.fontWeight.bold, color: TEACHER_SEMANTIC_COLORS.textPrimary, marginBottom: SPACING.lg }}>
+              오늘의 현황
+            </Text>
             <View style={{ flexDirection: 'row' }}>
               <View style={{ flex: 1, paddingRight: 4 }}>
                 <TouchableOpacity
@@ -367,47 +362,55 @@ export default function DashboardScreen({ navigation }) {
 
           {/* 빠른 작업 */}
           <View
-            className="bg-white rounded-3xl p-6 mb-4"
             style={{
-              shadowColor: '#000',
-              shadowOffset: { width: 0, height: 2 },
-              shadowOpacity: 0.05,
-              shadowRadius: 8,
-              elevation: 3,
+              ...CARD_STYLES.large,
+              marginBottom: SPACING.lg,
             }}
           >
-            <Text className="text-lg font-bold text-gray-800 mb-4">빠른 작업</Text>
+            <Text style={{ fontSize: TYPOGRAPHY.fontSize.lg, fontWeight: TYPOGRAPHY.fontWeight.bold, color: TEACHER_SEMANTIC_COLORS.textPrimary, marginBottom: SPACING.lg }}>
+              빠른 작업
+            </Text>
 
-            <Button
-              title="알림장 작성하기"
-              icon="notifications"
-              variant="primary"
-              onPress={() => navigation.navigate('NoticeTab')}
-            />
-
-            <Button
-              title="오늘 출석 체크"
-              icon="checkmark-circle"
-              variant="secondary"
-              onPress={() => navigation.navigate('Attendance')}
-              className="mt-3"
-            />
-
-            <Button
-              title="통계 분석 보기"
-              icon="stats-chart"
-              variant="outline"
-              onPress={() => navigation.navigate('StatisticsScreen')}
-              className="mt-3"
-            />
-
-            <Button
-              title="갤러리 관리"
-              icon="images"
-              variant="outline"
-              onPress={() => navigation.navigate('GalleryScreen')}
-              className="mt-3"
-            />
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginHorizontal: -SPACING.xs }}>
+              {[
+                { title: '알림장 작성', icon: 'notifications', route: 'NoticeTab', bgColor: TEACHER_COLORS.primary[50], iconColor: TEACHER_COLORS.primary[600] },
+                { title: '출석 체크', icon: 'checkmark-circle', route: 'Attendance', bgColor: TEACHER_COLORS.success[50], iconColor: TEACHER_COLORS.success[600], iconSize: 32, containerSize: 60 },
+                { title: '통계 분석', icon: 'stats-chart', route: 'StatisticsScreen', bgColor: TEACHER_COLORS.secondary[50], iconColor: TEACHER_COLORS.secondary[600] },
+                { title: '갤러리', icon: 'images', route: 'GalleryScreen', bgColor: TEACHER_COLORS.amber[50], iconColor: TEACHER_COLORS.amber[600] },
+                { title: '수업 일정', icon: 'calendar', route: 'ScheduleScreen', bgColor: TEACHER_COLORS.cyan[50], iconColor: TEACHER_COLORS.cyan[600] },
+                { title: '학생 관리', icon: 'people', route: 'StudentTab', bgColor: TEACHER_COLORS.purple[50], iconColor: TEACHER_COLORS.purple[600], iconSize: 32, containerSize: 60 },
+              ].map((action, index) => (
+                <View key={index} style={{ width: '50%', paddingHorizontal: SPACING.xs, marginBottom: SPACING.md }}>
+                  <TouchableOpacity
+                    onPress={() => navigation.navigate(action.route)}
+                    activeOpacity={0.7}
+                    style={{
+                      backgroundColor: action.bgColor,
+                      borderRadius: RADIUS.xl,
+                      padding: SPACING.lg,
+                      alignItems: 'center',
+                      ...SHADOWS.sm,
+                    }}
+                  >
+                    <View
+                      style={{
+                        width: action.containerSize || 56,
+                        height: action.containerSize || 56,
+                        borderRadius: RADIUS.lg,
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        marginBottom: 6,
+                      }}
+                    >
+                      <Ionicons name={action.icon} size={action.iconSize || 28} color={action.iconColor} />
+                    </View>
+                    <Text style={{ fontSize: TYPOGRAPHY.fontSize.sm, fontWeight: TYPOGRAPHY.fontWeight.bold, color: TEACHER_SEMANTIC_COLORS.textPrimary, textAlign: 'center' }}>
+                      {action.title}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              ))}
+            </View>
           </View>
 
           {/* 추가 기능 */}

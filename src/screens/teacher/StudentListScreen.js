@@ -15,7 +15,8 @@ import {
 import StudentCard from '../../components/teacher/StudentCard';
 import { useStudentStore, useAuthStore, useToastStore } from '../../store';
 import { useStudentFilters } from '../../hooks/useStudentFilters';
-import TEACHER_COLORS from '../../styles/teacher_colors';
+import TEACHER_COLORS, { TEACHER_SEMANTIC_COLORS } from '../../styles/teacher_colors';
+import { SHADOWS, RADIUS, SPACING, TYPOGRAPHY, CARD_STYLES, INPUT_STYLES, BADGE_STYLES } from '../../styles/commonStyles';
 import { getPendingStudentRequests, approveStudentRequest, rejectStudentRequest } from '../../services/firestoreService';
 
 export default function StudentListScreen({ navigation }) {
@@ -153,7 +154,7 @@ export default function StudentListScreen({ navigation }) {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-50">
+    <SafeAreaView style={{ flex: 1, backgroundColor: TEACHER_COLORS.gray[50] }}>
       {/* 헤더 */}
       <ScreenHeader
         title="학생 목록"
@@ -165,15 +166,29 @@ export default function StudentListScreen({ navigation }) {
       />
 
       {/* 검색 영역 */}
-      <View className="px-5 mt-4">
-        <View className="bg-white rounded-2xl px-4 py-3 flex-row items-center border border-gray-200">
+      <View style={{ paddingHorizontal: SPACING.xl, marginTop: SPACING.lg }}>
+        <View
+          style={{
+            ...INPUT_STYLES.default,
+            flexDirection: 'row',
+            alignItems: 'center',
+            paddingVertical: SPACING.md,
+            ...SHADOWS.sm,
+          }}
+        >
           <Ionicons name="search" size={20} color={TEACHER_COLORS.gray[400]} />
           <TextInput
-            className="flex-1 ml-3 text-base"
+            style={{
+              flex: 1,
+              marginLeft: SPACING.md,
+              fontSize: TYPOGRAPHY.fontSize.base,
+              fontFamily: 'MaruBuri-Regular',
+              color: TEACHER_COLORS.gray[900],
+            }}
             placeholder="학생 이름 검색"
+            placeholderTextColor={TEACHER_COLORS.gray[400]}
             value={filters.search}
             onChangeText={setSearchQuery}
-            style={{ fontFamily: 'MaruBuri-Regular' }}
           />
           {filters.search.length > 0 && (
             <TouchableOpacity onPress={() => setSearchQuery('')}>
@@ -184,7 +199,7 @@ export default function StudentListScreen({ navigation }) {
       </View>
 
       {/* 1차 카테고리 필터 */}
-      <View className="px-5 mt-4">
+      <View style={{ paddingHorizontal: SPACING.xl, marginTop: SPACING.lg }}>
         <FilterChip
           options={categories.map(cat => ({ value: cat, label: cat }))}
           value={filters.category}
@@ -195,7 +210,7 @@ export default function StudentListScreen({ navigation }) {
 
       {/* 2차 레벨 필터 (초등, 고등, 성인일 때만 표시) */}
       {showLevelFilter && (
-        <View className="px-5 mt-2">
+        <View style={{ paddingHorizontal: SPACING.xl, marginTop: SPACING.sm }}>
           <FilterChip
             options={levelFilters.map(level => ({ value: level, label: level }))}
             value={filters.level}
@@ -206,8 +221,8 @@ export default function StudentListScreen({ navigation }) {
       )}
 
       {/* 학생 수 또는 요청 수 */}
-      <View className="px-5 mt-4 mb-3">
-        <Text className="text-sm text-gray-600">
+      <View style={{ paddingHorizontal: SPACING.xl, marginTop: SPACING.lg, marginBottom: SPACING.md }}>
+        <Text style={{ fontSize: TYPOGRAPHY.fontSize.sm, color: TEACHER_COLORS.gray[600] }}>
           {filters.category === '등록 요청'
             ? `${studentRequests.length}개의 등록 요청`
             : `총 ${filteredStudents.length}명의 학생`}
@@ -215,98 +230,143 @@ export default function StudentListScreen({ navigation }) {
       </View>
 
       {/* 학생 목록 또는 등록 요청 목록 */}
-      <ScrollView className="flex-1 px-5">
+      <ScrollView style={{ flex: 1, paddingHorizontal: SPACING.xl }}>
         {filters.category === '등록 요청' ? (
           // 등록 요청 목록
           requestsLoading ? (
-            <View className="flex-1 items-center justify-center py-20">
+            <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: SPACING['5xl'] }}>
               <ActivityIndicator size="large" color={TEACHER_COLORS.primary.DEFAULT} />
             </View>
           ) : studentRequests.length === 0 ? (
-            <View className="flex-1 items-center justify-center py-20">
+            <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: SPACING['5xl'] }}>
               <Ionicons name="checkmark-circle-outline" size={64} color={TEACHER_COLORS.gray[300]} />
-              <Text className="text-gray-500 mt-4">대기 중인 등록 요청이 없습니다</Text>
+              <Text style={{ color: TEACHER_COLORS.gray[500], marginTop: SPACING.lg, fontSize: TYPOGRAPHY.fontSize.base }}>
+                대기 중인 등록 요청이 없습니다
+              </Text>
             </View>
           ) : (
             studentRequests.map((request) => (
-              <Card key={request.id} className="mb-3">
-                <View className="flex-row items-start justify-between mb-3">
-                  <View className="flex-1">
-                    <View className="flex-row items-center mb-1">
-                      <Text className="text-lg font-bold text-gray-800">{request.childName}</Text>
-                      <View className="ml-2 px-2 py-0.5 rounded-full bg-orange-100">
-                        <Text className="text-xs font-bold text-orange-700">대기중</Text>
+              <Card key={request.id} style={{ marginBottom: SPACING.md }}>
+                <View style={{ flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: SPACING.md }}>
+                  <View style={{ flex: 1 }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: SPACING.xs }}>
+                      <Text style={{ fontSize: TYPOGRAPHY.fontSize.lg, fontWeight: TYPOGRAPHY.fontWeight.bold, color: TEACHER_COLORS.gray[800] }}>
+                        {request.childName}
+                      </Text>
+                      <View
+                        style={{
+                          ...BADGE_STYLES.default(TEACHER_COLORS.warning[100]),
+                          marginLeft: SPACING.sm,
+                        }}
+                      >
+                        <Text style={{ fontSize: TYPOGRAPHY.fontSize.xs, fontWeight: TYPOGRAPHY.fontWeight.bold, color: TEACHER_COLORS.warning[700] }}>
+                          대기중
+                        </Text>
                       </View>
                     </View>
-                    <Text className="text-sm text-gray-600">만 {request.childAge}세</Text>
+                    <Text style={{ fontSize: TYPOGRAPHY.fontSize.sm, color: TEACHER_COLORS.gray[600] }}>
+                      만 {request.childAge}세
+                    </Text>
                     {request.school && (
-                      <Text className="text-sm text-gray-600">{request.school}</Text>
+                      <Text style={{ fontSize: TYPOGRAPHY.fontSize.sm, color: TEACHER_COLORS.gray[600] }}>{request.school}</Text>
                     )}
                   </View>
                 </View>
 
                 {/* 학부모 정보 */}
-                <View className="bg-gray-50 rounded-xl p-3 mb-3">
-                  <Text className="text-xs font-bold text-gray-500 mb-2">학부모 정보</Text>
-                  <View className="flex-row items-center mb-1">
+                <View
+                  style={{
+                    backgroundColor: TEACHER_COLORS.gray[50],
+                    borderRadius: RADIUS.xl,
+                    padding: SPACING.md,
+                    marginBottom: SPACING.md,
+                  }}
+                >
+                  <Text style={{ fontSize: TYPOGRAPHY.fontSize.xs, fontWeight: TYPOGRAPHY.fontWeight.bold, color: TEACHER_COLORS.gray[500], marginBottom: SPACING.sm }}>
+                    학부모 정보
+                  </Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: SPACING.xs }}>
                     <Ionicons name="person" size={14} color={TEACHER_COLORS.gray[500]} />
-                    <Text className="text-sm text-gray-700 ml-2">{request.parentName}</Text>
+                    <Text style={{ fontSize: TYPOGRAPHY.fontSize.sm, color: TEACHER_COLORS.gray[700], marginLeft: SPACING.sm }}>
+                      {request.parentName}
+                    </Text>
                   </View>
                   {request.parentPhone && (
-                    <View className="flex-row items-center mb-1">
+                    <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: SPACING.xs }}>
                       <Ionicons name="call" size={14} color={TEACHER_COLORS.gray[500]} />
-                      <Text className="text-sm text-gray-700 ml-2">{request.parentPhone}</Text>
+                      <Text style={{ fontSize: TYPOGRAPHY.fontSize.sm, color: TEACHER_COLORS.gray[700], marginLeft: SPACING.sm }}>
+                        {request.parentPhone}
+                      </Text>
                     </View>
                   )}
                   {request.parentEmail && (
-                    <View className="flex-row items-center">
+                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                       <Ionicons name="mail" size={14} color={TEACHER_COLORS.gray[500]} />
-                      <Text className="text-sm text-gray-700 ml-2">{request.parentEmail}</Text>
+                      <Text style={{ fontSize: TYPOGRAPHY.fontSize.sm, color: TEACHER_COLORS.gray[700], marginLeft: SPACING.sm }}>
+                        {request.parentEmail}
+                      </Text>
                     </View>
                   )}
                 </View>
 
                 {/* 추가 정보 */}
                 {(request.childPhone || request.address) && (
-                  <View className="mb-3">
+                  <View style={{ marginBottom: SPACING.md }}>
                     {request.childPhone && (
-                      <View className="flex-row items-center mb-1">
+                      <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: SPACING.xs }}>
                         <Ionicons name="phone-portrait" size={14} color={TEACHER_COLORS.gray[500]} />
-                        <Text className="text-sm text-gray-600 ml-2">{request.childPhone}</Text>
+                        <Text style={{ fontSize: TYPOGRAPHY.fontSize.sm, color: TEACHER_COLORS.gray[600], marginLeft: SPACING.sm }}>
+                          {request.childPhone}
+                        </Text>
                       </View>
                     )}
                     {request.address && (
-                      <View className="flex-row items-start">
+                      <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
                         <Ionicons name="location" size={14} color={TEACHER_COLORS.gray[500]} />
-                        <Text className="text-sm text-gray-600 ml-2 flex-1">{request.address}</Text>
+                        <Text style={{ fontSize: TYPOGRAPHY.fontSize.sm, color: TEACHER_COLORS.gray[600], marginLeft: SPACING.sm, flex: 1 }}>
+                          {request.address}
+                        </Text>
                       </View>
                     )}
                   </View>
                 )}
 
                 {/* 승인/거절 버튼 */}
-                <View className="flex-row gap-2">
+                <View style={{ flexDirection: 'row', gap: SPACING.sm }}>
                   <TouchableOpacity
                     onPress={() => handleRejectRequest(request)}
                     disabled={processingRequestId === request.id}
-                    className="flex-1 rounded-xl py-3 border border-gray-300"
-                    style={{ opacity: processingRequestId === request.id ? 0.5 : 1 }}
+                    style={{
+                      flex: 1,
+                      borderRadius: RADIUS.xl,
+                      paddingVertical: SPACING.md,
+                      borderWidth: 1,
+                      borderColor: TEACHER_COLORS.gray[300],
+                      opacity: processingRequestId === request.id ? 0.5 : 1,
+                    }}
                   >
-                    <Text className="text-center font-bold text-gray-700">거절</Text>
+                    <Text style={{ textAlign: 'center', fontWeight: TYPOGRAPHY.fontWeight.bold, color: TEACHER_COLORS.gray[700] }}>
+                      거절
+                    </Text>
                   </TouchableOpacity>
                   <TouchableOpacity
                     onPress={() => handleApproveRequest(request)}
                     disabled={processingRequestId === request.id}
-                    className="flex-1 rounded-xl py-3"
                     style={{
+                      flex: 1,
+                      borderRadius: RADIUS.xl,
+                      paddingVertical: SPACING.md,
                       backgroundColor: TEACHER_COLORS.primary.DEFAULT,
                       opacity: processingRequestId === request.id ? 0.5 : 1,
+                      ...SHADOWS.md,
                     }}
                   >
                     {processingRequestId === request.id ? (
-                      <ActivityIndicator color="white" />
+                      <ActivityIndicator color={TEACHER_COLORS.white} />
                     ) : (
-                      <Text className="text-center font-bold text-white">승인</Text>
+                      <Text style={{ textAlign: 'center', fontWeight: TYPOGRAPHY.fontWeight.bold, color: TEACHER_COLORS.white }}>
+                        승인
+                      </Text>
                     )}
                   </TouchableOpacity>
                 </View>
@@ -324,9 +384,11 @@ export default function StudentListScreen({ navigation }) {
             ) : students.length === 0 ? (
               <NoStudents onAddStudent={handleAddStudent} />
             ) : (
-              <View className="flex-1 items-center justify-center py-20">
+              <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: SPACING['5xl'] }}>
                 <Ionicons name="people-outline" size={64} color={TEACHER_COLORS.gray[200]} />
-                <Text className="text-gray-400 mt-4">해당하는 학생이 없습니다</Text>
+                <Text style={{ color: TEACHER_COLORS.gray[400], marginTop: SPACING.lg, fontSize: TYPOGRAPHY.fontSize.base }}>
+                  해당하는 학생이 없습니다
+                </Text>
               </View>
             )
           ) : (
@@ -343,18 +405,14 @@ export default function StudentListScreen({ navigation }) {
 
       {/* 학생 추가 버튼 (등록 요청 카테고리가 아닐 때만) */}
       {filters.category !== '등록 요청' && (
-        <View className="px-5 pb-4">
+        <View style={{ paddingHorizontal: SPACING.xl, paddingBottom: SPACING.lg }}>
           <Button
             title="새 학생 등록"
             icon="add-circle-outline"
             onPress={handleAddStudent}
             fullWidth
             style={{
-              shadowColor: TEACHER_COLORS.primary[600],
-              shadowOffset: { width: 0, height: 4 },
-              shadowOpacity: 0.3,
-              shadowRadius: 8,
-              elevation: 4,
+              ...SHADOWS.colored(TEACHER_COLORS.primary[600], 0.3),
             }}
           />
         </View>

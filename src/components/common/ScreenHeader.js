@@ -6,6 +6,7 @@ import { useNavigation } from '@react-navigation/native';
 import Text from './Text';
 import TEACHER_COLORS from '../../styles/teacher_colors';
 import PARENT_COLORS from '../../styles/parent_colors';
+import { SHADOWS, RADIUS, SPACING, TYPOGRAPHY, ICON_CONTAINER } from '../../styles/commonStyles';
 
 /**
  * ScreenHeader - 화면 상단 헤더 컴포넌트
@@ -44,26 +45,26 @@ export default function ScreenHeader({
         backgroundColor: 'rgba(255, 255, 255, 0.95)',
         borderBottomWidth: 0.5,
         borderBottomColor: COLORS.gray[200],
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.08,
-        shadowRadius: 3,
-        elevation: 3,
+        ...SHADOWS.sm,
       }}
     >
-      <View className="flex-row items-center justify-between px-4 py-3.5">
+      <View
+        style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          paddingHorizontal: SPACING.lg,
+          paddingVertical: SPACING.md + 2,
+        }}
+      >
         {/* 좌측: 뒤로가기 + 타이틀 */}
-        <View className="flex-row items-center flex-1">
+        <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
           {showBackButton && (
             <TouchableOpacity
               onPress={handleBackPress}
-              className="mr-3 rounded-full"
               style={{
-                width: 34,
-                height: 34,
-                backgroundColor: COLORS.gray[100],
-                alignItems: 'center',
-                justifyContent: 'center',
+                ...ICON_CONTAINER.round(COLORS.gray[100], 34),
+                marginRight: SPACING.md,
               }}
               activeOpacity={0.7}
             >
@@ -74,17 +75,24 @@ export default function ScreenHeader({
               />
             </TouchableOpacity>
           )}
-          <View className="flex-1">
+          <View style={{ flex: 1 }}>
             <Text
-              className="text-xl font-bold tracking-tight"
-              style={{ color: COLORS.gray[900] }}
+              style={{
+                fontSize: TYPOGRAPHY.fontSize.xl,
+                fontWeight: TYPOGRAPHY.fontWeight.bold,
+                color: COLORS.gray[900],
+                letterSpacing: -0.5,
+              }}
             >
               {title}
             </Text>
             {subtitle && (
               <Text
-                className="text-sm mt-0.5"
-                style={{ color: COLORS.gray[500] }}
+                style={{
+                  fontSize: TYPOGRAPHY.fontSize.sm,
+                  color: COLORS.gray[500],
+                  marginTop: SPACING.xs / 2,
+                }}
               >
                 {subtitle}
               </Text>
@@ -94,7 +102,7 @@ export default function ScreenHeader({
 
         {/* 우측: 커스텀 버튼 */}
         {rightButton && (
-          <View className="ml-3">
+          <View style={{ marginLeft: SPACING.md }}>
             {rightButton}
           </View>
         )}

@@ -248,7 +248,7 @@ export default function HomeScreen({ navigation }) {
         >
           {/* 그라디언트 헤더 */}
           <LinearGradient
-            colors={PARENT_GRADIENTS.primaryGradient}
+            colors={PARENT_GRADIENTS.primary}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={{ paddingTop: 50, paddingBottom: 80 }}
@@ -396,7 +396,7 @@ export default function HomeScreen({ navigation }) {
       >
         {/* 그라디언트 헤더 */}
         <LinearGradient
-          colors={PARENT_GRADIENTS.primaryGradient}
+          colors={PARENT_GRADIENTS.primary}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={{ paddingTop: 50, paddingBottom: 80 }}

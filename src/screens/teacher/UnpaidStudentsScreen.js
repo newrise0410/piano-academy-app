@@ -3,7 +3,8 @@ import { View, ScrollView, TouchableOpacity, RefreshControl, Linking, Alert, Mod
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Text, Button, ScreenHeader } from '../../components/common';
-import TEACHER_COLORS from '../../styles/teacher_colors';
+import TEACHER_COLORS, { TEACHER_SEMANTIC_COLORS } from '../../styles/teacher_colors';
+import { SHADOWS, RADIUS, SPACING, TYPOGRAPHY, CARD_STYLES, INPUT_STYLES, BADGE_STYLES, ICON_CONTAINER } from '../../styles/commonStyles';
 import { useStudentStore, usePaymentStore, useToastStore } from '../../store';
 import { useUnpaidStudents } from '../../hooks/useUnpaidStudents';
 import { formatCurrency } from '../../utils';
@@ -171,7 +172,7 @@ export default function UnpaidStudentsScreen({ navigation }) {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-50">
+    <SafeAreaView style={{ flex: 1, backgroundColor: TEACHER_COLORS.gray[50] }}>
       {/* 헤더 */}
       <ScreenHeader
         title="미납 학생"
@@ -179,61 +180,104 @@ export default function UnpaidStudentsScreen({ navigation }) {
       />
 
       {/* 통계 및 정렬 */}
-      <View className="bg-white border-b border-gray-200 px-5 py-3">
+      <View
+        style={{
+          backgroundColor: TEACHER_COLORS.white,
+          borderBottomWidth: 1,
+          borderBottomColor: TEACHER_COLORS.gray[200],
+          paddingHorizontal: SPACING.xl,
+          paddingVertical: SPACING.md,
+        }}
+      >
         {/* 통계 */}
-        <View className="bg-red-50 rounded-xl p-4">
-          <View className="flex-row items-center justify-between mb-2">
-            <Text className="text-sm text-gray-700">총 미납 학생</Text>
-            <Text className="text-lg font-bold text-gray-800">{unpaidStudents.length}명</Text>
+        <View
+          style={{
+            backgroundColor: TEACHER_COLORS.danger[50],
+            borderRadius: RADIUS.xl,
+            padding: SPACING.lg,
+          }}
+        >
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: SPACING.sm }}>
+            <Text style={{ fontSize: TYPOGRAPHY.fontSize.sm, color: TEACHER_COLORS.gray[700] }}>총 미납 학생</Text>
+            <Text style={{ fontSize: TYPOGRAPHY.fontSize.lg, fontWeight: TYPOGRAPHY.fontWeight.bold, color: TEACHER_COLORS.gray[800] }}>
+              {unpaidStudents.length}명
+            </Text>
           </View>
-          <View className="flex-row items-center justify-between">
-            <Text className="text-sm text-gray-700">총 미납 금액</Text>
-            <Text className="text-xl font-bold text-red-600">
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+            <Text style={{ fontSize: TYPOGRAPHY.fontSize.sm, color: TEACHER_COLORS.gray[700] }}>총 미납 금액</Text>
+            <Text style={{ fontSize: TYPOGRAPHY.fontSize['2xl'], fontWeight: TYPOGRAPHY.fontWeight.bold, color: TEACHER_COLORS.danger[600] }}>
               {formatCurrency(totalUnpaid)}
             </Text>
           </View>
         </View>
 
         {/* 정렬 옵션 */}
-        <View className="flex-row mt-3 gap-2">
+        <View style={{ flexDirection: 'row', marginTop: SPACING.md, gap: SPACING.sm }}>
           <TouchableOpacity
             onPress={() => setSortBy('date')}
-            className={`flex-1 py-2 px-3 rounded-lg ${
-              sortBy === 'date' ? 'bg-primary' : 'bg-gray-100'
-            }`}
+            style={{
+              flex: 1,
+              paddingVertical: SPACING.sm,
+              paddingHorizontal: SPACING.md,
+              borderRadius: RADIUS.md,
+              backgroundColor: sortBy === 'date' ? TEACHER_COLORS.primary.DEFAULT : TEACHER_COLORS.gray[100],
+            }}
             activeOpacity={0.7}
           >
-            <Text className={`text-xs font-semibold text-center ${
-              sortBy === 'date' ? 'text-white' : 'text-gray-600'
-            }`}>
+            <Text
+              style={{
+                fontSize: TYPOGRAPHY.fontSize.xs,
+                fontWeight: TYPOGRAPHY.fontWeight.semibold,
+                textAlign: 'center',
+                color: sortBy === 'date' ? TEACHER_COLORS.white : TEACHER_COLORS.gray[600],
+              }}
+            >
               납부일순
             </Text>
           </TouchableOpacity>
 
           <TouchableOpacity
             onPress={() => setSortBy('amount')}
-            className={`flex-1 py-2 px-3 rounded-lg ${
-              sortBy === 'amount' ? 'bg-primary' : 'bg-gray-100'
-            }`}
+            style={{
+              flex: 1,
+              paddingVertical: SPACING.sm,
+              paddingHorizontal: SPACING.md,
+              borderRadius: RADIUS.md,
+              backgroundColor: sortBy === 'amount' ? TEACHER_COLORS.primary.DEFAULT : TEACHER_COLORS.gray[100],
+            }}
             activeOpacity={0.7}
           >
-            <Text className={`text-xs font-semibold text-center ${
-              sortBy === 'amount' ? 'text-white' : 'text-gray-600'
-            }`}>
+            <Text
+              style={{
+                fontSize: TYPOGRAPHY.fontSize.xs,
+                fontWeight: TYPOGRAPHY.fontWeight.semibold,
+                textAlign: 'center',
+                color: sortBy === 'amount' ? TEACHER_COLORS.white : TEACHER_COLORS.gray[600],
+              }}
+            >
               금액순
             </Text>
           </TouchableOpacity>
 
           <TouchableOpacity
             onPress={() => setSortBy('name')}
-            className={`flex-1 py-2 px-3 rounded-lg ${
-              sortBy === 'name' ? 'bg-primary' : 'bg-gray-100'
-            }`}
+            style={{
+              flex: 1,
+              paddingVertical: SPACING.sm,
+              paddingHorizontal: SPACING.md,
+              borderRadius: RADIUS.md,
+              backgroundColor: sortBy === 'name' ? TEACHER_COLORS.primary.DEFAULT : TEACHER_COLORS.gray[100],
+            }}
             activeOpacity={0.7}
           >
-            <Text className={`text-xs font-semibold text-center ${
-              sortBy === 'name' ? 'text-white' : 'text-gray-600'
-            }`}>
+            <Text
+              style={{
+                fontSize: TYPOGRAPHY.fontSize.xs,
+                fontWeight: TYPOGRAPHY.fontWeight.semibold,
+                textAlign: 'center',
+                color: sortBy === 'name' ? TEACHER_COLORS.white : TEACHER_COLORS.gray[600],
+              }}
+            >
               이름순
             </Text>
           </TouchableOpacity>
@@ -242,54 +286,69 @@ export default function UnpaidStudentsScreen({ navigation }) {
 
       {/* 학생 리스트 */}
       <ScrollView
-        className="flex-1"
+        style={{ flex: 1 }}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
       >
         {unpaidStudents.length === 0 ? (
-          <View className="py-20 items-center">
-            <View className="w-20 h-20 bg-green-100 rounded-full items-center justify-center mb-4">
+          <View style={{ paddingVertical: SPACING['5xl'], alignItems: 'center' }}>
+            <View
+              style={{
+                ...ICON_CONTAINER.round(TEACHER_COLORS.success[100], 80),
+                marginBottom: SPACING.lg,
+              }}
+            >
               <Ionicons name="checkmark-circle" size={40} color={TEACHER_COLORS.success[600]} />
             </View>
-            <Text className="text-gray-500 text-center">
+            <Text style={{ color: TEACHER_COLORS.gray[500], textAlign: 'center', fontSize: TYPOGRAPHY.fontSize.base }}>
               미납 학생이 없습니다
             </Text>
           </View>
         ) : (
-          <View className="px-5 py-4">
+          <View style={{ paddingHorizontal: SPACING.xl, paddingVertical: SPACING.lg }}>
             {unpaidStudents.map((student, idx) => (
               <View
                 key={student.id}
-                className="bg-white rounded-xl p-4 mb-3"
+                style={{
+                  ...CARD_STYLES.default,
+                  marginBottom: SPACING.md,
+                }}
               >
                 {/* 상단: 학생 정보 */}
                 <TouchableOpacity
                   onPress={() => navigation.navigate('StudentDetail', { studentId: student.id })}
                   activeOpacity={0.7}
-                  className="mb-3"
+                  style={{ marginBottom: SPACING.md }}
                 >
-                  <View className="flex-1">
+                  <View style={{ flex: 1 }}>
                     {/* 학생 정보 */}
-                    <View className="flex-row items-center mb-1">
-                      <Text className="text-base font-bold text-gray-800">
+                    <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: SPACING.xs }}>
+                      <Text style={{ fontSize: TYPOGRAPHY.fontSize.base, fontWeight: TYPOGRAPHY.fontWeight.bold, color: TEACHER_COLORS.gray[800] }}>
                         {student.name}
                       </Text>
-                      <View className="rounded-full px-2 py-0.5 ml-2" style={{ backgroundColor: TEACHER_COLORS.purple[100] }}>
-                        <Text className="text-xs font-bold text-primary">{student.level}</Text>
+                      <View
+                        style={{
+                          ...BADGE_STYLES.default(TEACHER_COLORS.purple[100]),
+                          marginLeft: SPACING.sm,
+                        }}
+                      >
+                        <Text style={{ fontSize: TYPOGRAPHY.fontSize.xs, fontWeight: TYPOGRAPHY.fontWeight.bold, color: TEACHER_COLORS.primary.DEFAULT }}>
+                          {student.level}
+                        </Text>
                       </View>
                     </View>
 
                     {/* 마지막 납부일 */}
-                    <Text className="text-xs text-gray-600 mb-1">
+                    <Text style={{ fontSize: TYPOGRAPHY.fontSize.xs, color: TEACHER_COLORS.gray[600], marginBottom: SPACING.xs }}>
                       마지막 결제: {student.lastPaymentDate}
                     </Text>
 
                     {/* 미납 금액 */}
-                    <View className="flex-row items-center">
-                      <Text className="text-xs text-gray-500">미납 금액: </Text>
-                      <Text className="text-xs font-semibold" style={{ color: TEACHER_COLORS.red[600] }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                      <Text style={{ fontSize: TYPOGRAPHY.fontSize.xs, color: TEACHER_COLORS.gray[500] }}>미납 금액: </Text>
+                      <Text style={{ fontSize: TYPOGRAPHY.fontSize.xs, fontWeight: TYPOGRAPHY.fontWeight.semibold, color: TEACHER_COLORS.danger[600] }}>
                         {formatCurrency(student.unpaidAmount || 280000)}
                       </Text>
                     </View>
@@ -297,28 +356,44 @@ export default function UnpaidStudentsScreen({ navigation }) {
                 </TouchableOpacity>
 
                 {/* 납부처리 / 알림보내기 버튼 */}
-                <View className="flex-row mb-3 gap-2">
+                <View style={{ flexDirection: 'row', marginBottom: SPACING.md, gap: SPACING.sm }}>
                   <TouchableOpacity
                     onPress={() => handleMarkAsPaid(student)}
-                    className="flex-1 rounded-lg px-4 py-2.5"
-                    style={{ backgroundColor: TEACHER_COLORS.success[500] }}
+                    style={{
+                      flex: 1,
+                      borderRadius: RADIUS.md,
+                      paddingHorizontal: SPACING.lg,
+                      paddingVertical: SPACING.sm + 2,
+                      backgroundColor: TEACHER_COLORS.success[500],
+                      ...SHADOWS.sm,
+                    }}
                     activeOpacity={0.7}
                   >
-                    <Text className="text-sm font-bold text-white text-center">납부처리</Text>
+                    <Text style={{ fontSize: TYPOGRAPHY.fontSize.sm, fontWeight: TYPOGRAPHY.fontWeight.bold, color: TEACHER_COLORS.white, textAlign: 'center' }}>
+                      납부처리
+                    </Text>
                   </TouchableOpacity>
 
                   <TouchableOpacity
                     onPress={() => handleSendNotice(student)}
-                    className="flex-1 rounded-lg px-4 py-2.5"
-                    style={{ backgroundColor: TEACHER_COLORS.red[500] }}
+                    style={{
+                      flex: 1,
+                      borderRadius: RADIUS.md,
+                      paddingHorizontal: SPACING.lg,
+                      paddingVertical: SPACING.sm + 2,
+                      backgroundColor: TEACHER_COLORS.danger[500],
+                      ...SHADOWS.sm,
+                    }}
                     activeOpacity={0.7}
                   >
-                    <Text className="text-sm font-bold text-white text-center">알림보내기</Text>
+                    <Text style={{ fontSize: TYPOGRAPHY.fontSize.sm, fontWeight: TYPOGRAPHY.fontWeight.bold, color: TEACHER_COLORS.white, textAlign: 'center' }}>
+                      알림보내기
+                    </Text>
                   </TouchableOpacity>
                 </View>
 
                 {/* 하단: 액션 버튼 */}
-                <View className="flex-row gap-2">
+                <View style={{ flexDirection: 'row', gap: SPACING.sm }}>
                   <Button
                     title="수강료 입력"
                     icon="card"
@@ -344,11 +419,19 @@ export default function UnpaidStudentsScreen({ navigation }) {
 
       {/* 안내 메시지 */}
       {unpaidStudents.length > 0 && (
-        <View className="bg-yellow-50 border-t border-yellow-200 px-5 py-4">
-          <View className="flex-row items-start">
+        <View
+          style={{
+            backgroundColor: TEACHER_COLORS.warning[50],
+            borderTopWidth: 1,
+            borderTopColor: TEACHER_COLORS.warning[200],
+            paddingHorizontal: SPACING.xl,
+            paddingVertical: SPACING.lg,
+          }}
+        >
+          <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
             <Ionicons name="alert-circle" size={20} color={TEACHER_COLORS.warning[600]} />
-            <View className="flex-1 ml-2">
-              <Text className="text-sm text-gray-700 leading-5">
+            <View style={{ flex: 1, marginLeft: SPACING.sm }}>
+              <Text style={{ fontSize: TYPOGRAPHY.fontSize.sm, color: TEACHER_COLORS.gray[700], lineHeight: TYPOGRAPHY.fontSize.sm * TYPOGRAPHY.lineHeight.relaxed }}>
                 메시지 아이콘을 눌러 수강료 안내 알림장을 보내거나, 하단의 "알림 발송" 버튼을 이용해주세요.
               </Text>
             </View>
@@ -363,61 +446,92 @@ export default function UnpaidStudentsScreen({ navigation }) {
         transparent={true}
         onRequestClose={() => setPaymentModalVisible(false)}
       >
-        <View className="flex-1 justify-end" style={{ backgroundColor: 'rgba(0,0,0,0.4)' }}>
-          <View className="bg-white rounded-t-3xl p-6">
-            <View className="flex-row items-center justify-between mb-6">
-              <Text className="text-lg font-bold text-gray-900">
+        <View style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.4)' }}>
+          <View
+            style={{
+              backgroundColor: TEACHER_COLORS.white,
+              borderTopLeftRadius: RADIUS['3xl'],
+              borderTopRightRadius: RADIUS['3xl'],
+              padding: SPACING['2xl'],
+            }}
+          >
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: SPACING['2xl'] }}>
+              <Text style={{ fontSize: TYPOGRAPHY.fontSize.lg, fontWeight: TYPOGRAPHY.fontWeight.bold, color: TEACHER_COLORS.gray[900] }}>
                 수강료 입력
               </Text>
               <TouchableOpacity onPress={() => setPaymentModalVisible(false)}>
-                <Ionicons name="close-outline" size={24} color="#9CA3AF" />
+                <Ionicons name="close-outline" size={24} color={TEACHER_COLORS.gray[400]} />
               </TouchableOpacity>
             </View>
 
-            <View className="mb-4">
-              <Text className="text-gray-600 font-medium text-sm mb-2">학생</Text>
-              <View className="bg-gray-50 rounded-xl px-4 py-3">
-                <Text className="text-gray-900 font-bold text-base">
+            <View style={{ marginBottom: SPACING.lg }}>
+              <Text style={{ color: TEACHER_COLORS.gray[600], fontWeight: TYPOGRAPHY.fontWeight.medium, fontSize: TYPOGRAPHY.fontSize.sm, marginBottom: SPACING.sm }}>
+                학생
+              </Text>
+              <View
+                style={{
+                  backgroundColor: TEACHER_COLORS.gray[50],
+                  borderRadius: RADIUS.xl,
+                  paddingHorizontal: SPACING.lg,
+                  paddingVertical: SPACING.md,
+                }}
+              >
+                <Text style={{ color: TEACHER_COLORS.gray[900], fontWeight: TYPOGRAPHY.fontWeight.bold, fontSize: TYPOGRAPHY.fontSize.base }}>
                   {selectedStudentForPayment?.name}
                 </Text>
               </View>
             </View>
 
-            <View className="mb-6">
-              <Text className="text-gray-600 font-medium text-sm mb-2">금액</Text>
+            <View style={{ marginBottom: SPACING['2xl'] }}>
+              <Text style={{ color: TEACHER_COLORS.gray[600], fontWeight: TYPOGRAPHY.fontWeight.medium, fontSize: TYPOGRAPHY.fontSize.sm, marginBottom: SPACING.sm }}>
+                금액
+              </Text>
               <TextInput
-                className="rounded-xl px-4 py-3.5 text-base"
+                style={{
+                  ...INPUT_STYLES.default,
+                  paddingVertical: SPACING.md + 2,
+                  fontSize: TYPOGRAPHY.fontSize.base,
+                  fontFamily: 'MaruBuri-Regular',
+                  color: TEACHER_COLORS.gray[900],
+                }}
                 placeholder="금액을 입력하세요"
+                placeholderTextColor={TEACHER_COLORS.gray[400]}
                 value={paymentAmount}
                 onChangeText={setPaymentAmount}
                 keyboardType="numeric"
-                style={{
-                  fontFamily: 'MaruBuri-Regular',
-                  backgroundColor: '#FAFAFA',
-                  borderWidth: 1,
-                  borderColor: '#F3F4F6',
-                  color: '#111827',
-                }}
               />
             </View>
 
-            <View className="flex-row gap-2">
+            <View style={{ flexDirection: 'row', gap: SPACING.sm }}>
               <TouchableOpacity
                 onPress={() => setPaymentModalVisible(false)}
-                className="flex-1 rounded-full py-4"
-                style={{ backgroundColor: '#F9FAFB' }}
+                style={{
+                  flex: 1,
+                  borderRadius: RADIUS.full,
+                  paddingVertical: SPACING.lg,
+                  backgroundColor: TEACHER_COLORS.gray[100],
+                }}
                 activeOpacity={0.7}
               >
-                <Text className="text-gray-700 font-bold text-center text-base">취소</Text>
+                <Text style={{ color: TEACHER_COLORS.gray[700], fontWeight: TYPOGRAPHY.fontWeight.bold, textAlign: 'center', fontSize: TYPOGRAPHY.fontSize.base }}>
+                  취소
+                </Text>
               </TouchableOpacity>
 
               <TouchableOpacity
                 onPress={handleSavePayment}
-                className="flex-1 rounded-full py-4"
-                style={{ backgroundColor: TEACHER_COLORS.success[500] }}
+                style={{
+                  flex: 1,
+                  borderRadius: RADIUS.full,
+                  paddingVertical: SPACING.lg,
+                  backgroundColor: TEACHER_COLORS.success[500],
+                  ...SHADOWS.md,
+                }}
                 activeOpacity={0.8}
               >
-                <Text className="text-white font-bold text-center text-base">저장</Text>
+                <Text style={{ color: TEACHER_COLORS.white, fontWeight: TYPOGRAPHY.fontWeight.bold, textAlign: 'center', fontSize: TYPOGRAPHY.fontSize.base }}>
+                  저장
+                </Text>
               </TouchableOpacity>
             </View>
           </View>

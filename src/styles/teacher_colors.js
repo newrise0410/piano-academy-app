@@ -2,121 +2,283 @@
 // 선생님 앱 전용 색상 시스템
 
 const TEACHER_COLORS = {
+  // 메인 컬러 - 보라색
   primary: {
-    DEFAULT: "#8B5CF6", // 보라색 - 메인 컬러
+    DEFAULT: "#8B5CF6",
     50: "#F5F3FF",
     100: "#EDE9FE",
+    200: "#DDD6FE",
+    300: "#C4B5FD",
+    400: "#A78BFA",
     500: "#8B5CF6",
     600: "#7C3AED",
+    700: "#6D28D9",
+    800: "#5B21B6",
+    900: "#4C1D95",
   },
+
+  // 세컨더리 컬러 - 파란색
   secondary: {
-    DEFAULT: "#3B82F6", // 파란색
+    DEFAULT: "#3B82F6",
+    50: "#EFF6FF",
+    100: "#DBEAFE",
+    200: "#BFDBFE",
+    300: "#93C5FD",
+    400: "#60A5FA",
+    500: "#3B82F6",
+    600: "#2563EB",
+    700: "#1D4ED8",
+    800: "#1E40AF",
+    900: "#1E3A8A",
   },
+
+  // 성공 - 초록색
   success: {
-    DEFAULT: "#10B981", // 초록색
+    DEFAULT: "#10B981",
     50: "#ECFDF5",
+    100: "#D1FAE5",
+    200: "#A7F3D0",
+    300: "#6EE7B7",
+    400: "#34D399",
     500: "#10B981",
     600: "#059669",
+    700: "#047857",
+    800: "#065F46",
+    900: "#064E3B",
   },
+
+  // 경고 - 노란색
   warning: {
-    DEFAULT: "#F59E0B", // 노란색
+    DEFAULT: "#F59E0B",
     50: "#FFFBEB",
+    100: "#FEF3C7",
+    200: "#FDE68A",
+    300: "#FCD34D",
+    400: "#FBBF24",
+    500: "#F59E0B",
     600: "#D97706",
+    700: "#B45309",
+    800: "#92400E",
+    900: "#78350F",
   },
+
+  // 위험 - 빨간색
   danger: {
-    DEFAULT: "#EF4444", // 빨간색
-    50: "#FEF2F2",
-    500: "#EF4444",
-  },
-  orange: {
-    50: "#FFF7ED",
-    500: "#F97316",
-    600: "#EA580C",
-  },
-  red: {
+    DEFAULT: "#EF4444",
     50: "#FEF2F2",
     100: "#FEE2E2",
     200: "#FECACA",
+    300: "#FCA5A5",
+    400: "#F87171",
     500: "#EF4444",
     600: "#DC2626",
+    700: "#B91C1C",
+    800: "#991B1B",
+    900: "#7F1D1D",
   },
+
+  // 추가 색상 팔레트
+  orange: {
+    50: "#FFF7ED",
+    100: "#FFEDD5",
+    200: "#FED7AA",
+    300: "#FDBA74",
+    400: "#FB923C",
+    500: "#F97316",
+    600: "#EA580C",
+    700: "#C2410C",
+    800: "#9A3412",
+    900: "#7C2D12",
+  },
+
   green: {
     50: "#ECFDF5",
+    100: "#D1FAE5",
     200: "#BBF7D0",
+    300: "#86EFAC",
+    400: "#4ADE80",
     500: "#22C55E",
+    600: "#16A34A",
+    700: "#15803D",
+    800: "#166534",
+    900: "#14532D",
   },
+
   blue: {
     50: "#EFF6FF",
     100: "#DBEAFE",
     200: "#BFDBFE",
+    300: "#93C5FD",
+    400: "#60A5FA",
     500: "#3B82F6",
     600: "#2563EB",
+    700: "#1D4ED8",
+    800: "#1E40AF",
+    900: "#1E3A8A",
   },
+
   cyan: {
     DEFAULT: "#22D3EE",
+    50: "#ECFEFF",
+    100: "#CFFAFE",
+    200: "#A5F3FC",
+    300: "#67E8F9",
+    400: "#22D3EE",
     500: "#06B6D4",
+    600: "#0891B2",
+    700: "#0E7490",
+    800: "#155E75",
+    900: "#164E63",
   },
+
   purple: {
     50: "#FAF5FF",
     100: "#E9D5FF",
+    200: "#DDD6FE",
+    300: "#C4B5FD",
+    400: "#A78BFA",
     500: "#A855F7",
     600: "#8B5CF6",
+    700: "#7C3AED",
+    800: "#6D28D9",
+    900: "#5B21B6",
   },
+
   amber: {
+    50: "#FFFBEB",
     100: "#FED7AA",
+    200: "#FDE68A",
+    300: "#FCD34D",
+    400: "#FBBF24",
+    500: "#F59E0B",
+    600: "#D97706",
+    700: "#B45309",
+    800: "#92400E",
+    900: "#78350F",
   },
-  sky: {
-    100: "#DBEAFE",
-  },
+
+  // Gray 스케일
   gray: {
     50: "#F9FAFB",
     100: "#F3F4F6",
     200: "#E5E7EB",
+    300: "#D1D5DB",
     400: "#9CA3AF",
     500: "#6B7280",
     600: "#4B5563",
+    700: "#374151",
     800: "#1F2937",
+    900: "#111827",
   },
+
+  // 기본 색상
   white: "#FFFFFF",
   black: "#000000",
+  transparent: "transparent",
 };
 
 // 그라디언트 색상 조합 (선생님 앱)
 export const TEACHER_GRADIENTS = {
-  tuitionHeader: ['#4ADE80', '#22D3EE', '#3B82F6'], // 수강료 헤더 그라디언트
-  greenToCyan: [TEACHER_COLORS.success[500], TEACHER_COLORS.cyan.DEFAULT],
-  primaryGradient: [TEACHER_COLORS.primary[500], TEACHER_COLORS.primary[600]],
+  // 메인 그라디언트
+  primary: [TEACHER_COLORS.primary[400], TEACHER_COLORS.primary[600]],
+  primarySubtle: [TEACHER_COLORS.primary[50], TEACHER_COLORS.primary[100]],
+
+  // 세컨더리 그라디언트
+  secondary: [TEACHER_COLORS.secondary[400], TEACHER_COLORS.secondary[600]],
+
+  // 성공 그라디언트
+  success: [TEACHER_COLORS.success[400], TEACHER_COLORS.success[600]],
+  successSubtle: [TEACHER_COLORS.success[50], TEACHER_COLORS.success[100]],
+
+  // 경고/위험 그라디언트
+  warning: [TEACHER_COLORS.warning[400], TEACHER_COLORS.warning[600]],
+  danger: [TEACHER_COLORS.danger[400], TEACHER_COLORS.danger[600]],
+
+  // 특수 그라디언트
+  tuitionHeader: ['#4ADE80', '#22D3EE', '#3B82F6'],
+  greenToCyan: [TEACHER_COLORS.green[400], TEACHER_COLORS.cyan[400]],
+  purpleToBlue: [TEACHER_COLORS.primary[500], TEACHER_COLORS.secondary[500]],
+  sunset: [TEACHER_COLORS.orange[400], TEACHER_COLORS.danger[400]],
+  ocean: [TEACHER_COLORS.blue[400], TEACHER_COLORS.cyan[400]],
 };
 
 // 알림장 템플릿 배경 색상
 export const TEACHER_TEMPLATE_COLORS = {
   concert: TEACHER_COLORS.purple[100],      // 발표회 안내
   closure: TEACHER_COLORS.amber[100],       // 휴강 안내
-  tuition: TEACHER_COLORS.sky[100],         // 수강료 안내
-  custom: TEACHER_COLORS.red[100],          // 직접 입력
+  tuition: TEACHER_COLORS.blue[100],        // 수강료 안내
+  custom: TEACHER_COLORS.danger[100],       // 직접 입력
+  notice: TEACHER_COLORS.secondary[100],    // 일반 공지
+  event: TEACHER_COLORS.green[100],         // 이벤트
 };
 
 // 반투명 오버레이 색상
 export const TEACHER_OVERLAY_COLORS = {
-  whiteLight: 'rgba(255, 255, 255, 0.2)',
-  whiteMedium: 'rgba(255, 255, 255, 0.5)',
-  blackLight: 'rgba(0, 0, 0, 0.2)',
-  blackMedium: 'rgba(0, 0, 0, 0.5)',
+  whiteLight: 'rgba(255, 255, 255, 0.1)',
+  whiteMedium: 'rgba(255, 255, 255, 0.3)',
+  whiteHeavy: 'rgba(255, 255, 255, 0.5)',
+  whiteAlmost: 'rgba(255, 255, 255, 0.9)',
+
+  blackLight: 'rgba(0, 0, 0, 0.1)',
+  blackMedium: 'rgba(0, 0, 0, 0.3)',
+  blackHeavy: 'rgba(0, 0, 0, 0.5)',
+  blackAlmost: 'rgba(0, 0, 0, 0.9)',
+
+  primaryLight: 'rgba(139, 92, 246, 0.1)',
+  primaryMedium: 'rgba(139, 92, 246, 0.3)',
 };
 
 // 의미론적 색상 (선생님 앱)
 export const TEACHER_SEMANTIC_COLORS = {
+  // 상태 색상
   success: TEACHER_COLORS.success.DEFAULT,
   warning: TEACHER_COLORS.warning.DEFAULT,
   error: TEACHER_COLORS.danger.DEFAULT,
-  paid: TEACHER_COLORS.success.DEFAULT,      // 납부 완료
-  unpaid: TEACHER_COLORS.danger.DEFAULT,     // 미납
+  info: TEACHER_COLORS.secondary.DEFAULT,
+
+  // 납부 상태
+  paid: TEACHER_COLORS.success[500],         // 납부 완료
+  unpaid: TEACHER_COLORS.danger[500],        // 미납
+  partial: TEACHER_COLORS.warning[500],      // 부분 납부
+
+  // 출석 상태
+  present: TEACHER_COLORS.success[500],      // 출석
+  absent: TEACHER_COLORS.danger[500],        // 결석
+  late: TEACHER_COLORS.warning[500],         // 지각
+  excused: TEACHER_COLORS.gray[400],         // 조퇴
+
+  // UI 요소
+  active: TEACHER_COLORS.primary[500],
+  inactive: TEACHER_COLORS.gray[400],
+  disabled: TEACHER_COLORS.gray[300],
+
+  // 텍스트 색상
+  textPrimary: TEACHER_COLORS.gray[900],
+  textSecondary: TEACHER_COLORS.gray[600],
+  textTertiary: TEACHER_COLORS.gray[500],
+  textDisabled: TEACHER_COLORS.gray[400],
+  textInverse: TEACHER_COLORS.white,
+
+  // 배경 색상
+  bgPrimary: TEACHER_COLORS.white,
+  bgSecondary: TEACHER_COLORS.gray[50],
+  bgTertiary: TEACHER_COLORS.gray[100],
+
+  // Border 색상
+  border: TEACHER_COLORS.gray[200],
+  borderFocus: TEACHER_COLORS.primary[500],
+  borderError: TEACHER_COLORS.danger[500],
 };
 
 // 그림자 색상
 export const TEACHER_SHADOW_COLORS = {
   primary: TEACHER_COLORS.primary[600],
+  secondary: TEACHER_COLORS.secondary[600],
+  success: TEACHER_COLORS.success[600],
+  warning: TEACHER_COLORS.warning[600],
+  danger: TEACHER_COLORS.danger[600],
   black: TEACHER_COLORS.black,
+  gray: TEACHER_COLORS.gray[400],
 };
 
 export default TEACHER_COLORS;

@@ -13,7 +13,7 @@
  *
  * 환경변수를 통해 설정 가능: EXPO_PUBLIC_DATA_MODE
  */
-export const DATA_SOURCE_MODE = process.env.EXPO_PUBLIC_DATA_MODE || 'mock'; // 'mock', 'api', or 'firebase'
+export const DATA_SOURCE_MODE = process.env.EXPO_PUBLIC_DATA_MODE || 'firebase'; // 'mock', 'api', or 'firebase'
 
 /**
  * Mock 모드인지 확인

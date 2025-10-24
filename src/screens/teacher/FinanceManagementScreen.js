@@ -14,6 +14,8 @@ import {
   getExpensesByTeacher,
   EXPENSE_CATEGORIES
 } from '../../services/expenseService';
+import TEACHER_COLORS, { TEACHER_SEMANTIC_COLORS } from '../../styles/teacher_colors';
+import { SHADOWS, RADIUS, SPACING, TYPOGRAPHY } from '../../styles/commonStyles';
 
 export default function FinanceManagementScreen({ navigation }) {
   const { user } = useAuthStore();
@@ -309,13 +311,13 @@ export default function FinanceManagementScreen({ navigation }) {
   };
 
   return (
-    <SafeAreaView className="flex-1" style={{ backgroundColor: '#FAFAFA' }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: TEACHER_COLORS.gray[50] }}>
       <ScreenHeader title="재정 관리" onBackPress={() => navigation.goBack()} />
 
-      <ScrollView className="flex-1">
+      <ScrollView style={{ flex: 1 }}>
         {/* 월 선택 & 정산일 설정 */}
-        <View className="px-6 py-4" style={{ backgroundColor: 'white' }}>
-          <View className="flex-row items-center justify-between mb-2">
+        <View style={{ paddingHorizontal: SPACING['2xl'], paddingVertical: SPACING.lg, backgroundColor: TEACHER_COLORS.white }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: SPACING.sm }}>
             <TouchableOpacity
               onPress={() => {
                 if (selectedMonth === 1) {
@@ -325,12 +327,12 @@ export default function FinanceManagementScreen({ navigation }) {
                   setSelectedMonth(selectedMonth - 1);
                 }
               }}
-              className="p-2"
+              style={{ padding: SPACING.sm }}
             >
-              <Ionicons name="chevron-back" size={24} color="#6B7280" />
+              <Ionicons name="chevron-back" size={24} color={TEACHER_COLORS.gray[600]} />
             </TouchableOpacity>
 
-            <Text className="text-gray-900 font-black text-xl">
+            <Text style={{ color: TEACHER_COLORS.gray[900], fontWeight: TYPOGRAPHY.fontWeight.bold, fontSize: TYPOGRAPHY.fontSize.xl }}>
               {selectedYear}년 {selectedMonth}월
             </Text>
 
@@ -343,25 +345,31 @@ export default function FinanceManagementScreen({ navigation }) {
                   setSelectedMonth(selectedMonth + 1);
                 }
               }}
-              className="p-2"
+              style={{ padding: SPACING.sm }}
             >
-              <Ionicons name="chevron-forward" size={24} color="#6B7280" />
+              <Ionicons name="chevron-forward" size={24} color={TEACHER_COLORS.gray[600]} />
             </TouchableOpacity>
           </View>
 
           {/* 정산 기간 표시 */}
-          <View className="items-center">
+          <View style={{ alignItems: 'center' }}>
             <TouchableOpacity
               onPress={() => setSettlementDayModalVisible(true)}
               activeOpacity={0.7}
-              className="flex-row items-center rounded-full px-4 py-2"
-              style={{ backgroundColor: '#F9FAFB' }}
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                borderRadius: RADIUS.full,
+                paddingHorizontal: SPACING.lg,
+                paddingVertical: SPACING.sm,
+                backgroundColor: TEACHER_COLORS.gray[50],
+              }}
             >
-              <Ionicons name="calendar-outline" size={14} color="#9CA3AF" />
-              <Text className="text-gray-500 text-xs ml-1.5">
+              <Ionicons name="calendar-outline" size={14} color={TEACHER_COLORS.gray[400]} />
+              <Text style={{ color: TEACHER_COLORS.gray[500], fontSize: TYPOGRAPHY.fontSize.xs, marginLeft: SPACING.xs + 2 }}>
                 {settlementPeriod.startDate.getMonth() + 1}/{settlementPeriod.startDate.getDate()} ~ {settlementPeriod.endDate.getMonth() + 1}/{settlementPeriod.endDate.getDate()}
               </Text>
-              <Text className="text-gray-400 text-xs ml-2">
+              <Text style={{ color: TEACHER_COLORS.gray[400], fontSize: TYPOGRAPHY.fontSize.xs, marginLeft: SPACING.sm }}>
                 (매월 {settlementDay}일)
               </Text>
             </TouchableOpacity>
@@ -369,18 +377,18 @@ export default function FinanceManagementScreen({ navigation }) {
         </View>
 
         {/* 재정 통계 */}
-        <View className="px-6 pt-6 pb-4">
-          <Text className="text-gray-500 text-sm mb-2">순이익</Text>
-          <View className="flex-row items-end mb-4">
-            <Text className="text-gray-900 font-black" style={{ fontSize: 48, lineHeight: 52 }}>
+        <View style={{ paddingHorizontal: SPACING['2xl'], paddingTop: SPACING['2xl'], paddingBottom: SPACING.lg }}>
+          <Text style={{ color: TEACHER_COLORS.gray[500], fontSize: TYPOGRAPHY.fontSize.sm, marginBottom: SPACING.sm }}>순이익</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'flex-end', marginBottom: SPACING.lg }}>
+            <Text style={{ color: TEACHER_COLORS.gray[900], fontWeight: TYPOGRAPHY.fontWeight.bold, fontSize: 48, lineHeight: 52 }}>
               {formatCurrency(Math.abs(monthlyIncome - stats.totalExpense))}
             </Text>
           </View>
         </View>
 
         {/* 수입/지출 카드 */}
-        <View className="px-6 pb-6">
-          <View className="flex-row">
+        <View style={{ paddingHorizontal: SPACING['2xl'], paddingBottom: SPACING['2xl'] }}>
+          <View style={{ flexDirection: 'row' }}>
             {/* 수입 */}
             <TouchableOpacity
               onPress={() => navigation.navigate('IncomeList', {
@@ -390,21 +398,20 @@ export default function FinanceManagementScreen({ navigation }) {
                 }
               })}
               activeOpacity={0.7}
-              className="flex-1 mr-2 rounded-2xl p-4"
               style={{
-                backgroundColor: 'white',
-                shadowColor: '#000',
-                shadowOffset: { width: 0, height: 1 },
-                shadowOpacity: 0.05,
-                shadowRadius: 3,
-                elevation: 2,
+                flex: 1,
+                marginRight: SPACING.sm,
+                borderRadius: RADIUS['2xl'],
+                padding: SPACING.lg,
+                backgroundColor: TEACHER_COLORS.white,
+                ...SHADOWS.sm,
               }}
             >
-              <View className="flex-row items-center justify-between mb-3">
-                <Text className="text-gray-600 text-xs font-medium">수입</Text>
-                <Ionicons name="chevron-forward" size={14} color="#D1D5DB" />
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: SPACING.md }}>
+                <Text style={{ color: TEACHER_COLORS.gray[600], fontSize: TYPOGRAPHY.fontSize.xs, fontWeight: TYPOGRAPHY.fontWeight.medium }}>수입</Text>
+                <Ionicons name="chevron-forward" size={14} color={TEACHER_COLORS.gray[300]} />
               </View>
-              <Text className="text-gray-900 font-black text-xl">
+              <Text style={{ color: TEACHER_COLORS.gray[900], fontWeight: TYPOGRAPHY.fontWeight.bold, fontSize: TYPOGRAPHY.fontSize.xl }}>
                 {formatCurrency(monthlyIncome)}
               </Text>
             </TouchableOpacity>
@@ -418,21 +425,20 @@ export default function FinanceManagementScreen({ navigation }) {
                 }
               })}
               activeOpacity={0.7}
-              className="flex-1 ml-2 rounded-2xl p-4"
               style={{
-                backgroundColor: 'white',
-                shadowColor: '#000',
-                shadowOffset: { width: 0, height: 1 },
-                shadowOpacity: 0.05,
-                shadowRadius: 3,
-                elevation: 2,
+                flex: 1,
+                marginLeft: SPACING.sm,
+                borderRadius: RADIUS['2xl'],
+                padding: SPACING.lg,
+                backgroundColor: TEACHER_COLORS.white,
+                ...SHADOWS.sm,
               }}
             >
-              <View className="flex-row items-center justify-between mb-3">
-                <Text className="text-gray-600 text-xs font-medium">지출</Text>
-                <Ionicons name="chevron-forward" size={14} color="#D1D5DB" />
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: SPACING.md }}>
+                <Text style={{ color: TEACHER_COLORS.gray[600], fontSize: TYPOGRAPHY.fontSize.xs, fontWeight: TYPOGRAPHY.fontWeight.medium }}>지출</Text>
+                <Ionicons name="chevron-forward" size={14} color={TEACHER_COLORS.gray[300]} />
               </View>
-              <Text className="text-gray-900 font-black text-xl">
+              <Text style={{ color: TEACHER_COLORS.gray[900], fontWeight: TYPOGRAPHY.fontWeight.bold, fontSize: TYPOGRAPHY.fontSize.xl }}>
                 {formatCurrency(stats.totalExpense)}
               </Text>
             </TouchableOpacity>
@@ -440,50 +446,89 @@ export default function FinanceManagementScreen({ navigation }) {
         </View>
 
         {/* 수입/지출 추가 버튼 */}
-        <View className="px-6 mb-4">
-          <View className="flex-row">
+        <View style={{ paddingHorizontal: SPACING['2xl'], marginBottom: SPACING.lg }}>
+          <View style={{ flexDirection: 'row' }}>
             {/* 수입 추가 */}
             <TouchableOpacity
               onPress={handleAddIncome}
               activeOpacity={0.8}
-              style={{ backgroundColor: '#3B82F6' }}
-              className="flex-1 rounded-3xl py-4 flex-row items-center justify-center mr-2"
+              style={{
+                flex: 1,
+                backgroundColor: TEACHER_COLORS.blue[500],
+                borderRadius: RADIUS['3xl'],
+                paddingVertical: SPACING.lg,
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'center',
+                marginRight: SPACING.sm,
+                ...SHADOWS.md,
+              }}
             >
-              <Ionicons name="add-circle" size={24} color="white" />
-              <Text className="text-white font-bold text-base ml-2">수입 추가</Text>
+              <Ionicons name="add-circle" size={24} color={TEACHER_COLORS.white} />
+              <Text style={{ color: TEACHER_COLORS.white, fontWeight: TYPOGRAPHY.fontWeight.bold, fontSize: TYPOGRAPHY.fontSize.base, marginLeft: SPACING.sm }}>
+                수입 추가
+              </Text>
             </TouchableOpacity>
 
             {/* 지출 추가 */}
             <TouchableOpacity
               onPress={handleAddExpense}
               activeOpacity={0.8}
-              style={{ backgroundColor: '#EF4444' }}
-              className="flex-1 rounded-3xl py-4 flex-row items-center justify-center ml-2"
+              style={{
+                flex: 1,
+                backgroundColor: TEACHER_COLORS.danger[500],
+                borderRadius: RADIUS['3xl'],
+                paddingVertical: SPACING.lg,
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'center',
+                marginLeft: SPACING.sm,
+                ...SHADOWS.md,
+              }}
             >
-              <Ionicons name="add-circle" size={24} color="white" />
-              <Text className="text-white font-bold text-base ml-2">지출 추가</Text>
+              <Ionicons name="add-circle" size={24} color={TEACHER_COLORS.white} />
+              <Text style={{ color: TEACHER_COLORS.white, fontWeight: TYPOGRAPHY.fontWeight.bold, fontSize: TYPOGRAPHY.fontSize.base, marginLeft: SPACING.sm }}>
+                지출 추가
+              </Text>
             </TouchableOpacity>
           </View>
         </View>
 
         {/* 수입/지출 캘린더 */}
-        <View className="px-2 mb-6">
+        <View style={{ paddingHorizontal: SPACING.sm, marginBottom: SPACING['2xl'] }}>
           <TouchableOpacity
             onPress={() => setCalendarExpanded(!calendarExpanded)}
             activeOpacity={0.7}
-            className="flex-row items-center justify-between mb-3 px-2"
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              marginBottom: SPACING.md,
+              paddingHorizontal: SPACING.sm,
+            }}
           >
-            <View className="flex-row items-center">
-              <View className="w-8 h-8 rounded-full items-center justify-center mr-3"
-                style={{ backgroundColor: '#F9FAFB' }}>
-                <Ionicons name="calendar-outline" size={16} color="#6B7280" />
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <View
+                style={{
+                  width: 32,
+                  height: 32,
+                  borderRadius: RADIUS.full,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  marginRight: SPACING.md,
+                  backgroundColor: TEACHER_COLORS.gray[50],
+                }}
+              >
+                <Ionicons name="calendar-outline" size={16} color={TEACHER_COLORS.gray[600]} />
               </View>
-              <Text className="text-gray-900 font-bold text-base">수입/지출 캘린더</Text>
+              <Text style={{ color: TEACHER_COLORS.gray[900], fontWeight: TYPOGRAPHY.fontWeight.bold, fontSize: TYPOGRAPHY.fontSize.base }}>
+                수입/지출 캘린더
+              </Text>
             </View>
             <Ionicons
               name={calendarExpanded ? "chevron-up" : "chevron-down"}
               size={20}
-              color="#9CA3AF"
+              color={TEACHER_COLORS.gray[400]}
             />
           </TouchableOpacity>
 
@@ -712,122 +757,221 @@ export default function FinanceManagementScreen({ navigation }) {
         </View>
 
         {/* 추가 기능 메뉴 */}
-        <View className="px-6 mb-6">
-          <View className="flex-row items-center justify-between mb-3">
-            <View className="flex-row items-center">
-              <View className="w-8 h-8 rounded-full items-center justify-center mr-3"
-                style={{ backgroundColor: '#F9FAFB' }}>
-                <Ionicons name="apps-outline" size={16} color="#6B7280" />
-              </View>
-              <Text className="text-gray-900 font-bold text-base">추가 기능</Text>
-            </View>
-          </View>
+        <View style={{ paddingHorizontal: SPACING.xl, marginBottom: SPACING['3xl'] }}>
+          <Text style={{ fontSize: TYPOGRAPHY.fontSize.lg, fontWeight: TYPOGRAPHY.fontWeight.bold, color: TEACHER_SEMANTIC_COLORS.textPrimary, marginBottom: SPACING.lg }}>
+            추가 기능
+          </Text>
 
-          <View className="flex-row flex-wrap">
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginHorizontal: -SPACING.xs }}>
             {/* 통계/리포트 */}
-            <TouchableOpacity
-              onPress={() => navigation.navigate('PaymentStatistics')}
-              activeOpacity={0.7}
-              className="bg-white rounded-2xl p-4 mr-2 mb-2"
-              style={{
-                width: '31%',
-                shadowColor: '#000',
-                shadowOffset: { width: 0, height: 1 },
-                shadowOpacity: 0.05,
-                shadowRadius: 3,
-                elevation: 2,
-              }}
-            >
-              <View className="bg-blue-100 rounded-full w-10 h-10 items-center justify-center mb-2">
-                <Ionicons name="stats-chart" size={20} color="#3B82F6" />
-              </View>
-              <Text className="text-gray-900 font-bold text-xs mb-1">통계</Text>
-              <Text className="text-gray-500 text-[10px]">리포트</Text>
-            </TouchableOpacity>
+            <View style={{ width: '50%', paddingHorizontal: SPACING.xs, marginBottom: SPACING.md }}>
+              <TouchableOpacity
+                onPress={() => navigation.navigate('PaymentStatistics')}
+                activeOpacity={0.7}
+                style={{
+                  backgroundColor: TEACHER_COLORS.secondary[50],
+                  borderRadius: RADIUS.xl,
+                  padding: SPACING.lg,
+                  alignItems: 'center',
+                  ...SHADOWS.sm,
+                }}
+              >
+                <View
+                  style={{
+                    width: 56,
+                    height: 56,
+                    borderRadius: RADIUS.lg,
+                    backgroundColor: TEACHER_COLORS.white,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    marginBottom: SPACING.md,
+                  }}
+                >
+                  <Ionicons name="stats-chart" size={28} color={TEACHER_COLORS.secondary[600]} />
+                </View>
+                <Text style={{ fontSize: TYPOGRAPHY.fontSize.sm, fontWeight: TYPOGRAPHY.fontWeight.bold, color: TEACHER_SEMANTIC_COLORS.textPrimary, textAlign: 'center' }}>
+                  통계 분석
+                </Text>
+                <Text style={{ fontSize: TYPOGRAPHY.fontSize.xs, color: TEACHER_SEMANTIC_COLORS.textSecondary, marginTop: SPACING.xs }}>
+                  리포트
+                </Text>
+              </TouchableOpacity>
+            </View>
 
             {/* 학생별 이력 */}
-            <TouchableOpacity
-              onPress={() => navigation.navigate('StudentPaymentHistory')}
-              activeOpacity={0.7}
-              className="bg-white rounded-2xl p-4 mr-2 mb-2"
-              style={{
-                width: '31%',
-                shadowColor: '#000',
-                shadowOffset: { width: 0, height: 1 },
-                shadowOpacity: 0.05,
-                shadowRadius: 3,
-                elevation: 2,
-              }}
-            >
-              <View className="bg-purple-100 rounded-full w-10 h-10 items-center justify-center mb-2">
-                <Ionicons name="people" size={20} color="#A855F7" />
-              </View>
-              <Text className="text-gray-900 font-bold text-xs mb-1">이력</Text>
-              <Text className="text-gray-500 text-[10px]">학생별</Text>
-            </TouchableOpacity>
+            <View style={{ width: '50%', paddingHorizontal: SPACING.xs, marginBottom: SPACING.md }}>
+              <TouchableOpacity
+                onPress={() => navigation.navigate('StudentPaymentHistory')}
+                activeOpacity={0.7}
+                style={{
+                  backgroundColor: TEACHER_COLORS.purple[50],
+                  borderRadius: RADIUS.xl,
+                  padding: SPACING.lg,
+                  alignItems: 'center',
+                  ...SHADOWS.sm,
+                }}
+              >
+                <View
+                  style={{
+                    width: 56,
+                    height: 56,
+                    borderRadius: RADIUS.lg,
+                    backgroundColor: TEACHER_COLORS.white,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    marginBottom: SPACING.md,
+                  }}
+                >
+                  <Ionicons name="people" size={28} color={TEACHER_COLORS.purple[600]} />
+                </View>
+                <Text style={{ fontSize: TYPOGRAPHY.fontSize.sm, fontWeight: TYPOGRAPHY.fontWeight.bold, color: TEACHER_SEMANTIC_COLORS.textPrimary, textAlign: 'center' }}>
+                  학생 이력
+                </Text>
+                <Text style={{ fontSize: TYPOGRAPHY.fontSize.xs, color: TEACHER_SEMANTIC_COLORS.textSecondary, marginTop: SPACING.xs }}>
+                  납부 내역
+                </Text>
+              </TouchableOpacity>
+            </View>
 
             {/* 할인/할증 */}
-            <TouchableOpacity
-              onPress={() => navigation.navigate('DiscountManagement')}
-              activeOpacity={0.7}
-              className="bg-white rounded-2xl p-4 mb-2"
-              style={{
-                width: '31%',
-                shadowColor: '#000',
-                shadowOffset: { width: 0, height: 1 },
-                shadowOpacity: 0.05,
-                shadowRadius: 3,
-                elevation: 2,
-              }}
-            >
-              <View className="bg-green-100 rounded-full w-10 h-10 items-center justify-center mb-2">
-                <Ionicons name="pricetag" size={20} color="#10B981" />
-              </View>
-              <Text className="text-gray-900 font-bold text-xs mb-1">할인</Text>
-              <Text className="text-gray-500 text-[10px]">할증 관리</Text>
-            </TouchableOpacity>
+            <View style={{ width: '50%', paddingHorizontal: SPACING.xs, marginBottom: SPACING.md }}>
+              <TouchableOpacity
+                onPress={() => navigation.navigate('DiscountManagement')}
+                activeOpacity={0.7}
+                style={{
+                  backgroundColor: TEACHER_COLORS.success[50],
+                  borderRadius: RADIUS.xl,
+                  padding: SPACING.lg,
+                  alignItems: 'center',
+                  ...SHADOWS.sm,
+                }}
+              >
+                <View
+                  style={{
+                    width: 56,
+                    height: 56,
+                    borderRadius: RADIUS.lg,
+                    backgroundColor: TEACHER_COLORS.white,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    marginBottom: SPACING.md,
+                  }}
+                >
+                  <Ionicons name="pricetag" size={28} color={TEACHER_COLORS.success[600]} />
+                </View>
+                <Text style={{ fontSize: TYPOGRAPHY.fontSize.sm, fontWeight: TYPOGRAPHY.fontWeight.bold, color: TEACHER_SEMANTIC_COLORS.textPrimary, textAlign: 'center' }}>
+                  할인 관리
+                </Text>
+                <Text style={{ fontSize: TYPOGRAPHY.fontSize.xs, color: TEACHER_SEMANTIC_COLORS.textSecondary, marginTop: SPACING.xs }}>
+                  할증 설정
+                </Text>
+              </TouchableOpacity>
+            </View>
 
             {/* 영수증/정산서 */}
-            <TouchableOpacity
-              onPress={() => navigation.navigate('Receipt')}
-              activeOpacity={0.7}
-              className="bg-white rounded-2xl p-4 mr-2 mb-2"
-              style={{
-                width: '31%',
-                shadowColor: '#000',
-                shadowOffset: { width: 0, height: 1 },
-                shadowOpacity: 0.05,
-                shadowRadius: 3,
-                elevation: 2,
-              }}
-            >
-              <View className="bg-amber-100 rounded-full w-10 h-10 items-center justify-center mb-2">
-                <Ionicons name="receipt" size={20} color="#F59E0B" />
-              </View>
-              <Text className="text-gray-900 font-bold text-xs mb-1">영수증</Text>
-              <Text className="text-gray-500 text-[10px]">정산서</Text>
-            </TouchableOpacity>
+            <View style={{ width: '50%', paddingHorizontal: SPACING.xs, marginBottom: SPACING.md }}>
+              <TouchableOpacity
+                onPress={() => navigation.navigate('Receipt')}
+                activeOpacity={0.7}
+                style={{
+                  backgroundColor: TEACHER_COLORS.amber[50],
+                  borderRadius: RADIUS.xl,
+                  padding: SPACING.lg,
+                  alignItems: 'center',
+                  ...SHADOWS.sm,
+                }}
+              >
+                <View
+                  style={{
+                    width: 56,
+                    height: 56,
+                    borderRadius: RADIUS.lg,
+                    backgroundColor: TEACHER_COLORS.white,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    marginBottom: SPACING.md,
+                  }}
+                >
+                  <Ionicons name="receipt" size={28} color={TEACHER_COLORS.amber[600]} />
+                </View>
+                <Text style={{ fontSize: TYPOGRAPHY.fontSize.sm, fontWeight: TYPOGRAPHY.fontWeight.bold, color: TEACHER_SEMANTIC_COLORS.textPrimary, textAlign: 'center' }}>
+                  영수증
+                </Text>
+                <Text style={{ fontSize: TYPOGRAPHY.fontSize.xs, color: TEACHER_SEMANTIC_COLORS.textSecondary, marginTop: SPACING.xs }}>
+                  정산서
+                </Text>
+              </TouchableOpacity>
+            </View>
 
             {/* 환불 처리 */}
-            <TouchableOpacity
-              onPress={() => navigation.navigate('Refund')}
-              activeOpacity={0.7}
-              className="bg-white rounded-2xl p-4 mr-2 mb-2"
-              style={{
-                width: '31%',
-                shadowColor: '#000',
-                shadowOffset: { width: 0, height: 1 },
-                shadowOpacity: 0.05,
-                shadowRadius: 3,
-                elevation: 2,
-              }}
-            >
-              <View className="bg-red-100 rounded-full w-10 h-10 items-center justify-center mb-2">
-                <Ionicons name="return-down-back" size={20} color="#EF4444" />
-              </View>
-              <Text className="text-gray-900 font-bold text-xs mb-1">환불</Text>
-              <Text className="text-gray-500 text-[10px]">처리</Text>
-            </TouchableOpacity>
+            <View style={{ width: '50%', paddingHorizontal: SPACING.xs, marginBottom: SPACING.md }}>
+              <TouchableOpacity
+                onPress={() => navigation.navigate('Refund')}
+                activeOpacity={0.7}
+                style={{
+                  backgroundColor: TEACHER_COLORS.danger[50],
+                  borderRadius: RADIUS.xl,
+                  padding: SPACING.lg,
+                  alignItems: 'center',
+                  ...SHADOWS.sm,
+                }}
+              >
+                <View
+                  style={{
+                    width: 56,
+                    height: 56,
+                    borderRadius: RADIUS.lg,
+                    backgroundColor: TEACHER_COLORS.white,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    marginBottom: SPACING.md,
+                  }}
+                >
+                  <Ionicons name="return-down-back" size={28} color={TEACHER_COLORS.danger[600]} />
+                </View>
+                <Text style={{ fontSize: TYPOGRAPHY.fontSize.sm, fontWeight: TYPOGRAPHY.fontWeight.bold, color: TEACHER_SEMANTIC_COLORS.textPrimary, textAlign: 'center' }}>
+                  환불 처리
+                </Text>
+                <Text style={{ fontSize: TYPOGRAPHY.fontSize.xs, color: TEACHER_SEMANTIC_COLORS.textSecondary, marginTop: SPACING.xs }}>
+                  취소/반환
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* 수강료 설정 */}
+            <View style={{ width: '50%', paddingHorizontal: SPACING.xs, marginBottom: SPACING.md }}>
+              <TouchableOpacity
+                onPress={() => setPriceExpanded(!priceExpanded)}
+                activeOpacity={0.7}
+                style={{
+                  backgroundColor: TEACHER_COLORS.cyan[50],
+                  borderRadius: RADIUS.xl,
+                  padding: SPACING.lg,
+                  alignItems: 'center',
+                  ...SHADOWS.sm,
+                }}
+              >
+                <View
+                  style={{
+                    width: 56,
+                    height: 56,
+                    borderRadius: RADIUS.lg,
+                    backgroundColor: TEACHER_COLORS.white,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    marginBottom: SPACING.md,
+                  }}
+                >
+                  <Ionicons name="settings" size={28} color={TEACHER_COLORS.cyan[600]} />
+                </View>
+                <Text style={{ fontSize: TYPOGRAPHY.fontSize.sm, fontWeight: TYPOGRAPHY.fontWeight.bold, color: TEACHER_SEMANTIC_COLORS.textPrimary, textAlign: 'center' }}>
+                  가격 설정
+                </Text>
+                <Text style={{ fontSize: TYPOGRAPHY.fontSize.xs, color: TEACHER_SEMANTIC_COLORS.textSecondary, marginTop: SPACING.xs }}>
+                  수강료
+                </Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
 

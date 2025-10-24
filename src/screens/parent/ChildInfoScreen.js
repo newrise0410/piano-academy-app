@@ -11,6 +11,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Text, ScreenHeader } from '../../components/common';
 import PARENT_COLORS from '../../styles/parent_colors';
+import { SHADOWS, RADIUS, SPACING, TYPOGRAPHY, CARD_STYLES, BADGE_STYLES, ICON_CONTAINER } from '../../styles/commonStyles';
 import { useAuthStore } from '../../store';
 import { getStudentById } from '../../services/firestoreService';
 
@@ -50,9 +51,9 @@ export default function ChildInfoScreen({ navigation }) {
 
   if (loading) {
     return (
-      <SafeAreaView className="flex-1 bg-gray-50">
+      <SafeAreaView style={{ flex: 1, backgroundColor: PARENT_COLORS.gray[50] }}>
         <ScreenHeader title="우리 아이 정보" colorScheme="parent" />
-        <View className="flex-1 items-center justify-center">
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
           <ActivityIndicator size="large" color={PARENT_COLORS.primary.DEFAULT} />
         </View>
       </SafeAreaView>
@@ -61,24 +62,36 @@ export default function ChildInfoScreen({ navigation }) {
 
   if (children.length === 0) {
     return (
-      <SafeAreaView className="flex-1 bg-gray-50">
+      <SafeAreaView style={{ flex: 1, backgroundColor: PARENT_COLORS.gray[50] }}>
         <ScreenHeader title="우리 아이 정보" colorScheme="parent" />
-        <View className="flex-1 items-center justify-center px-5">
-          <View className="bg-gray-100 rounded-full p-6 mb-4">
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: SPACING.xl }}>
+          <View
+            style={{
+              ...ICON_CONTAINER.round(PARENT_COLORS.gray[100], 96),
+              marginBottom: SPACING.lg,
+            }}
+          >
             <Ionicons name="person-outline" size={64} color={PARENT_COLORS.gray[400]} />
           </View>
-          <Text className="text-gray-800 font-bold text-xl text-center mb-2">
+          <Text style={{ color: PARENT_COLORS.gray[800], fontWeight: TYPOGRAPHY.fontWeight.bold, fontSize: TYPOGRAPHY.fontSize.xl, textAlign: 'center', marginBottom: SPACING.sm }}>
             등록된 자녀 정보가 없습니다
           </Text>
-          <Text className="text-gray-500 text-center mb-6">
+          <Text style={{ color: PARENT_COLORS.gray[500], textAlign: 'center', marginBottom: SPACING['2xl'], fontSize: TYPOGRAPHY.fontSize.base }}>
             자녀 정보를 등록하면{'\n'}학습 정보를 확인할 수 있어요
           </Text>
           <TouchableOpacity
             onPress={() => navigation.navigate('ChildRegistrationRequest')}
-            className="rounded-2xl py-3 px-6"
-            style={{ backgroundColor: PARENT_COLORS.primary.DEFAULT }}
+            style={{
+              borderRadius: RADIUS['2xl'],
+              paddingVertical: SPACING.md,
+              paddingHorizontal: SPACING['2xl'],
+              backgroundColor: PARENT_COLORS.primary.DEFAULT,
+              ...SHADOWS.md,
+            }}
           >
-            <Text className="text-white font-bold text-base">자녀 등록 요청하기</Text>
+            <Text style={{ color: PARENT_COLORS.white, fontWeight: TYPOGRAPHY.fontWeight.bold, fontSize: TYPOGRAPHY.fontSize.base }}>
+              자녀 등록 요청하기
+            </Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -86,53 +99,55 @@ export default function ChildInfoScreen({ navigation }) {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-50">
+    <SafeAreaView style={{ flex: 1, backgroundColor: PARENT_COLORS.gray[50] }}>
       <ScreenHeader title="우리 아이 정보" colorScheme="parent" />
 
       <ScrollView
-        className="flex-1"
+        style={{ flex: 1 }}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
       >
-        <View className="px-5 py-6">
+        <View style={{ paddingHorizontal: SPACING.xl, paddingVertical: SPACING['2xl'] }}>
           {/* 자녀 카드 목록 */}
           {children.map((child, index) => (
             <TouchableOpacity
               key={child.id || index}
               onPress={() => navigation.navigate('ChildDetail', { studentId: child.id })}
-              className="bg-white rounded-3xl p-5 mb-4"
               style={{
-                shadowColor: '#000',
-                shadowOffset: { width: 0, height: 4 },
-                shadowOpacity: 0.1,
-                shadowRadius: 12,
-                elevation: 8,
+                ...CARD_STYLES.elevated,
+                marginBottom: SPACING.lg,
               }}
             >
-              <View className="flex-row items-center">
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                 {/* 프로필 아이콘 */}
                 <View
-                  className="w-16 h-16 rounded-full items-center justify-center mr-4"
-                  style={{ backgroundColor: PARENT_COLORS.primary[100] }}
+                  style={{
+                    ...ICON_CONTAINER.round(PARENT_COLORS.primary[100], 64),
+                    marginRight: SPACING.lg,
+                  }}
                 >
-                  <Text className="text-3xl">🎹</Text>
+                  <Text style={{ fontSize: 32 }}>🎹</Text>
                 </View>
 
                 {/* 자녀 정보 */}
-                <View className="flex-1">
-                  <View className="flex-row items-center mb-2">
-                    <Text className="text-gray-800 text-xl font-bold mr-2">
+                <View style={{ flex: 1 }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: SPACING.sm }}>
+                    <Text style={{ color: PARENT_COLORS.gray[800], fontSize: TYPOGRAPHY.fontSize.xl, fontWeight: TYPOGRAPHY.fontWeight.bold, marginRight: SPACING.sm }}>
                       {child.name}
                     </Text>
                     <View
-                      className="px-2 py-1 rounded-full"
-                      style={{ backgroundColor: PARENT_COLORS.primary[100] }}
+                      style={{
+                        ...BADGE_STYLES.default(PARENT_COLORS.primary[100]),
+                      }}
                     >
                       <Text
-                        className="text-xs font-bold"
-                        style={{ color: PARENT_COLORS.primary[600] }}
+                        style={{
+                          fontSize: TYPOGRAPHY.fontSize.xs,
+                          fontWeight: TYPOGRAPHY.fontWeight.bold,
+                          color: PARENT_COLORS.primary[600],
+                        }}
                       >
                         {child.level}
                       </Text>
@@ -140,35 +155,35 @@ export default function ChildInfoScreen({ navigation }) {
                   </View>
 
                   {/* 통계 요약 */}
-                  <View className="flex-row items-center">
-                    <View className="flex-row items-center mr-4">
+                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: SPACING.lg }}>
                       <Ionicons
                         name="calendar-outline"
                         size={14}
                         color={PARENT_COLORS.gray[500]}
                       />
-                      <Text className="text-gray-600 text-xs ml-1">
+                      <Text style={{ color: PARENT_COLORS.gray[600], fontSize: TYPOGRAPHY.fontSize.xs, marginLeft: SPACING.xs }}>
                         출석 {child.attendanceRate || 0}%
                       </Text>
                     </View>
-                    <View className="flex-row items-center mr-4">
+                    <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: SPACING.lg }}>
                       <Ionicons
                         name="musical-notes-outline"
                         size={14}
                         color={PARENT_COLORS.gray[500]}
                       />
-                      <Text className="text-gray-600 text-xs ml-1">
+                      <Text style={{ color: PARENT_COLORS.gray[600], fontSize: TYPOGRAPHY.fontSize.xs, marginLeft: SPACING.xs }}>
                         수업 {child.completedLessons || 0}회
                       </Text>
                     </View>
                     {child.ticketType === 'count' && (
-                      <View className="flex-row items-center">
+                      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                         <Ionicons
                           name="ticket-outline"
                           size={14}
                           color={PARENT_COLORS.gray[500]}
                         />
-                        <Text className="text-gray-600 text-xs ml-1">
+                        <Text style={{ color: PARENT_COLORS.gray[600], fontSize: TYPOGRAPHY.fontSize.xs, marginLeft: SPACING.xs }}>
                           남은 {child.ticketCount || 0}회
                         </Text>
                       </View>
@@ -189,20 +204,28 @@ export default function ChildInfoScreen({ navigation }) {
           {/* 자녀 등록 요청 버튼 */}
           <TouchableOpacity
             onPress={() => navigation.navigate('ChildRegistrationRequest')}
-            className="bg-white rounded-3xl p-5 border-2 border-dashed"
             style={{
+              backgroundColor: PARENT_COLORS.white,
+              borderRadius: RADIUS['3xl'],
+              padding: SPACING.xl,
+              borderWidth: 2,
+              borderStyle: 'dashed',
               borderColor: PARENT_COLORS.gray[300],
             }}
           >
-            <View className="flex-row items-center justify-center">
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
               <Ionicons
                 name="add-circle-outline"
                 size={24}
                 color={PARENT_COLORS.primary.DEFAULT}
               />
               <Text
-                className="text-base font-bold ml-2"
-                style={{ color: PARENT_COLORS.primary.DEFAULT }}
+                style={{
+                  fontSize: TYPOGRAPHY.fontSize.base,
+                  fontWeight: TYPOGRAPHY.fontWeight.bold,
+                  marginLeft: SPACING.sm,
+                  color: PARENT_COLORS.primary.DEFAULT,
+                }}
               >
                 자녀 등록 요청하기
               </Text>

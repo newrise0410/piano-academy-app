@@ -156,23 +156,22 @@ export const useLessonNoteStore = create((set, get) => ({
     try {
       await LessonNoteRepository.delete(noteId);
 
-      const note = get().lessonNotes.find(n => n.id === noteId);
-      const studentId = note?.studentId;
+      set((state) => {
+        // lessonNotes 배열에서 삭제
+        const updatedLessonNotes = state.lessonNotes.filter(n => n.id !== noteId);
 
-      set((state) => ({
-        lessonNotes: state.lessonNotes.filter(n => n.id !== noteId),
-        loading: false,
-      }));
+        // studentNotes 객체의 모든 학생 데이터에서 해당 noteId 삭제
+        const updatedStudentNotes = {};
+        Object.keys(state.studentNotes).forEach(studentId => {
+          updatedStudentNotes[studentId] = state.studentNotes[studentId].filter(n => n.id !== noteId);
+        });
 
-      // 학생별 노트도 삭제
-      if (studentId && get().studentNotes[studentId]) {
-        set((state) => ({
-          studentNotes: {
-            ...state.studentNotes,
-            [studentId]: state.studentNotes[studentId].filter(n => n.id !== noteId),
-          },
-        }));
-      }
+        return {
+          lessonNotes: updatedLessonNotes,
+          studentNotes: updatedStudentNotes,
+          loading: false,
+        };
+      });
     } catch (error) {
       set({
         error: error.message || '수업 일지 삭제에 실패했습니다.',

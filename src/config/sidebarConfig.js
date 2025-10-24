@@ -1,10 +1,11 @@
 // src/config/sidebarConfig.js
 import TEACHER_COLORS from '../styles/teacher_colors';
+import PARENT_COLORS from '../styles/parent_colors';
 
 /**
  * 선생님용 사이드바 메뉴 설정
  * @param {Object} navigation - React Navigation 객체
- * @param {Function} closeS idebar - 사이드바 닫기 함수
+ * @param {Function} closeSidebar - 사이드바 닫기 함수
  * @returns {Array} 메뉴 섹션 배열
  */
 export const getTeacherMenuSections = (navigation, closeSidebar) => [
@@ -100,7 +101,7 @@ export const getTeacherMenuSections = (navigation, closeSidebar) => [
       {
         icon: 'log-out-outline',
         label: '로그아웃',
-        color: TEACHER_COLORS.red[500],
+        color: TEACHER_COLORS.danger[500],
         isLogout: true,
       },
     ],
@@ -241,7 +242,7 @@ export const getParentMenuSections = (navigation, closeSidebar) => [
       {
         icon: 'log-out-outline',
         label: '로그아웃',
-        color: '#EF4444', // red-500
+        color: PARENT_COLORS.danger[500],
         isLogout: true,
       },
     ],

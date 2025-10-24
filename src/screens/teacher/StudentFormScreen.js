@@ -36,13 +36,18 @@ export default function StudentFormScreen({ navigation, route }) {
 
   const [formData, setFormData] = useState({
     name: student?.name || '',
+    birthDate: student?.birthDate || '',
+    createdAt: student?.createdAt || new Date().toISOString().split('T')[0],
     age: student?.age || '',
+    school: student?.school || '',
+    grade: student?.grade || '',
     phone: student?.phone || '',
     parentName: student?.parentName || '',
     parentPhone: student?.parentPhone || '',
     category: student?.category || '초등',
     level: student?.level || '초급',
     book: student?.book || '',
+    memo: student?.memo || '',
     ticketType: student?.ticketType || 'count',
     ticketCount: student?.ticketCount || 8,
     ticketPeriodStart: student?.ticketPeriod?.start || '',
@@ -153,13 +158,42 @@ export default function StudentFormScreen({ navigation, route }) {
             style={{ marginBottom: 16 }}
           />
 
-          {/* 나이 */}
+          {/* 생년월일 */}
           <FormInput
-            label="나이"
-            placeholder="예: 10"
-            value={formData.age}
-            onChangeText={(text) => setFormData({ ...formData, age: text })}
-            type="numeric"
+            label="생년월일"
+            placeholder="예: 2015-03-15"
+            value={formData.birthDate}
+            onChangeText={(text) => setFormData({ ...formData, birthDate: text })}
+            iconName="calendar-outline"
+            style={{ marginBottom: 16 }}
+          />
+
+          {/* 등록일 */}
+          <FormInput
+            label="등록일"
+            placeholder="예: 2025-01-15"
+            value={formData.createdAt}
+            onChangeText={(text) => setFormData({ ...formData, createdAt: text })}
+            iconName="calendar-outline"
+            style={{ marginBottom: 16 }}
+          />
+
+          {/* 학교 */}
+          <FormInput
+            label="학교"
+            placeholder="예: 서울초등학교"
+            value={formData.school}
+            onChangeText={(text) => setFormData({ ...formData, school: text })}
+            iconName="school-outline"
+            style={{ marginBottom: 16 }}
+          />
+
+          {/* 학년 */}
+          <FormInput
+            label="학년"
+            placeholder="예: 3학년"
+            value={formData.grade}
+            onChangeText={(text) => setFormData({ ...formData, grade: text })}
             style={{ marginBottom: 16 }}
           />
 
@@ -273,6 +307,19 @@ export default function StudentFormScreen({ navigation, route }) {
             onChangeText={(text) => setFormData({ ...formData, parentPhone: text })}
             type="phone"
             iconName="call-outline"
+          />
+        </SectionCard>
+
+        {/* 메모/특이사항 */}
+        <SectionCard title="메모 및 특이사항" iconName="document-text-outline" style={{ marginBottom: 16 }}>
+          <FormInput
+            label="메모"
+            placeholder="특이사항, 알레르기, 성향 등을 기록하세요"
+            value={formData.memo}
+            onChangeText={(text) => setFormData({ ...formData, memo: text })}
+            multiline
+            numberOfLines={4}
+            style={{ minHeight: 100 }}
           />
         </SectionCard>
 

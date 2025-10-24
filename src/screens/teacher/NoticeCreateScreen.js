@@ -11,6 +11,7 @@ import {
   MediaPicker
 } from '../../components/common';
 import TEACHER_COLORS from '../../styles/teacher_colors';
+import { SHADOWS, RADIUS, SPACING, TYPOGRAPHY, CARD_STYLES, BADGE_STYLES } from '../../styles/commonStyles';
 import { useNoticeStore, useStudentStore, useNotificationStore, useAuthStore } from '../../store';
 import { useToastStore } from '../../store';
 import { generateNoticeContent, improveNoticeContent, isGeminiAvailable } from '../../services/geminiService';
@@ -326,7 +327,7 @@ export default function NoticeCreateScreen({ navigation }) {
   // 발송 대상 선택 화면
   if (currentStep === 'selectRecipients') {
     return (
-      <SafeAreaView className="flex-1 bg-gray-50">
+      <SafeAreaView style={{ flex: 1, backgroundColor: TEACHER_COLORS.gray[50] }}>
         {/* 헤더 */}
         <ScreenHeader
           title="발송 대상 선택"
@@ -338,14 +339,18 @@ export default function NoticeCreateScreen({ navigation }) {
           }
         />
 
-        <ScrollView className="flex-1 px-5 py-4">
+        <ScrollView style={{ flex: 1, paddingHorizontal: SPACING.xl, paddingVertical: SPACING.lg }}>
           {/* 필터 섹션 */}
-          <View className="bg-white rounded-2xl p-4 mb-4">
-            <Text className="text-base font-bold text-gray-800 mb-3">필터</Text>
+          <View style={{ ...CARD_STYLES.default, marginBottom: SPACING.lg }}>
+            <Text style={{ fontSize: TYPOGRAPHY.fontSize.base, fontWeight: TYPOGRAPHY.fontWeight.bold, color: TEACHER_COLORS.gray[800], marginBottom: SPACING.md }}>
+              필터
+            </Text>
 
             {/* 카테고리 필터 */}
-            <View className="mb-3">
-              <Text className="text-sm font-semibold text-gray-700 mb-2">카테고리</Text>
+            <View style={{ marginBottom: SPACING.md }}>
+              <Text style={{ fontSize: TYPOGRAPHY.fontSize.sm, fontWeight: TYPOGRAPHY.fontWeight.semibold, color: TEACHER_COLORS.gray[700], marginBottom: SPACING.sm }}>
+                카테고리
+              </Text>
               <FilterChip
                 options={['전체', '초등', '고등', '성인'].map(cat => ({ value: cat, label: cat }))}
                 value={categoryFilter}
@@ -356,7 +361,9 @@ export default function NoticeCreateScreen({ navigation }) {
 
             {/* 요일 필터 */}
             <View>
-              <Text className="text-sm font-semibold text-gray-700 mb-2">요일</Text>
+              <Text style={{ fontSize: TYPOGRAPHY.fontSize.sm, fontWeight: TYPOGRAPHY.fontWeight.semibold, color: TEACHER_COLORS.gray[700], marginBottom: SPACING.sm }}>
+                요일
+              </Text>
               <FilterChip
                 options={['전체', '월', '화', '수', '목', '금', '토', '일'].map(day => ({ value: day, label: day }))}
                 value={dayFilter}
@@ -367,15 +374,17 @@ export default function NoticeCreateScreen({ navigation }) {
           </View>
 
           {/* 선택 정보 및 일괄 버튼 */}
-          <View className="bg-white rounded-2xl p-4 mb-4">
-            <View className="flex-row items-center justify-between mb-3">
-              <Text className="text-base font-bold text-gray-800">발송 대상</Text>
-              <Text className="text-sm text-primary font-bold">
+          <View style={{ ...CARD_STYLES.default, marginBottom: SPACING.lg }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: SPACING.md }}>
+              <Text style={{ fontSize: TYPOGRAPHY.fontSize.base, fontWeight: TYPOGRAPHY.fontWeight.bold, color: TEACHER_COLORS.gray[800] }}>
+                발송 대상
+              </Text>
+              <Text style={{ fontSize: TYPOGRAPHY.fontSize.sm, color: TEACHER_COLORS.primary.DEFAULT, fontWeight: TYPOGRAPHY.fontWeight.bold }}>
                 {selectedStudents.length}/{filteredStudents.length}명 선택
               </Text>
             </View>
 
-            <View className="flex-row gap-2">
+            <View style={{ flexDirection: 'row', gap: SPACING.sm }}>
               <Button
                 title="모두 선택"
                 icon="checkmark-done"
@@ -396,42 +405,49 @@ export default function NoticeCreateScreen({ navigation }) {
           </View>
 
           {/* 학생 목록 */}
-          <View className="bg-white rounded-2xl p-4 mb-4">
-            <Text className="text-base font-bold text-gray-800 mb-3">
+          <View style={{ ...CARD_STYLES.default, marginBottom: SPACING.lg }}>
+            <Text style={{ fontSize: TYPOGRAPHY.fontSize.base, fontWeight: TYPOGRAPHY.fontWeight.bold, color: TEACHER_COLORS.gray[800], marginBottom: SPACING.md }}>
               학생 목록 ({filteredStudents.length}명)
             </Text>
             {filteredStudents.length > 0 ? (
               filteredStudents.map((student, index) => (
                 <TouchableOpacity
                   key={student.id}
-                  className={`flex-row items-center justify-between py-3 ${
-                    index < filteredStudents.length - 1 ? 'border-b border-gray-100' : ''
-                  }`}
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    paddingVertical: SPACING.md,
+                    borderBottomWidth: index < filteredStudents.length - 1 ? 1 : 0,
+                    borderBottomColor: TEACHER_COLORS.gray[100],
+                  }}
                   onPress={() => handleStudentToggle(student.id)}
                   activeOpacity={0.7}
                 >
-                  <View className="flex-row items-center flex-1">
+                  <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
                     <Ionicons
                       name={selectedStudents.includes(student.id) ? "checkbox" : "square-outline"}
                       size={22}
                       color={selectedStudents.includes(student.id) ? TEACHER_COLORS.primary.DEFAULT : TEACHER_COLORS.gray[400]}
                     />
-                    <View className="ml-3 flex-1">
-                      <View className="flex-row items-center mb-1">
-                        <Text className="text-base font-bold text-gray-800 mr-2">
+                    <View style={{ marginLeft: SPACING.md, flex: 1 }}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: SPACING.xs }}>
+                        <Text style={{ fontSize: TYPOGRAPHY.fontSize.base, fontWeight: TYPOGRAPHY.fontWeight.bold, color: TEACHER_COLORS.gray[800], marginRight: SPACING.sm }}>
                           {student.name}
                         </Text>
                         <LevelBadge level={student.level} />
                       </View>
-                      <Text className="text-xs text-gray-600">{student.schedule}</Text>
+                      <Text style={{ fontSize: TYPOGRAPHY.fontSize.xs, color: TEACHER_COLORS.gray[600] }}>
+                        {student.schedule}
+                      </Text>
                     </View>
                   </View>
                 </TouchableOpacity>
               ))
             ) : (
-              <View className="py-8 items-center">
+              <View style={{ paddingVertical: SPACING['4xl'], alignItems: 'center' }}>
                 <Ionicons name="search-outline" size={48} color={TEACHER_COLORS.gray[200]} />
-                <Text className="text-gray-400 mt-3 text-center">
+                <Text style={{ color: TEACHER_COLORS.gray[400], marginTop: SPACING.md, textAlign: 'center', fontSize: TYPOGRAPHY.fontSize.sm }}>
                   해당 조건의 학생이 없습니다
                 </Text>
               </View>
@@ -440,7 +456,15 @@ export default function NoticeCreateScreen({ navigation }) {
         </ScrollView>
 
         {/* 하단 발송 버튼 */}
-        <View className="bg-white px-5 py-4 border-t border-gray-200">
+        <View
+          style={{
+            backgroundColor: TEACHER_COLORS.white,
+            paddingHorizontal: SPACING.xl,
+            paddingVertical: SPACING.lg,
+            borderTopWidth: 1,
+            borderTopColor: TEACHER_COLORS.gray[200],
+          }}
+        >
           <Button
             title={selectedStudents.length > 0
               ? `${selectedStudents.length}명에게 발송하기`
@@ -457,7 +481,7 @@ export default function NoticeCreateScreen({ navigation }) {
 
   // 알림장 작성 화면
   return (
-    <SafeAreaView className="flex-1 bg-gray-50">
+    <SafeAreaView style={{ flex: 1, backgroundColor: TEACHER_COLORS.gray[50] }}>
       {/* 헤더 */}
       <ScreenHeader
         title="알림장 작성"
@@ -468,39 +492,42 @@ export default function NoticeCreateScreen({ navigation }) {
         }
       />
 
-      <ScrollView className="flex-1 px-5 py-4">
+      <ScrollView style={{ flex: 1, paddingHorizontal: SPACING.xl, paddingVertical: SPACING.lg }}>
 
 
         {/* 템플릿 선택 카드 */}
-        <Card className="mb-4">
-          <View className="flex-row items-center mb-4">
-            <Text className="text-lg">📝</Text>
-            <Text className="text-base font-bold text-gray-800 ml-2">
+        <Card style={{ marginBottom: SPACING.lg }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: SPACING.lg }}>
+            <Text style={{ fontSize: TYPOGRAPHY.fontSize.lg }}>📝</Text>
+            <Text style={{ fontSize: TYPOGRAPHY.fontSize.base, fontWeight: TYPOGRAPHY.fontWeight.bold, color: TEACHER_COLORS.gray[800], marginLeft: SPACING.sm }}>
               어떤 알림을 보내시나요?
             </Text>
           </View>
 
           {/* 템플릿 버튼들 */}
-          <View className="flex-row flex-wrap -mx-1">
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginHorizontal: -SPACING.xs }}>
             {templates.map((template) => (
               <TouchableOpacity
                 key={template.id}
-                className="w-1/2 px-1 mb-2"
+                style={{ width: '50%', paddingHorizontal: SPACING.xs, marginBottom: SPACING.sm }}
                 onPress={() => handleTemplateSelect(template)}
                 activeOpacity={0.7}
               >
                 <Animated.View
-                  className={`rounded-xl p-4 items-center justify-center ${
-                    selectedTemplate === template.id ? 'border-2 border-primary' : 'border border-gray-200'
-                  }`}
                   style={{
                     backgroundColor: template.color,
+                    borderRadius: RADIUS.xl,
+                    padding: SPACING.lg,
+                    alignItems: 'center',
+                    justifyContent: 'center',
                     minHeight: 80,
+                    borderWidth: selectedTemplate === template.id ? 2 : 1,
+                    borderColor: selectedTemplate === template.id ? TEACHER_COLORS.primary.DEFAULT : TEACHER_COLORS.gray[200],
                     transform: selectedTemplate === template.id ? [{ scale: scaleAnim }] : [{ scale: 1 }],
                   }}
                 >
-                  <Text className="text-2xl mb-1">{template.emoji}</Text>
-                  <Text className="text-sm font-semibold text-gray-700">
+                  <Text style={{ fontSize: 24, marginBottom: SPACING.xs }}>{template.emoji}</Text>
+                  <Text style={{ fontSize: TYPOGRAPHY.fontSize.sm, fontWeight: TYPOGRAPHY.fontWeight.semibold, color: TEACHER_COLORS.gray[700] }}>
                     {template.title}
                   </Text>
                 </Animated.View>
@@ -512,10 +539,17 @@ export default function NoticeCreateScreen({ navigation }) {
         {/* AI에게 요청하기 섹션 - 직접 입력이 아닐 때만 표시 */}
         {selectedTemplate && !isDirectInput && (
           <Animated.View style={{ opacity: fadeAnim }}>
-            <View className="rounded-2xl p-5 mb-4" style={{ backgroundColor: TEACHER_COLORS.purple[50] }}>
-              <View className="flex-row items-center mb-3">
+            <View
+              style={{
+                borderRadius: RADIUS['2xl'],
+                padding: SPACING.xl,
+                marginBottom: SPACING.lg,
+                backgroundColor: TEACHER_COLORS.purple[50],
+              }}
+            >
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: SPACING.md }}>
                 <Ionicons name="sparkles" size={20} color={TEACHER_COLORS.primary.DEFAULT} />
-                <Text className="text-base font-bold text-gray-800 ml-2">
+                <Text style={{ fontSize: TYPOGRAPHY.fontSize.base, fontWeight: TYPOGRAPHY.fontWeight.bold, color: TEACHER_COLORS.gray[800], marginLeft: SPACING.sm }}>
                   AI에게 요청하기
                 </Text>
               </View>
@@ -527,7 +561,7 @@ export default function NoticeCreateScreen({ navigation }) {
                 onChangeText={setAiPrompt}
                 type="multiline"
                 numberOfLines={4}
-                style={{ marginBottom: 12 }}
+                style={{ marginBottom: SPACING.md }}
               />
 
               {/* AI로 작성하기 버튼 */}
@@ -544,31 +578,53 @@ export default function NoticeCreateScreen({ navigation }) {
 
         {/* 생성된 알림장 미리보기 - 항상 표시 */}
         <Animated.View style={{ opacity: fadeAnim }}>
-          <View className="bg-white rounded-2xl p-5 mb-4">
-            <View className="flex-row justify-between items-center mb-4">
-              <View className="flex-row items-center">
-                <Text className="text-lg">📋</Text>
-                <Text className="text-base font-bold text-gray-800 ml-2">
+          <View
+            style={{
+              ...CARD_STYLES.default,
+              marginBottom: SPACING.lg,
+            }}
+          >
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: SPACING.lg }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <Text style={{ fontSize: TYPOGRAPHY.fontSize.lg }}>📋</Text>
+                <Text style={{ fontSize: TYPOGRAPHY.fontSize.base, fontWeight: TYPOGRAPHY.fontWeight.bold, color: TEACHER_COLORS.gray[800], marginLeft: SPACING.sm }}>
                   {isDirectInput ? '직접 작성하기' : '생성된 알림장'}
                 </Text>
               </View>
               {!isDirectInput && selectedTemplate && previewContent && (
-                <View className="flex-row">
+                <View style={{ flexDirection: 'row' }}>
                   <TouchableOpacity
-                    className="border border-gray-300 rounded-lg px-3 py-1 mr-2"
+                    style={{
+                      borderWidth: 1,
+                      borderColor: TEACHER_COLORS.gray[300],
+                      borderRadius: RADIUS.md,
+                      paddingHorizontal: SPACING.md,
+                      paddingVertical: SPACING.xs,
+                      marginRight: SPACING.sm,
+                    }}
                     onPress={() => handleImproveContent('friendly')}
                     disabled={isGenerating}
                     activeOpacity={0.7}
                   >
-                    <Text className="text-xs text-gray-700">{isGenerating ? '⏳' : '더 친절하게'}</Text>
+                    <Text style={{ fontSize: TYPOGRAPHY.fontSize.xs, color: TEACHER_COLORS.gray[700] }}>
+                      {isGenerating ? '⏳' : '더 친절하게'}
+                    </Text>
                   </TouchableOpacity>
                   <TouchableOpacity
-                    className="border border-gray-300 rounded-lg px-3 py-1"
+                    style={{
+                      borderWidth: 1,
+                      borderColor: TEACHER_COLORS.gray[300],
+                      borderRadius: RADIUS.md,
+                      paddingHorizontal: SPACING.md,
+                      paddingVertical: SPACING.xs,
+                    }}
                     onPress={() => handleImproveContent('concise')}
                     disabled={isGenerating}
                     activeOpacity={0.7}
                   >
-                    <Text className="text-xs text-gray-700">{isGenerating ? '⏳' : '더 간결하게'}</Text>
+                    <Text style={{ fontSize: TYPOGRAPHY.fontSize.xs, color: TEACHER_COLORS.gray[700] }}>
+                      {isGenerating ? '⏳' : '더 간결하게'}
+                    </Text>
                   </TouchableOpacity>
                 </View>
               )}
@@ -583,7 +639,7 @@ export default function NoticeCreateScreen({ navigation }) {
                   placeholder="제목을 입력하세요"
                   value={previewTitle}
                   onChangeText={setPreviewTitle}
-                  style={{ marginBottom: 16 }}
+                  style={{ marginBottom: SPACING.lg }}
                 />
 
                 {/* 내용 */}
@@ -594,7 +650,7 @@ export default function NoticeCreateScreen({ navigation }) {
                   onChangeText={setPreviewContent}
                   type="multiline"
                   numberOfLines={10}
-                  style={{ marginBottom: 16 }}
+                  style={{ marginBottom: SPACING.lg }}
                 />
               </>
             ) : (
@@ -603,23 +659,30 @@ export default function NoticeCreateScreen({ navigation }) {
                 {selectedTemplate ? (
                   <>
                     {/* 제목 */}
-                    <View className="mb-3">
-                      <Text className="text-sm font-bold text-gray-900 mb-1">
+                    <View style={{ marginBottom: SPACING.md }}>
+                      <Text style={{ fontSize: TYPOGRAPHY.fontSize.sm, fontWeight: TYPOGRAPHY.fontWeight.bold, color: TEACHER_COLORS.gray[900], marginBottom: SPACING.xs }}>
                         {previewTitle}
                       </Text>
                     </View>
 
                     {/* 내용 */}
-                    <View className="bg-gray-50 rounded-xl p-4 mb-4">
-                      <Text className="text-sm text-gray-700 leading-5">
+                    <View
+                      style={{
+                        backgroundColor: TEACHER_COLORS.gray[50],
+                        borderRadius: RADIUS.xl,
+                        padding: SPACING.lg,
+                        marginBottom: SPACING.lg,
+                      }}
+                    >
+                      <Text style={{ fontSize: TYPOGRAPHY.fontSize.sm, color: TEACHER_COLORS.gray[700], lineHeight: TYPOGRAPHY.fontSize.sm * 1.5 }}>
                         {previewContent}
                       </Text>
                     </View>
                   </>
                 ) : (
-                  <View className="py-12 items-center justify-center">
+                  <View style={{ paddingVertical: SPACING['5xl'], alignItems: 'center', justifyContent: 'center' }}>
                     <Ionicons name="document-text-outline" size={48} color={TEACHER_COLORS.gray[200]} />
-                    <Text className="text-gray-400 mt-3 text-center">
+                    <Text style={{ color: TEACHER_COLORS.gray[400], marginTop: SPACING.md, textAlign: 'center', fontSize: TYPOGRAPHY.fontSize.sm }}>
                       템플릿을 선택하면{'\n'}미리보기가 표시됩니다
                     </Text>
                   </View>
@@ -629,10 +692,10 @@ export default function NoticeCreateScreen({ navigation }) {
 
             {/* 미디어 첨부 */}
             {selectedTemplate && (
-              <View className="mb-4">
-                <View className="flex-row items-center mb-3">
+              <View style={{ marginBottom: SPACING.lg }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: SPACING.md }}>
                   <Ionicons name="images-outline" size={18} color={TEACHER_COLORS.primary.DEFAULT} />
-                  <Text className="text-sm font-bold text-gray-800 ml-2">
+                  <Text style={{ fontSize: TYPOGRAPHY.fontSize.sm, fontWeight: TYPOGRAPHY.fontWeight.bold, color: TEACHER_COLORS.gray[800], marginLeft: SPACING.sm }}>
                     사진/동영상 첨부 (선택)
                   </Text>
                 </View>
@@ -647,7 +710,7 @@ export default function NoticeCreateScreen({ navigation }) {
 
             {/* 액션 버튼 */}
             {selectedTemplate && (
-              <View className="flex-row gap-2">
+              <View style={{ flexDirection: 'row', gap: SPACING.sm }}>
                 <Button
                   title="다시 작성"
                   variant="outline"
@@ -714,24 +777,25 @@ const templates = [
 // 필터 칩 컴포넌트
 function FilterChip({ options, value, onChange, layout = 'wrapped' }) {
   return (
-    <View className="flex-row flex-wrap gap-2">
+    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: SPACING.sm }}>
       {options.map((option) => (
         <TouchableOpacity
           key={option.value}
-          className={`px-3 py-2 rounded-lg ${
-            value === option.value
-              ? 'bg-primary'
-              : 'bg-gray-100'
-          }`}
+          style={{
+            paddingHorizontal: SPACING.md,
+            paddingVertical: SPACING.sm,
+            borderRadius: RADIUS.md,
+            backgroundColor: value === option.value ? TEACHER_COLORS.primary.DEFAULT : TEACHER_COLORS.gray[100],
+          }}
           onPress={() => onChange(option.value)}
           activeOpacity={0.7}
         >
           <Text
-            className={`text-sm font-semibold ${
-              value === option.value
-                ? 'text-white'
-                : 'text-gray-700'
-            }`}
+            style={{
+              fontSize: TYPOGRAPHY.fontSize.sm,
+              fontWeight: TYPOGRAPHY.fontWeight.semibold,
+              color: value === option.value ? TEACHER_COLORS.white : TEACHER_COLORS.gray[700],
+            }}
           >
             {option.label}
           </Text>
@@ -753,10 +817,11 @@ function LevelBadge({ level }) {
 
   return (
     <View
-      className="px-2 py-0.5 rounded"
-      style={{ backgroundColor: colors.bg }}
+      style={{
+        ...BADGE_STYLES.default(colors.bg),
+      }}
     >
-      <Text className="text-xs font-semibold" style={{ color: colors.text }}>
+      <Text style={{ fontSize: TYPOGRAPHY.fontSize.xs, fontWeight: TYPOGRAPHY.fontWeight.semibold, color: colors.text }}>
         {level}
       </Text>
     </View>

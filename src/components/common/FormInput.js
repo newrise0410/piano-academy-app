@@ -2,6 +2,7 @@ import React, { forwardRef } from 'react';
 import { View, TextInput, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Text from './Text';
+import { SPACING, TYPOGRAPHY, RADIUS, INPUT_STYLES } from '../../styles/commonStyles';
 
 /**
  * FormInput - 재사용 가능한 폼 입력 컴포넌트
@@ -20,6 +21,7 @@ import Text from './Text';
  * @param {number} maxLength - 최대 글자 수
  * @param {number} numberOfLines - multiline 시 줄 수
  * @param {string} size - 크기 (small, medium, large)
+ * @param {string} colorScheme - 색상 스키마 (teacher 또는 parent)
  * @param {object} style - 추가 스타일
  * @param {object} inputStyle - TextInput 추가 스타일
  */
@@ -39,10 +41,15 @@ const FormInput = forwardRef(({
   maxLength,
   numberOfLines = 1,
   size = 'medium',
+  colorScheme = 'teacher',
   style,
   inputStyle,
   ...props
 }, ref) => {
+  // 색상 스키마에 따른 import
+  const COLORS = colorScheme === 'teacher'
+    ? require('../../styles/teacher_colors').default
+    : require('../../styles/parent_colors').default;
   // 타입별 키보드 설정
   const getKeyboardType = () => {
     switch (type) {
@@ -60,18 +67,18 @@ const FormInput = forwardRef(({
   // 크기별 스타일
   const sizeStyles = {
     small: {
-      container: 'p-3',
-      text: 'text-sm',
+      padding: SPACING.md,
+      fontSize: TYPOGRAPHY.fontSize.sm,
       icon: 16,
     },
     medium: {
-      container: 'p-4',
-      text: 'text-base',
+      padding: SPACING.lg,
+      fontSize: TYPOGRAPHY.fontSize.base,
       icon: 20,
     },
     large: {
-      container: 'p-5',
-      text: 'text-lg',
+      padding: SPACING.xl,
+      fontSize: TYPOGRAPHY.fontSize.lg,
       icon: 24,
     },
   };
@@ -83,33 +90,37 @@ const FormInput = forwardRef(({
     <View style={style}>
       {/* 레이블 */}
       {label && (
-        <View className="flex-row items-center mb-2">
-          <Text className="text-sm font-semibold text-gray-700">
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: SPACING.sm }}>
+          <Text style={{ fontSize: TYPOGRAPHY.fontSize.sm, fontWeight: TYPOGRAPHY.fontWeight.semibold, color: COLORS.gray[700] }}>
             {label}
           </Text>
           {required && (
-            <Text className="text-red-500 ml-1">*</Text>
+            <Text style={{ color: COLORS.danger[500], marginLeft: SPACING.xs }}>*</Text>
           )}
         </View>
       )}
 
       {/* 입력 필드 */}
       <View
-        className={`
-          bg-gray-50 rounded-xl border flex-row items-center
-          ${error ? 'border-red-500' : 'border-gray-200'}
-          ${disabled ? 'bg-gray-100 opacity-60' : ''}
-          ${currentSize.container}
-          ${isMultiline ? 'min-h-[100px] items-start' : ''}
-        `}
+        style={{
+          backgroundColor: disabled ? COLORS.gray[100] : COLORS.gray[50],
+          borderRadius: RADIUS.xl,
+          borderWidth: error ? 2 : 1,
+          borderColor: error ? COLORS.danger[500] : COLORS.gray[200],
+          flexDirection: 'row',
+          alignItems: isMultiline ? 'flex-start' : 'center',
+          padding: currentSize.padding,
+          opacity: disabled ? 0.6 : 1,
+          minHeight: isMultiline ? 100 : undefined,
+        }}
       >
         {/* 왼쪽 아이콘 */}
         {iconName && (
           <Ionicons
             name={iconName}
             size={currentSize.icon}
-            color={error ? '#EF4444' : '#9CA3AF'}
-            style={{ marginRight: 12 }}
+            color={error ? COLORS.danger[500] : COLORS.gray[400]}
+            style={{ marginRight: SPACING.md }}
           />
         )}
 
@@ -119,22 +130,24 @@ const FormInput = forwardRef(({
           value={value}
           onChangeText={onChangeText}
           placeholder={placeholder}
-          placeholderTextColor="#9CA3AF"
+          placeholderTextColor={COLORS.gray[400]}
           keyboardType={getKeyboardType()}
           secureTextEntry={secureTextEntry !== undefined ? secureTextEntry : type === 'password'}
           editable={!disabled}
           maxLength={maxLength}
           multiline={isMultiline}
           numberOfLines={isMultiline ? numberOfLines : 1}
-          className={`flex-1 ${currentSize.text} text-gray-800`}
           style={[
             {
+              flex: 1,
+              fontSize: currentSize.fontSize,
+              color: COLORS.gray[800],
               fontFamily: 'MaruBuri-Regular',
               paddingVertical: 0,
               paddingHorizontal: 0,
               margin: 0,
               includeFontPadding: false,
-              textAlignVertical: 'center',
+              textAlignVertical: isMultiline ? 'top' : 'center',
             },
             inputStyle,
           ]}
@@ -146,8 +159,8 @@ const FormInput = forwardRef(({
           <Ionicons
             name={rightIconName}
             size={currentSize.icon}
-            color={error ? '#EF4444' : '#9CA3AF'}
-            style={{ marginLeft: 12 }}
+            color={error ? COLORS.danger[500] : COLORS.gray[400]}
+            style={{ marginLeft: SPACING.md }}
             onPress={onRightIconPress}
           />
         )}
@@ -155,9 +168,9 @@ const FormInput = forwardRef(({
 
       {/* 에러 메시지 */}
       {error && (
-        <View className="flex-row items-center mt-2">
-          <Ionicons name="alert-circle" size={14} color="#EF4444" />
-          <Text className="text-xs text-red-500 ml-1">
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: SPACING.sm }}>
+          <Ionicons name="alert-circle" size={14} color={COLORS.danger[500]} />
+          <Text style={{ fontSize: TYPOGRAPHY.fontSize.xs, color: COLORS.danger[500], marginLeft: SPACING.xs }}>
             {error}
           </Text>
         </View>
@@ -165,7 +178,7 @@ const FormInput = forwardRef(({
 
       {/* 글자 수 표시 */}
       {maxLength && value && (
-        <Text className="text-xs text-gray-400 text-right mt-1">
+        <Text style={{ fontSize: TYPOGRAPHY.fontSize.xs, color: COLORS.gray[400], textAlign: 'right', marginTop: SPACING.xs }}>
           {value.length}/{maxLength}
         </Text>
       )}

@@ -220,7 +220,7 @@ export default function TodayClassesScreen({ navigation }) {
                           <Ionicons
                             name="close-circle"
                             size={18}
-                            color={studentAttendance === 'absent' ? '#FFFFFF' : TEACHER_COLORS.red[600]}
+                            color={studentAttendance === 'absent' ? '#FFFFFF' : TEACHER_COLORS.danger[600]}
                           />
                           <Text
                             className={`ml-1 text-sm font-semibold ${

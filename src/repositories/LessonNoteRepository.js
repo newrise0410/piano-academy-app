@@ -1,29 +1,14 @@
 // src/repositories/LessonNoteRepository.js
 // 수업 일지 데이터 관리 Repository
 
-import { isMockMode, isFirebaseMode, DEV_CONFIG } from '../config/dataConfig';
-import { apiClient } from '../services/api/client';
-import { ENDPOINTS } from '../services/api/endpoints';
+import { DEV_CONFIG } from '../config/dataConfig';
 import {
   getLessonNotes,
-  getLessonNotesByStudent,
   saveLessonNote,
   updateLessonNote,
   deleteLessonNote,
 } from '../services/firestoreService';
 import { getCurrentUser } from '../services/authService';
-
-/**
- * 네트워크 딜레이 시뮬레이션 (Mock 모드에서만)
- */
-const simulateNetworkDelay = () => {
-  if (isMockMode() && DEV_CONFIG.mockNetworkDelay > 0) {
-    return new Promise((resolve) =>
-      setTimeout(resolve, DEV_CONFIG.mockNetworkDelay)
-    );
-  }
-  return Promise.resolve();
-};
 
 /**
  * Repository 호출 로그
@@ -33,28 +18,6 @@ const log = (method, ...args) => {
     console.log(`[LessonNoteRepository.${method}]`, ...args);
   }
 };
-
-/**
- * Mock 수업 일지 데이터 (임시)
- */
-let mockLessonNotes = [
-  {
-    id: '1',
-    studentId: '1',
-    studentName: '김지우',
-    teacherId: 'teacher1',
-    date: '2025-01-22',
-    progress: '체르니 30-1, 바이엘 60번',
-    homework: '체르니 30-1 3회 반복 연습',
-    memo: '리듬감이 좋아졌어요',
-    strengths: '박자 정확도 향상',
-    improvements: '손목 긴장 풀기',
-    practicePoints: '느린 템포로 연습',
-    isPublic: true,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  }
-];
 
 /**
  * 수업 일지 Repository
@@ -68,58 +31,20 @@ export const LessonNoteRepository = {
   async getAll(options = {}) {
     log('getAll', options);
 
-    if (isMockMode()) {
-      await simulateNetworkDelay();
-      let filtered = [...mockLessonNotes];
-
-      // studentId 필터링
-      if (options.studentId) {
-        filtered = filtered.filter(note => note.studentId === options.studentId);
-      }
-
-      // 날짜 범위 필터링
-      if (options.startDate && options.endDate) {
-        filtered = filtered.filter(
-          note => note.date >= options.startDate && note.date <= options.endDate
-        );
-      }
-
-      // limit 적용
-      if (options.limit) {
-        filtered = filtered.slice(0, options.limit);
-      }
-
-      return filtered;
+    const currentUser = getCurrentUser();
+    if (!currentUser) {
+      throw new Error('로그인이 필요합니다');
     }
 
-    if (isFirebaseMode()) {
-      const currentUser = getCurrentUser();
-      if (!currentUser) {
-        throw new Error('로그인이 필요합니다');
-      }
-
-      const result = await getLessonNotes(currentUser.uid, options);
-      if (!result.success) {
-        throw new Error(result.error);
-      }
-      return result.data;
+    const result = await getLessonNotes(currentUser.uid, options);
+    if (!result.success) {
+      throw new Error(result.error);
     }
-
-    try {
-      const response = await apiClient.get(ENDPOINTS.LESSON_NOTES?.LIST || '/lesson-notes', {
-        params: options
-      });
-      return response.data;
-    } catch (error) {
-      if (DEV_CONFIG.logApiErrors) {
-        console.error('[LessonNoteRepository.getAll] API Error:', error);
-      }
-      throw error;
-    }
+    return result.data;
   },
 
   /**
-   * 학생별 수업 일지 조회 (학부모용)
+   * 학생별 수업 일지 조회
    * @param {string} studentId - 학생 ID
    * @param {Object} options - 쿼리 옵션
    * @returns {Promise<Array>} 수업 일지 목록
@@ -127,39 +52,21 @@ export const LessonNoteRepository = {
   async getByStudentId(studentId, options = {}) {
     log('getByStudentId', studentId, options);
 
-    if (isMockMode()) {
-      await simulateNetworkDelay();
-      let filtered = mockLessonNotes.filter(
-        note => note.studentId === studentId && note.isPublic
-      );
-
-      if (options.limit) {
-        filtered = filtered.slice(0, options.limit);
-      }
-
-      return filtered;
+    const currentUser = getCurrentUser();
+    if (!currentUser) {
+      throw new Error('로그인이 필요합니다');
     }
 
-    if (isFirebaseMode()) {
-      const result = await getLessonNotesByStudent(studentId, options);
-      if (!result.success) {
-        throw new Error(result.error);
-      }
-      return result.data;
+    console.log('🔍 [LessonNoteRepository.getByStudentId] teacherId로 조회:', currentUser.uid, 'studentId:', studentId);
+
+    // 선생님용: teacherId와 studentId로 조회
+    const result = await getLessonNotes(currentUser.uid, { ...options, studentId });
+    if (!result.success) {
+      throw new Error(result.error);
     }
 
-    try {
-      const response = await apiClient.get(
-        ENDPOINTS.LESSON_NOTES?.BY_STUDENT?.(studentId) || `/lesson-notes/student/${studentId}`,
-        { params: options }
-      );
-      return response.data;
-    } catch (error) {
-      if (DEV_CONFIG.logApiErrors) {
-        console.error('[LessonNoteRepository.getByStudentId] API Error:', error);
-      }
-      throw error;
-    }
+    console.log('✅ [LessonNoteRepository.getByStudentId] 조회 결과:', result.data.length, '개');
+    return result.data;
   },
 
   /**
@@ -170,43 +77,18 @@ export const LessonNoteRepository = {
   async create(lessonNoteData) {
     log('create', lessonNoteData);
 
-    if (isMockMode()) {
-      await simulateNetworkDelay();
-      const newNote = {
-        id: Date.now().toString(),
-        ...lessonNoteData,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-      mockLessonNotes.unshift(newNote);
-      return newNote;
+    console.log('✅ Firebase에 수업일지 저장');
+    const currentUser = getCurrentUser();
+    if (!currentUser) {
+      throw new Error('로그인이 필요합니다');
     }
 
-    if (isFirebaseMode()) {
-      const currentUser = getCurrentUser();
-      if (!currentUser) {
-        throw new Error('로그인이 필요합니다');
-      }
-
-      const result = await saveLessonNote(lessonNoteData, currentUser.uid);
-      if (!result.success) {
-        throw new Error(result.error);
-      }
-      return { ...lessonNoteData, id: result.id };
+    const result = await saveLessonNote(lessonNoteData, currentUser.uid);
+    if (!result.success) {
+      throw new Error(result.error);
     }
-
-    try {
-      const response = await apiClient.post(
-        ENDPOINTS.LESSON_NOTES?.CREATE || '/lesson-notes',
-        lessonNoteData
-      );
-      return response.data;
-    } catch (error) {
-      if (DEV_CONFIG.logApiErrors) {
-        console.error('[LessonNoteRepository.create] API Error:', error);
-      }
-      throw error;
-    }
+    console.log('✅ Firebase에 저장 완료:', result.id);
+    return { ...lessonNoteData, id: result.id };
   },
 
   /**
@@ -218,40 +100,11 @@ export const LessonNoteRepository = {
   async update(id, updates) {
     log('update', id, updates);
 
-    if (isMockMode()) {
-      await simulateNetworkDelay();
-      const index = mockLessonNotes.findIndex(note => note.id === id);
-      if (index === -1) {
-        throw new Error('수업 일지를 찾을 수 없습니다');
-      }
-      mockLessonNotes[index] = {
-        ...mockLessonNotes[index],
-        ...updates,
-        updatedAt: new Date().toISOString(),
-      };
-      return mockLessonNotes[index];
+    const result = await updateLessonNote(id, updates);
+    if (!result.success) {
+      throw new Error(result.error);
     }
-
-    if (isFirebaseMode()) {
-      const result = await updateLessonNote(id, updates);
-      if (!result.success) {
-        throw new Error(result.error);
-      }
-      return { id, ...updates };
-    }
-
-    try {
-      const response = await apiClient.put(
-        ENDPOINTS.LESSON_NOTES?.UPDATE?.(id) || `/lesson-notes/${id}`,
-        updates
-      );
-      return response.data;
-    } catch (error) {
-      if (DEV_CONFIG.logApiErrors) {
-        console.error('[LessonNoteRepository.update] API Error:', error);
-      }
-      throw error;
-    }
+    return { id, ...updates };
   },
 
   /**
@@ -262,35 +115,11 @@ export const LessonNoteRepository = {
   async delete(id) {
     log('delete', id);
 
-    if (isMockMode()) {
-      await simulateNetworkDelay();
-      const index = mockLessonNotes.findIndex(note => note.id === id);
-      if (index === -1) {
-        throw new Error('수업 일지를 찾을 수 없습니다');
-      }
-      mockLessonNotes.splice(index, 1);
-      return { success: true };
+    const result = await deleteLessonNote(id);
+    if (!result.success) {
+      throw new Error(result.error);
     }
-
-    if (isFirebaseMode()) {
-      const result = await deleteLessonNote(id);
-      if (!result.success) {
-        throw new Error(result.error);
-      }
-      return { success: true };
-    }
-
-    try {
-      await apiClient.delete(
-        ENDPOINTS.LESSON_NOTES?.DELETE?.(id) || `/lesson-notes/${id}`
-      );
-      return { success: true };
-    } catch (error) {
-      if (DEV_CONFIG.logApiErrors) {
-        console.error('[LessonNoteRepository.delete] API Error:', error);
-      }
-      throw error;
-    }
+    return { success: true };
   }
 };
 

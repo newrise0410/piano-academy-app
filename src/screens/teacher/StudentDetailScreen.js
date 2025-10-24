@@ -14,12 +14,19 @@ import {
   SegmentedControl
 } from '../../components/common';
 import TEACHER_COLORS, { TEACHER_SHADOW_COLORS, TEACHER_OVERLAY_COLORS } from '../../styles/teacher_colors';
+import { SPACING, TYPOGRAPHY, RADIUS, SHADOWS, CARD_STYLES } from '../../styles/commonStyles';
 import { useStudentStore, usePaymentStore, useAttendanceStore, useLessonNoteStore } from '../../store';
 import { useToastStore } from '../../store';
 import { formatDate, formatCurrency } from '../../utils';
-import AiMemoEditor from '../../components/teacher/AiMemoEditor';
 import LessonNoteCard from '../../components/common/LessonNoteCard';
 import LessonNoteModal from '../../components/teacher/LessonNoteModal';
+import ProgressManageModal from '../../components/teacher/ProgressManageModal';
+import ProgressEditModal from '../../components/teacher/ProgressEditModal';
+import { getStudentProgress, calculateProgressStats, getMonthlyProgressData } from '../../services/progressService';
+import { ProgressRepository } from '../../repositories/ProgressRepository';
+import { getLearningStepById } from '../../constants/learningSteps';
+import { LineChart } from 'react-native-chart-kit';
+import { Dimensions } from 'react-native';
 
 export default function StudentDetailScreen({ route, navigation }) {
   const { studentId } = route?.params || {};
@@ -28,11 +35,10 @@ export default function StudentDetailScreen({ route, navigation }) {
   const { students, deleteStudent, loading: studentLoading } = useStudentStore();
   const { payments, fetchAllPayments } = usePaymentStore();
   const { records, fetchAllRecords } = useAttendanceStore();
-  const { lessonNotes, fetchStudentNotes, deleteLessonNote } = useLessonNoteStore();
+  const { studentNotes, fetchStudentNotes, deleteLessonNote } = useLessonNoteStore();
   const toast = useToastStore();
 
   const [activeTab, setActiveTab] = useState('정보');
-  const [memo, setMemo] = useState('');
   const [loading, setLoading] = useState(true);
   const [showTicketModal, setShowTicketModal] = useState(false);
   const [showLessonNoteModal, setShowLessonNoteModal] = useState(false);
@@ -43,6 +49,14 @@ export default function StudentDetailScreen({ route, navigation }) {
     ticketPeriodStart: '',
     ticketPeriodEnd: '',
   });
+
+  // 진도 관리 state
+  const [progressList, setProgressList] = useState([]);
+  const [progressLoading, setProgressLoading] = useState(false);
+  const [expandedBooks, setExpandedBooks] = useState({}); // 교재별 펼침 상태
+  const [showProgressManageModal, setShowProgressManageModal] = useState(false);
+  const [showProgressEditModal, setShowProgressEditModal] = useState(false);
+  const [selectedBook, setSelectedBook] = useState(null); // 곡 추가 시 선택된 교재
 
   // 학생 정보 가져오기
   const student = useMemo(() => {
@@ -63,13 +77,20 @@ export default function StudentDetailScreen({ route, navigation }) {
       .sort((a, b) => new Date(b.date) - new Date(a.date));
   }, [payments, studentId]);
 
-  // 학생의 수업 일지 가져오기
-  const studentLessonNotes = useMemo(() => {
-    return lessonNotes
-      .filter(note => note.studentId === studentId)
+  // 학생의 수업 일지 가져오기 (정보 탭용 - 최근 5개)
+  const recentLessonNotes = useMemo(() => {
+    const notes = studentNotes[studentId] || [];
+    return notes
       .sort((a, b) => new Date(b.date) - new Date(a.date))
       .slice(0, 5); // 최근 5개만
-  }, [lessonNotes, studentId]);
+  }, [studentNotes, studentId]);
+
+  // 전체 수업 일지 (일지 탭용)
+  const allLessonNotes = useMemo(() => {
+    const notes = studentNotes[studentId] || [];
+    return notes
+      .sort((a, b) => new Date(b.date) - new Date(a.date)); // 전체 목록
+  }, [studentNotes, studentId]);
 
   // 출석 통계 계산
   const attendanceStats = useMemo(() => {
@@ -91,6 +112,7 @@ export default function StudentDetailScreen({ route, navigation }) {
 
   useEffect(() => {
     loadData();
+    loadProgress(); // 진도 데이터 로드
   }, []);
 
   const loadData = async () => {
@@ -103,7 +125,74 @@ export default function StudentDetailScreen({ route, navigation }) {
     setLoading(false);
   };
 
-  const tabs = ['정보', '진도', '출석', '수강료'];
+  // 진도 데이터 로드
+  const loadProgress = async () => {
+    if (!studentId) return;
+
+    setProgressLoading(true);
+    try {
+      const data = await getStudentProgress(studentId);
+      setProgressList(data);
+      console.log('✅ 진도 데이터 로드 완료:', data);
+    } catch (error) {
+      console.error('진도 데이터 로드 실패:', error);
+      toast.error('진도 데이터 로드에 실패했습니다.');
+    } finally {
+      setProgressLoading(false);
+    }
+  };
+
+  // 교재 추가 모달 열기
+  const handleOpenAddBookModal = () => {
+    setSelectedBook(null);
+    setShowProgressManageModal(true);
+  };
+
+  // 곡 추가 모달 열기
+  const handleOpenAddSongModal = (progress) => {
+    setSelectedBook(progress);
+    setShowProgressManageModal(true);
+  };
+
+  // 진도 저장 완료 핸들러
+  const handleProgressSaved = () => {
+    setShowProgressManageModal(false);
+    setSelectedBook(null);
+    loadProgress(); // 진도 데이터 다시 로드
+  };
+
+  // 진도 수정 핸들러
+  const handleEditProgress = (progress) => {
+    setSelectedBook(progress);
+    setShowProgressEditModal(true);
+  };
+
+  // 진도 삭제 핸들러
+  const handleDeleteProgress = (progress) => {
+    Alert.alert(
+      '교재 삭제',
+      `"${progress.book.name}" 교재를 삭제하시겠습니까?\n모든 진도 기록이 삭제됩니다.`,
+      [
+        { text: '취소', style: 'cancel' },
+        {
+          text: '삭제',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await ProgressRepository.delete(progress.id);
+              toast.success('교재가 삭제되었습니다');
+              loadProgress(); // 진도 데이터 다시 로드
+            } catch (error) {
+              console.error('진도 삭제 오류:', error);
+              toast.error('삭제에 실패했습니다');
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const tabs = ['정보', '진도', '일지', '출석', '수강료'];
 
   const handleGoBack = () => {
     if (navigation?.goBack) {
@@ -147,11 +236,11 @@ export default function StudentDetailScreen({ route, navigation }) {
   const getAttendanceStatusColor = (status) => {
     switch (status) {
       case 'present':
-        return { bg: TEACHER_COLORS.green[50], text: TEACHER_COLORS.success[600], label: '출석' };
+        return { bg: TEACHER_COLORS.success[50], text: TEACHER_COLORS.success[600], label: '출석' };
       case 'absent':
-        return { bg: TEACHER_COLORS.red[100], text: TEACHER_COLORS.red[600], label: '결석' };
+        return { bg: TEACHER_COLORS.danger[100], text: TEACHER_COLORS.danger[600], label: '결석' };
       case 'late':
-        return { bg: '#FEF3C7', text: TEACHER_COLORS.warning[600], label: '지각' };
+        return { bg: TEACHER_COLORS.warning[50], text: TEACHER_COLORS.warning[600], label: '지각' };
       default:
         return { bg: TEACHER_COLORS.gray[100], text: TEACHER_COLORS.gray[600], label: '-' };
     }
@@ -161,11 +250,11 @@ export default function StudentDetailScreen({ route, navigation }) {
   const getPaymentStatusColor = (status) => {
     switch (status) {
       case 'paid':
-        return { bg: TEACHER_COLORS.green[50], text: TEACHER_COLORS.success[600], label: '완료' };
+        return { bg: TEACHER_COLORS.success[50], text: TEACHER_COLORS.success[600], label: '완료' };
       case 'unpaid':
-        return { bg: TEACHER_COLORS.red[100], text: TEACHER_COLORS.red[600], label: '미납' };
+        return { bg: TEACHER_COLORS.danger[100], text: TEACHER_COLORS.danger[600], label: '미납' };
       case 'overdue':
-        return { bg: '#FEF3C7', text: TEACHER_COLORS.warning[600], label: '연체' };
+        return { bg: TEACHER_COLORS.warning[50], text: TEACHER_COLORS.warning[600], label: '연체' };
       default:
         return { bg: TEACHER_COLORS.gray[100], text: TEACHER_COLORS.gray[600], label: '-' };
     }
@@ -309,9 +398,127 @@ export default function StudentDetailScreen({ route, navigation }) {
       case '정보':
         return (
           <View className="p-5">
+            {/* 학생 상태 요약 */}
+            <View className="bg-white rounded-2xl p-4 mb-4">
+              <Text className="text-base font-bold text-gray-800 mb-3">학생 현황</Text>
+
+              <View className="flex-row justify-around">
+                {/* 출석률 */}
+                <TouchableOpacity
+                  className="items-center"
+                  onPress={() => setActiveTab('출석')}
+                  activeOpacity={0.7}
+                >
+                  <View className="w-16 h-16 rounded-full items-center justify-center mb-2"
+                    style={{ backgroundColor: TEACHER_COLORS.success[50] }}>
+                    <Text className="text-2xl font-bold" style={{ color: TEACHER_COLORS.success[600] }}>
+                      {attendanceStats.rate}%
+                    </Text>
+                  </View>
+                  <Text className="text-xs text-gray-600">출석률</Text>
+                  <Text className="text-xs text-gray-400">이번 달</Text>
+                </TouchableOpacity>
+
+                {/* 진행 중인 교재 */}
+                <TouchableOpacity
+                  className="items-center"
+                  onPress={() => setActiveTab('진도')}
+                  activeOpacity={0.7}
+                >
+                  <View className="w-16 h-16 rounded-full items-center justify-center mb-2"
+                    style={{ backgroundColor: TEACHER_COLORS.primary[50] }}>
+                    <Text className="text-2xl font-bold" style={{ color: TEACHER_COLORS.primary.DEFAULT }}>
+                      {progressList.length}
+                    </Text>
+                  </View>
+                  <Text className="text-xs text-gray-600">진행 교재</Text>
+                  <Text className="text-xs text-gray-400">권</Text>
+                </TouchableOpacity>
+
+                {/* 수업일지 */}
+                <TouchableOpacity
+                  className="items-center"
+                  onPress={() => setActiveTab('일지')}
+                  activeOpacity={0.7}
+                >
+                  <View className="w-16 h-16 rounded-full items-center justify-center mb-2"
+                    style={{ backgroundColor: TEACHER_COLORS.purple[50] }}>
+                    <Text className="text-2xl font-bold" style={{ color: TEACHER_COLORS.purple[600] }}>
+                      {allLessonNotes.length}
+                    </Text>
+                  </View>
+                  <Text className="text-xs text-gray-600">수업일지</Text>
+                  <Text className="text-xs text-gray-400">개</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            {/* 수강권 정보 */}
+            {student?.ticketType && (
+              <View className="bg-white rounded-2xl p-4 mb-4">
+                <Text className="text-base font-bold text-gray-800 mb-3">수강권 정보</Text>
+
+                {student.ticketType === 'count' ? (
+                  <View>
+                    <View className="flex-row justify-between items-center mb-2">
+                      <Text className="text-sm text-gray-600">잔여 횟수</Text>
+                      <Text className="text-lg font-bold" style={{
+                        color: (student.ticketCount || 0) > 3
+                          ? TEACHER_COLORS.success[600]
+                          : TEACHER_COLORS.warning[600]
+                      }}>
+                        {student.ticketCount || 0}회
+                      </Text>
+                    </View>
+                    <TouchableOpacity
+                      onPress={handleRechargeTicket}
+                      className="flex-row items-center justify-center py-2 rounded-lg mt-2"
+                      style={{ backgroundColor: TEACHER_COLORS.primary[50] }}
+                      activeOpacity={0.7}
+                    >
+                      <Ionicons name="add-circle" size={18} color={TEACHER_COLORS.primary.DEFAULT} />
+                      <Text className="text-sm font-semibold ml-1" style={{ color: TEACHER_COLORS.primary.DEFAULT }}>
+                        회차권 충전
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                ) : (
+                  <View>
+                    <View className="flex-row justify-between items-center py-2 border-b border-gray-100">
+                      <Text className="text-sm text-gray-600">시작일</Text>
+                      <Text className="text-sm font-semibold text-gray-800">
+                        {student.ticketPeriodStart || '-'}
+                      </Text>
+                    </View>
+                    <View className="flex-row justify-between items-center py-2">
+                      <Text className="text-sm text-gray-600">종료일</Text>
+                      <Text className="text-sm font-semibold text-gray-800">
+                        {student.ticketPeriodEnd || '-'}
+                      </Text>
+                    </View>
+                  </View>
+                )}
+              </View>
+            )}
+
             {/* 기본 정보 */}
             <View className="bg-white rounded-2xl p-4 mb-4">
-              <Text className="text-base font-bold text-gray-800 mb-3">기본 정보</Text>
+              <View className="flex-row items-center justify-between mb-3">
+                <Text className="text-base font-bold text-gray-800">학생 정보</Text>
+                <TouchableOpacity
+                  onPress={() => navigation.navigate('StudentForm', { student })}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons name="create-outline" size={20} color={TEACHER_COLORS.gray[500]} />
+                </TouchableOpacity>
+              </View>
+
+              <View className="flex-row justify-between items-center py-2 border-b border-gray-100">
+                <Text className="text-sm text-gray-600">이름</Text>
+                <Text className="text-sm font-semibold text-gray-800">
+                  {student?.name || '-'}
+                </Text>
+              </View>
 
               <View className="flex-row justify-between items-center py-2 border-b border-gray-100">
                 <Text className="text-sm text-gray-600">생년월일</Text>
@@ -320,6 +527,15 @@ export default function StudentDetailScreen({ route, navigation }) {
                 </Text>
               </View>
 
+              {student?.school && (
+                <View className="flex-row justify-between items-center py-2 border-b border-gray-100">
+                  <Text className="text-sm text-gray-600">학교</Text>
+                  <Text className="text-sm font-semibold text-gray-800">
+                    {student.school} {student.grade ? `(${student.grade})` : ''}
+                  </Text>
+                </View>
+              )}
+
               <View className="flex-row justify-between items-center py-2 border-b border-gray-100">
                 <Text className="text-sm text-gray-600">등록일</Text>
                 <Text className="text-sm font-semibold text-gray-800">
@@ -327,169 +543,715 @@ export default function StudentDetailScreen({ route, navigation }) {
                 </Text>
               </View>
 
+              <View className="flex-row justify-between items-center py-2 border-b border-gray-100">
+                <Text className="text-sm text-gray-600">레벨</Text>
+                <View className="flex-row items-center">
+                  <View
+                    className="px-2 py-1 rounded"
+                    style={{
+                      backgroundColor:
+                        student?.level === '초급'
+                          ? TEACHER_COLORS.success[50]
+                          : student?.level === '중급'
+                          ? TEACHER_COLORS.blue[50]
+                          : TEACHER_COLORS.purple[50],
+                    }}
+                  >
+                    <Text
+                      className="text-xs font-semibold"
+                      style={{
+                        color:
+                          student?.level === '초급'
+                            ? TEACHER_COLORS.success[600]
+                            : student?.level === '중급'
+                            ? TEACHER_COLORS.blue[600]
+                            : TEACHER_COLORS.purple[600],
+                      }}
+                    >
+                      {student?.level || '-'}
+                    </Text>
+                  </View>
+                </View>
+              </View>
+
+              <View className="flex-row justify-between items-center py-2 border-b border-gray-100">
+                <Text className="text-sm text-gray-600">학부모</Text>
+                <Text className="text-sm font-semibold text-gray-800">
+                  {student?.parentName || '-'}
+                </Text>
+              </View>
+
               <View className="flex-row justify-between items-center py-2">
                 <Text className="text-sm text-gray-600">연락처</Text>
-                <Text className="text-sm font-semibold text-primary">
-                  {student?.parentName || '학부모'} ({student?.parentPhone || '-'})
-                </Text>
+                <TouchableOpacity activeOpacity={0.7}>
+                  <Text className="text-sm font-semibold" style={{ color: TEACHER_COLORS.primary.DEFAULT }}>
+                    {student?.parentPhone || '-'}
+                  </Text>
+                </TouchableOpacity>
               </View>
             </View>
 
-            {/* 현재 진도 */}
-            {student?.book && (
-              <View className="bg-white rounded-2xl p-4 mb-4">
-                <Text className="text-base font-bold text-gray-800 mb-3">현재 진도</Text>
-
-                <View className="mb-3">
-                  <View className="flex-row justify-between items-center mb-2">
-                    <Text className="text-sm text-gray-600">{student.book}</Text>
-                    {student.progress !== undefined && (
-                      <Text className="text-sm font-bold text-primary">{student.progress}%</Text>
-                    )}
-                  </View>
-                  {student.progress !== undefined && (
-                    <>
-                      <View className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                        <View className="h-full bg-primary rounded-full" style={{ width: `${student.progress}%` }} />
-                      </View>
-                      {student.progressPage && student.totalPages && (
-                        <Text className="text-xs text-gray-500 mt-1">
-                          {student.progressPage}/{student.totalPages}곡 완료
-                        </Text>
-                      )}
-                    </>
-                  )}
-                </View>
-              </View>
-            )}
-
-            {/* 최근 수업 일지 */}
+            {/* 특이사항/메모 */}
             <View className="bg-white rounded-2xl p-4 mb-4">
               <View className="flex-row items-center justify-between mb-3">
-                <Text className="text-base font-bold text-gray-800">최근 수업 일지</Text>
-                <View className="flex-row gap-2">
-                  <TouchableOpacity
-                    className="flex-row items-center rounded-lg px-3 py-1.5"
-                    style={{ backgroundColor: TEACHER_COLORS.purple[50] }}
-                    onPress={() => {
-                      setSelectedLessonNote(null);
-                      setShowLessonNoteModal(true);
-                    }}
-                    activeOpacity={0.7}
-                  >
-                    <Ionicons name="add" size={16} color={TEACHER_COLORS.purple[600]} />
-                    <Text className="text-xs font-semibold ml-1" style={{ color: TEACHER_COLORS.purple[600] }}>
-                      작성
-                    </Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    className="flex-row items-center rounded-lg px-3 py-1.5"
-                    style={{ backgroundColor: TEACHER_COLORS.gray[100] }}
-                    onPress={() => navigation.navigate('LessonNoteScreen')}
-                    activeOpacity={0.7}
-                  >
-                    <Ionicons name="list" size={16} color={TEACHER_COLORS.gray[700]} />
-                    <Text className="text-xs font-semibold text-gray-700 ml-1">전체</Text>
-                  </TouchableOpacity>
-                </View>
+                <Text className="text-base font-bold text-gray-800">학생 메모</Text>
+                <TouchableOpacity
+                  onPress={() => navigation.navigate('StudentForm', { student })}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons name="create-outline" size={20} color={TEACHER_COLORS.gray[500]} />
+                </TouchableOpacity>
               </View>
 
-              {studentLessonNotes.length > 0 ? (
-                studentLessonNotes.map((note) => (
-                  <View key={note.id} className="mb-2">
-                    <LessonNoteCard
-                      lessonNote={note}
-                      student={student}
-                      onEdit={() => {
-                        setSelectedLessonNote(note);
-                        setShowLessonNoteModal(true);
-                      }}
-                      onDelete={async () => {
-                        Alert.alert(
-                          '수업 일지 삭제',
-                          '이 수업 일지를 삭제하시겠습니까?',
-                          [
-                            { text: '취소', style: 'cancel' },
-                            {
-                              text: '삭제',
-                              style: 'destructive',
-                              onPress: async () => {
-                                try {
-                                  await deleteLessonNote(note.id);
-                                  toast.success('수업 일지가 삭제되었습니다');
-                                } catch (error) {
-                                  toast.error('삭제에 실패했습니다');
-                                }
-                              }
-                            }
-                          ]
-                        );
-                      }}
-                    />
-                  </View>
-                ))
+              {student?.memo ? (
+                <Text className="text-sm text-gray-700 leading-5">
+                  {student.memo}
+                </Text>
               ) : (
-                <View className="items-center py-8">
-                  <Ionicons name="document-text-outline" size={48} color={TEACHER_COLORS.gray[300]} />
-                  <Text className="text-gray-400 mt-2">작성된 수업 일지가 없습니다</Text>
-                  <TouchableOpacity
-                    className="mt-3 rounded-lg px-4 py-2"
-                    style={{ backgroundColor: TEACHER_COLORS.purple[500] }}
-                    onPress={() => {
-                      setSelectedLessonNote(null);
-                      setShowLessonNoteModal(true);
-                    }}
-                    activeOpacity={0.7}
-                  >
-                    <Text className="text-white text-sm font-semibold">첫 수업 일지 작성하기</Text>
-                  </TouchableOpacity>
-                </View>
+                <TouchableOpacity
+                  onPress={() => navigation.navigate('StudentForm', { student })}
+                  activeOpacity={0.7}
+                >
+                  <Text className="text-sm text-gray-400 italic">
+                    특이사항이나 메모를 작성하려면 탭하세요
+                  </Text>
+                </TouchableOpacity>
               )}
             </View>
 
-            {/* 메모 */}
+            {/* 빠른 액션 */}
             <View className="bg-white rounded-2xl p-4 mb-4">
-              <Text className="text-base font-bold text-gray-800 mb-3">학생 전반 메모</Text>
+              <Text className="text-base font-bold text-gray-800 mb-3">빠른 작업</Text>
 
-              <AiMemoEditor
-                value={memo}
-                onChange={setMemo}
-                studentInfo={{
-                  name: student?.name,
-                  level: student?.level,
-                  book: student?.book || '바이엘',
-                  recentProgress: student?.progress,
-                }}
-                placeholder="학생에 대한 전반적인 메모를 입력하세요..."
-                enableAttachments={true}
-                enableHomeworkGenerator={true}
-              />
+              <View className="flex-row flex-wrap gap-2">
+                <TouchableOpacity
+                  className="flex-1 flex-row items-center justify-center py-3 rounded-xl"
+                  style={{ backgroundColor: TEACHER_COLORS.purple[50], minWidth: '45%' }}
+                  onPress={() => {
+                    setSelectedLessonNote(null);
+                    setShowLessonNoteModal(true);
+                  }}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons name="create" size={18} color={TEACHER_COLORS.purple[600]} />
+                  <Text className="text-sm font-semibold ml-2" style={{ color: TEACHER_COLORS.purple[600] }}>
+                    수업일지
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  className="flex-1 flex-row items-center justify-center py-3 rounded-xl"
+                  style={{ backgroundColor: TEACHER_COLORS.primary[50], minWidth: '45%' }}
+                  onPress={() => setActiveTab('진도')}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons name="book" size={18} color={TEACHER_COLORS.primary.DEFAULT} />
+                  <Text className="text-sm font-semibold ml-2" style={{ color: TEACHER_COLORS.primary.DEFAULT }}>
+                    진도 관리
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  className="flex-1 flex-row items-center justify-center py-3 rounded-xl"
+                  style={{ backgroundColor: TEACHER_COLORS.success[50], minWidth: '45%' }}
+                  onPress={() => setActiveTab('출석')}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons name="checkmark-circle" size={18} color={TEACHER_COLORS.success[600]} />
+                  <Text className="text-sm font-semibold ml-2" style={{ color: TEACHER_COLORS.success[600] }}>
+                    출석 체크
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  className="flex-1 flex-row items-center justify-center py-3 rounded-xl"
+                  style={{ backgroundColor: TEACHER_COLORS.blue[50], minWidth: '45%' }}
+                  onPress={() => setActiveTab('수강료')}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons name="card" size={18} color={TEACHER_COLORS.blue[600]} />
+                  <Text className="text-sm font-semibold ml-2" style={{ color: TEACHER_COLORS.blue[600] }}>
+                    수강료
+                  </Text>
+                </TouchableOpacity>
+              </View>
             </View>
-
-            {/* 저장하기 버튼 */}
-            <TouchableOpacity
-              className="bg-primary rounded-2xl p-4 items-center"
-              activeOpacity={0.8}
-              style={{
-                shadowColor: TEACHER_COLORS.primary[600],
-                shadowOffset: { width: 0, height: 4 },
-                shadowOpacity: 0.3,
-                shadowRadius: 8,
-                elevation: 4,
-              }}
-            >
-              <Text className="text-white text-base font-bold">저장하기</Text>
-            </TouchableOpacity>
           </View>
         );
 
       case '진도':
+        const progressStats = calculateProgressStats(progressList);
+
         return (
-          <View className="p-5">
-            <View className="bg-white rounded-2xl p-4">
-              <Text className="text-base font-bold text-gray-800 mb-3">교재별 진도</Text>
-              <Text className="text-sm text-gray-500">진도 관리 기능은 준비 중입니다.</Text>
+          <View style={{ padding: SPACING.xl }}>
+            {progressLoading ? (
+              <View style={{ padding: SPACING['4xl'], alignItems: 'center' }}>
+                <ActivityIndicator size="large" color={TEACHER_COLORS.primary.DEFAULT} />
+                <Text style={{ marginTop: SPACING.md, fontSize: TYPOGRAPHY.fontSize.sm, color: TEACHER_COLORS.gray[500] }}>
+                  진도 데이터 로딩 중...
+                </Text>
+              </View>
+            ) : progressList.length === 0 ? (
+              /* 진도 데이터가 없을 때 */
+              <View
+                style={{
+                  ...CARD_STYLES.default,
+                  padding: SPACING['4xl'],
+                  alignItems: 'center',
+                }}
+              >
+                <View
+                  style={{
+                    width: 80,
+                    height: 80,
+                    borderRadius: 40,
+                    backgroundColor: TEACHER_COLORS.primary[50],
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    marginBottom: SPACING.lg,
+                  }}
+                >
+                  <Ionicons name="book-outline" size={40} color={TEACHER_COLORS.primary.DEFAULT} />
+                </View>
+                <Text style={{ fontSize: TYPOGRAPHY.fontSize.lg, fontWeight: TYPOGRAPHY.fontWeight.bold, color: TEACHER_COLORS.gray[800], marginBottom: SPACING.sm }}>
+                  아직 진도 기록이 없습니다
+                </Text>
+                <Text style={{ fontSize: TYPOGRAPHY.fontSize.sm, color: TEACHER_COLORS.gray[500], textAlign: 'center', lineHeight: 20 }}>
+                  수업일지에 진도를 작성하면{'\n'}AI가 자동으로 진도를 분석해드립니다!
+                </Text>
+                <TouchableOpacity
+                  onPress={() => setShowLessonNoteModal(true)}
+                  style={{
+                    marginTop: SPACING.xl,
+                    paddingHorizontal: SPACING.xl,
+                    paddingVertical: SPACING.md,
+                    borderRadius: RADIUS.xl,
+                    backgroundColor: TEACHER_COLORS.primary.DEFAULT,
+                  }}
+                >
+                  <Text style={{ fontSize: TYPOGRAPHY.fontSize.sm, fontWeight: TYPOGRAPHY.fontWeight.semibold, color: TEACHER_COLORS.white }}>
+                    수업일지 작성하기
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <>
+                {/* 전체 통계 */}
+                <View
+                  style={{
+                    ...CARD_STYLES.default,
+                    marginBottom: SPACING.lg,
+                  }}
+                >
+                  <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: SPACING.lg }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                      <Ionicons name="stats-chart" size={22} color={TEACHER_COLORS.primary.DEFAULT} />
+                      <Text style={{ marginLeft: SPACING.sm, fontSize: TYPOGRAPHY.fontSize.lg, fontWeight: TYPOGRAPHY.fontWeight.bold, color: TEACHER_COLORS.gray[800] }}>
+                        전체 진행 상황
+                      </Text>
+                    </View>
+                    <TouchableOpacity
+                      onPress={handleOpenAddBookModal}
+                      style={{
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        paddingHorizontal: SPACING.md,
+                        paddingVertical: SPACING.sm,
+                        borderRadius: RADIUS.lg,
+                        backgroundColor: TEACHER_COLORS.primary.DEFAULT,
+                      }}
+                      activeOpacity={0.7}
+                    >
+                      <Ionicons name="add" size={18} color={TEACHER_COLORS.white} />
+                      <Text style={{ marginLeft: SPACING.xs, fontSize: TYPOGRAPHY.fontSize.sm, fontWeight: TYPOGRAPHY.fontWeight.semibold, color: TEACHER_COLORS.white }}>
+                        교재 추가
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-around' }}>
+                    <View style={{ alignItems: 'center' }}>
+                      <Text style={{ fontSize: TYPOGRAPHY.fontSize['2xl'], fontWeight: TYPOGRAPHY.fontWeight.bold, color: TEACHER_COLORS.primary.DEFAULT }}>
+                        {progressStats.totalBooks}
+                      </Text>
+                      <Text style={{ marginTop: SPACING.xs, fontSize: TYPOGRAPHY.fontSize.xs, color: TEACHER_COLORS.gray[500] }}>
+                        진행 중인 교재
+                      </Text>
+                    </View>
+                    <View style={{ alignItems: 'center' }}>
+                      <Text style={{ fontSize: TYPOGRAPHY.fontSize['2xl'], fontWeight: TYPOGRAPHY.fontWeight.bold, color: TEACHER_COLORS.success[600] }}>
+                        {progressStats.completedSongs}
+                      </Text>
+                      <Text style={{ marginTop: SPACING.xs, fontSize: TYPOGRAPHY.fontSize.xs, color: TEACHER_COLORS.gray[500] }}>
+                        완료한 곡
+                      </Text>
+                    </View>
+                    <View style={{ alignItems: 'center' }}>
+                      <Text style={{ fontSize: TYPOGRAPHY.fontSize['2xl'], fontWeight: TYPOGRAPHY.fontWeight.bold, color: TEACHER_COLORS.secondary.DEFAULT }}>
+                        {progressStats.averageCompletionRate.toFixed(0)}%
+                      </Text>
+                      <Text style={{ marginTop: SPACING.xs, fontSize: TYPOGRAPHY.fontSize.xs, color: TEACHER_COLORS.gray[500] }}>
+                        평균 진행률
+                      </Text>
+                    </View>
+                  </View>
+                </View>
+
+                {/* 월별 진도 그래프 */}
+                {(() => {
+                  const chartData = getMonthlyProgressData(progressList, 6);
+                  const hasData = chartData.data && chartData.data.some(value => value > 0);
+
+                  return hasData ? (
+                    <View
+                      style={{
+                        ...CARD_STYLES.default,
+                        marginBottom: SPACING.lg,
+                      }}
+                    >
+                      <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: SPACING.lg }}>
+                        <Ionicons name="trending-up" size={22} color={TEACHER_COLORS.secondary.DEFAULT} />
+                        <Text style={{ marginLeft: SPACING.sm, fontSize: TYPOGRAPHY.fontSize.lg, fontWeight: TYPOGRAPHY.fontWeight.bold, color: TEACHER_COLORS.gray[800] }}>
+                          월별 학습 진행
+                        </Text>
+                      </View>
+
+                      <LineChart
+                        data={{
+                          labels: chartData.labels,
+                          datasets: [
+                            {
+                              data: chartData.data,
+                            },
+                          ],
+                        }}
+                        width={Dimensions.get('window').width - SPACING.xl * 4}
+                        height={200}
+                        chartConfig={{
+                          backgroundColor: TEACHER_COLORS.white,
+                          backgroundGradientFrom: TEACHER_COLORS.white,
+                          backgroundGradientTo: TEACHER_COLORS.white,
+                          decimalPlaces: 0,
+                          color: (opacity = 1) => `rgba(123, 97, 255, ${opacity})`,
+                          labelColor: (opacity = 1) => `rgba(107, 114, 128, ${opacity})`,
+                          style: {
+                            borderRadius: RADIUS.xl,
+                          },
+                          propsForDots: {
+                            r: '6',
+                            strokeWidth: '2',
+                            stroke: TEACHER_COLORS.secondary.DEFAULT,
+                          },
+                          propsForBackgroundLines: {
+                            strokeDasharray: '',
+                            stroke: TEACHER_COLORS.gray[200],
+                            strokeWidth: 1,
+                          },
+                        }}
+                        bezier
+                        style={{
+                          marginVertical: SPACING.sm,
+                          borderRadius: RADIUS.xl,
+                        }}
+                      />
+
+                      <Text style={{ fontSize: TYPOGRAPHY.fontSize.xs, color: TEACHER_COLORS.gray[500], textAlign: 'center', marginTop: SPACING.sm }}>
+                        최근 6개월간 완료한 곡 수
+                      </Text>
+                    </View>
+                  ) : null;
+                })()}
+
+                {/* 교재별 진도 */}
+                {progressList.map((progress, index) => {
+                  const isExpanded = expandedBooks[progress.id];
+                  const completionRate = progress.stats?.completionRate || 0;
+
+                  return (
+                    <View
+                      key={progress.id}
+                      style={{
+                        ...CARD_STYLES.default,
+                        marginBottom: SPACING.lg,
+                      }}
+                    >
+                      {/* 교재 헤더 */}
+                      <View style={{ flexDirection: 'row', alignItems: 'flex-start', marginBottom: SPACING.md }}>
+                        <TouchableOpacity
+                          onPress={() =>
+                            setExpandedBooks({
+                              ...expandedBooks,
+                              [progress.id]: !isExpanded,
+                            })
+                          }
+                          style={{ flex: 1 }}
+                          activeOpacity={0.7}
+                        >
+                          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                            <View style={{ flex: 1 }}>
+                              <Text style={{ fontSize: TYPOGRAPHY.fontSize.lg, fontWeight: TYPOGRAPHY.fontWeight.bold, color: TEACHER_COLORS.gray[800] }}>
+                                📖 {progress.book.name}
+                              </Text>
+                              <Text style={{ marginTop: SPACING.xs, fontSize: TYPOGRAPHY.fontSize.xs, color: TEACHER_COLORS.gray[500] }}>
+                                {progress.stats?.completedSongs || 0} / {progress.stats?.totalSongs || 0} 곡 완료
+                              </Text>
+                            </View>
+                            <Ionicons
+                              name={isExpanded ? 'chevron-up' : 'chevron-down'}
+                              size={24}
+                              color={TEACHER_COLORS.gray[400]}
+                            />
+                          </View>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          onPress={() => handleEditProgress(progress)}
+                          style={{ marginLeft: SPACING.sm, padding: SPACING.xs }}
+                          activeOpacity={0.7}
+                        >
+                          <Ionicons name="create-outline" size={20} color={TEACHER_COLORS.primary.DEFAULT} />
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          onPress={() => handleDeleteProgress(progress)}
+                          style={{ marginLeft: SPACING.sm, padding: SPACING.xs }}
+                          activeOpacity={0.7}
+                        >
+                          <Ionicons name="trash-outline" size={20} color={TEACHER_COLORS.danger[600]} />
+                        </TouchableOpacity>
+                      </View>
+
+                      {/* 진행률 바 */}
+                      <View
+                        style={{
+                          height: 8,
+                          borderRadius: RADIUS.full,
+                          backgroundColor: TEACHER_COLORS.gray[100],
+                          overflow: 'hidden',
+                        }}
+                      >
+                        <View
+                          style={{
+                            width: `${completionRate}%`,
+                            height: '100%',
+                            backgroundColor: TEACHER_COLORS.primary.DEFAULT,
+                          }}
+                        />
+                      </View>
+                      <Text style={{ marginTop: SPACING.xs, fontSize: TYPOGRAPHY.fontSize.xs, color: TEACHER_COLORS.primary.DEFAULT, textAlign: 'right' }}>
+                        {completionRate.toFixed(1)}%
+                      </Text>
+
+                      {/* 곡 추가 버튼 */}
+                      <TouchableOpacity
+                        onPress={() => handleOpenAddSongModal(progress)}
+                        style={{
+                          flexDirection: 'row',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          paddingVertical: SPACING.sm,
+                          marginTop: SPACING.md,
+                          borderRadius: RADIUS.lg,
+                          borderWidth: 1.5,
+                          borderColor: TEACHER_COLORS.primary[200],
+                          borderStyle: 'dashed',
+                          backgroundColor: TEACHER_COLORS.primary[50],
+                        }}
+                        activeOpacity={0.7}
+                      >
+                        <Ionicons name="add-circle" size={16} color={TEACHER_COLORS.primary.DEFAULT} />
+                        <Text style={{ marginLeft: SPACING.xs, fontSize: TYPOGRAPHY.fontSize.sm, fontWeight: TYPOGRAPHY.fontWeight.semibold, color: TEACHER_COLORS.primary.DEFAULT }}>
+                          곡 추가
+                        </Text>
+                      </TouchableOpacity>
+
+                      {/* 곡 목록 (펼쳤을 때만 표시) */}
+                      {isExpanded && progress.songs && progress.songs.length > 0 && (
+                        <View style={{ marginTop: SPACING.lg, paddingTop: SPACING.lg, borderTopWidth: 1, borderTopColor: TEACHER_COLORS.gray[100] }}>
+                          {progress.songs
+                            .sort((a, b) => {
+                              // 진행중 > 완료 > 미시작 순서
+                              const order = { in_progress: 0, completed: 1, not_started: 2 };
+                              return (order[a.status] || 2) - (order[b.status] || 2);
+                            })
+                            .map((song, idx) => {
+                              const getStatusInfo = (status) => {
+                                switch (status) {
+                                  case 'completed':
+                                    return {
+                                      icon: 'checkmark-circle',
+                                      color: TEACHER_COLORS.success[600],
+                                      bgColor: TEACHER_COLORS.success[50],
+                                      label: '완료',
+                                    };
+                                  case 'in_progress':
+                                    return {
+                                      icon: 'play-circle',
+                                      color: TEACHER_COLORS.warning[600],
+                                      bgColor: TEACHER_COLORS.warning[50],
+                                      label: '진행중',
+                                    };
+                                  default:
+                                    return {
+                                      icon: 'ellipse-outline',
+                                      color: TEACHER_COLORS.gray[400],
+                                      bgColor: TEACHER_COLORS.gray[50],
+                                      label: '대기',
+                                    };
+                                }
+                              };
+
+                              const statusInfo = getStatusInfo(song.status);
+
+                              return (
+                                <View
+                                  key={idx}
+                                  style={{
+                                    flexDirection: 'row',
+                                    alignItems: 'center',
+                                    paddingVertical: SPACING.md,
+                                    borderBottomWidth: idx < progress.songs.length - 1 ? 1 : 0,
+                                    borderBottomColor: TEACHER_COLORS.gray[50],
+                                  }}
+                                >
+                                  <View
+                                    style={{
+                                      width: 32,
+                                      height: 32,
+                                      borderRadius: 16,
+                                      backgroundColor: statusInfo.bgColor,
+                                      alignItems: 'center',
+                                      justifyContent: 'center',
+                                      marginRight: SPACING.md,
+                                    }}
+                                  >
+                                    <Ionicons name={statusInfo.icon} size={18} color={statusInfo.color} />
+                                  </View>
+                                  <View style={{ flex: 1 }}>
+                                    <Text style={{ fontSize: TYPOGRAPHY.fontSize.sm, fontWeight: TYPOGRAPHY.fontWeight.medium, color: TEACHER_COLORS.gray[800] }}>
+                                      {song.title}
+                                    </Text>
+                                    {song.learningStep?.currentStep && (() => {
+                                      const stepInfo = getLearningStepById(song.learningStep.currentStep);
+                                      return stepInfo ? (
+                                        <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
+                                          <Text style={{ fontSize: TYPOGRAPHY.fontSize.lg, marginRight: 4 }}>
+                                            {stepInfo.icon}
+                                          </Text>
+                                          <Text style={{ fontSize: TYPOGRAPHY.fontSize.xs, fontWeight: TYPOGRAPHY.fontWeight.semibold, color: stepInfo.color }}>
+                                            {stepInfo.name}
+                                          </Text>
+                                        </View>
+                                      ) : null;
+                                    })()}
+                                    {song.notes && (
+                                      <Text style={{ marginTop: 2, fontSize: TYPOGRAPHY.fontSize.xs, color: TEACHER_COLORS.gray[500] }}>
+                                        {song.notes}
+                                      </Text>
+                                    )}
+                                    {song.completedDate && (
+                                      <Text style={{ marginTop: 2, fontSize: TYPOGRAPHY.fontSize.xs, color: TEACHER_COLORS.gray[400] }}>
+                                        완료일: {song.completedDate}
+                                      </Text>
+                                    )}
+                                  </View>
+                                  <View
+                                    style={{
+                                      paddingHorizontal: SPACING.sm,
+                                      paddingVertical: SPACING.xs - 2,
+                                      borderRadius: RADIUS.md,
+                                      backgroundColor: statusInfo.bgColor,
+                                    }}
+                                  >
+                                    <Text style={{ fontSize: TYPOGRAPHY.fontSize.xs, fontWeight: TYPOGRAPHY.fontWeight.bold, color: statusInfo.color }}>
+                                      {statusInfo.label}
+                                    </Text>
+                                  </View>
+                                </View>
+                              );
+                            })}
+                        </View>
+                      )}
+                    </View>
+                  );
+                })}
+
+                {/* 안내 메시지 */}
+                <View
+                  style={{
+                    backgroundColor: TEACHER_COLORS.blue[50],
+                    borderRadius: RADIUS.xl,
+                    padding: SPACING.lg,
+                    flexDirection: 'row',
+                    alignItems: 'flex-start',
+                  }}
+                >
+                  <Ionicons name="information-circle" size={20} color={TEACHER_COLORS.blue[600]} style={{ marginTop: 2 }} />
+                  <View style={{ flex: 1, marginLeft: SPACING.md }}>
+                    <Text style={{ fontSize: TYPOGRAPHY.fontSize.sm, color: TEACHER_COLORS.gray[700], lineHeight: 20 }}>
+                      수업일지에 "바이엘 45번 완료", "체르니 30-5번 시작" 등을 작성하면 AI가 자동으로 진도를 업데이트합니다!
+                    </Text>
+                  </View>
+                </View>
+              </>
+            )}
+          </View>
+        );
+
+      case '일지':
+        return (
+          <View style={{ flex: 1 }}>
+            {/* 헤더 - 작성 버튼 */}
+            <View style={{
+              ...CARD_STYLES.default,
+              marginHorizontal: SPACING.xl,
+              marginTop: SPACING.xl,
+              marginBottom: SPACING.md,
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+            }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <Ionicons name="document-text" size={22} color={TEACHER_COLORS.purple[600]} />
+                <Text style={{
+                  marginLeft: SPACING.sm,
+                  fontSize: TYPOGRAPHY.fontSize.lg,
+                  fontWeight: TYPOGRAPHY.fontWeight.bold,
+                  color: TEACHER_COLORS.gray[800]
+                }}>
+                  수업일지 게시판
+                </Text>
+              </View>
+              <TouchableOpacity
+                onPress={() => {
+                  setSelectedLessonNote(null);
+                  setShowLessonNoteModal(true);
+                }}
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  paddingHorizontal: SPACING.lg,
+                  paddingVertical: SPACING.sm,
+                  borderRadius: RADIUS.lg,
+                  backgroundColor: TEACHER_COLORS.purple[500],
+                }}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="add-circle" size={20} color={TEACHER_COLORS.white} />
+                <Text style={{
+                  marginLeft: SPACING.xs,
+                  fontSize: TYPOGRAPHY.fontSize.sm,
+                  fontWeight: TYPOGRAPHY.fontWeight.semibold,
+                  color: TEACHER_COLORS.white
+                }}>
+                  일지 작성
+                </Text>
+              </TouchableOpacity>
             </View>
+
+            {/* 수업일지 타임라인 */}
+            <ScrollView
+              style={{ flex: 1, paddingHorizontal: SPACING.xl }}
+              showsVerticalScrollIndicator={false}
+            >
+              {allLessonNotes.length > 0 ? (
+                <>
+                  <View style={{ marginBottom: SPACING.md }}>
+                    <Text style={{ fontSize: TYPOGRAPHY.fontSize.sm, color: TEACHER_COLORS.gray[500] }}>
+                      총 {allLessonNotes.length}개의 수업일지
+                    </Text>
+                  </View>
+                  {allLessonNotes.map((note, index) => (
+                    <View key={note.id} style={{ marginBottom: SPACING.lg }}>
+                      <LessonNoteCard
+                        lessonNote={note}
+                        student={student}
+                        onEdit={() => {
+                          setSelectedLessonNote(note);
+                          setShowLessonNoteModal(true);
+                        }}
+                        onDelete={async () => {
+                          Alert.alert(
+                            '수업 일지 삭제',
+                            '이 수업 일지를 삭제하시겠습니까?',
+                            [
+                              { text: '취소', style: 'cancel' },
+                              {
+                                text: '삭제',
+                                style: 'destructive',
+                                onPress: async () => {
+                                  try {
+                                    await deleteLessonNote(note.id);
+                                    toast.success('수업 일지가 삭제되었습니다');
+                                  } catch (error) {
+                                    toast.error('삭제에 실패했습니다');
+                                  }
+                                }
+                              }
+                            ]
+                          );
+                        }}
+                      />
+                    </View>
+                  ))}
+                  <View style={{ height: SPACING['4xl'] }} />
+                </>
+              ) : (
+                <View style={{
+                  ...CARD_STYLES.default,
+                  padding: SPACING['4xl'],
+                  alignItems: 'center',
+                }}>
+                  <View style={{
+                    width: 80,
+                    height: 80,
+                    borderRadius: 40,
+                    backgroundColor: TEACHER_COLORS.purple[50],
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    marginBottom: SPACING.lg,
+                  }}>
+                    <Ionicons name="document-text-outline" size={40} color={TEACHER_COLORS.purple[400]} />
+                  </View>
+                  <Text style={{
+                    fontSize: TYPOGRAPHY.fontSize.lg,
+                    fontWeight: TYPOGRAPHY.fontWeight.bold,
+                    color: TEACHER_COLORS.gray[800],
+                    marginBottom: SPACING.sm
+                  }}>
+                    작성된 수업 일지가 없습니다
+                  </Text>
+                  <Text style={{
+                    fontSize: TYPOGRAPHY.fontSize.sm,
+                    color: TEACHER_COLORS.gray[500],
+                    textAlign: 'center',
+                    lineHeight: 20,
+                    marginBottom: SPACING.xl
+                  }}>
+                    수업 후 진도와 메모를 작성하면{'\n'}AI가 자동으로 분석해드립니다
+                  </Text>
+                  <TouchableOpacity
+                    onPress={() => {
+                      setSelectedLessonNote(null);
+                      setShowLessonNoteModal(true);
+                    }}
+                    style={{
+                      paddingHorizontal: SPACING.xl,
+                      paddingVertical: SPACING.md,
+                      borderRadius: RADIUS.xl,
+                      backgroundColor: TEACHER_COLORS.purple[500],
+                    }}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={{
+                      fontSize: TYPOGRAPHY.fontSize.sm,
+                      fontWeight: TYPOGRAPHY.fontWeight.semibold,
+                      color: TEACHER_COLORS.white
+                    }}>
+                      첫 수업 일지 작성하기
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+            </ScrollView>
           </View>
         );
 
@@ -507,13 +1269,13 @@ export default function StudentDetailScreen({ route, navigation }) {
                   <Text className="text-xs text-gray-500 mt-1">출석</Text>
                 </View>
                 <View className="items-center">
-                  <Text className="text-2xl font-bold" style={{ color: TEACHER_COLORS.red[600] }}>
+                  <Text className="text-2xl font-bold" style={{ color: TEACHER_COLORS.danger[600] }}>
                     {attendanceStats.absent}
                   </Text>
                   <Text className="text-xs text-gray-500 mt-1">결석</Text>
                 </View>
                 <View className="items-center">
-                  <Text className="text-2xl font-bold" style={{ color: TEACHER_COLORS.orange[600] }}>
+                  <Text className="text-2xl font-bold" style={{ color: TEACHER_COLORS.warning[600] }}>
                     {attendanceStats.late}
                   </Text>
                   <Text className="text-xs text-gray-500 mt-1">지각</Text>
@@ -596,14 +1358,14 @@ export default function StudentDetailScreen({ route, navigation }) {
                     <View
                       className="rounded-full px-3 py-1"
                       style={{
-                        backgroundColor: (student?.ticketCount || 0) <= 2 ? TEACHER_COLORS.red[50] : TEACHER_COLORS.white
+                        backgroundColor: (student?.ticketCount || 0) <= 2 ? TEACHER_COLORS.danger[50] : TEACHER_COLORS.white
                       }}
                     >
                       <Text
                         className="text-xs font-bold"
                         style={{
                           color: (student?.ticketCount || 0) <= 2
-                            ? TEACHER_COLORS.red[600]
+                            ? TEACHER_COLORS.danger[600]
                             : TEACHER_COLORS.purple[600]
                         }}
                       >
@@ -743,7 +1505,7 @@ export default function StudentDetailScreen({ route, navigation }) {
               className="p-2"
               activeOpacity={0.7}
             >
-              <Ionicons name="trash-outline" size={22} color={TEACHER_COLORS.red[500]} />
+              <Ionicons name="trash-outline" size={22} color={TEACHER_COLORS.danger[500]} />
             </TouchableOpacity>
           </View>
         }
@@ -879,10 +1641,41 @@ export default function StudentDetailScreen({ route, navigation }) {
           setShowLessonNoteModal(false);
           setSelectedLessonNote(null);
           fetchStudentNotes(studentId);
+          loadProgress(); // 진도 데이터도 새로고침
         }}
         student={student}
         date={new Date().toISOString().split('T')[0]}
         existingNote={selectedLessonNote}
+      />
+
+      {/* 진도 관리 모달 */}
+      <ProgressManageModal
+        visible={showProgressManageModal}
+        onClose={() => {
+          setShowProgressManageModal(false);
+          setSelectedBook(null);
+        }}
+        studentId={studentId}
+        studentName={student?.name}
+        existingProgress={selectedBook}
+        onSaved={handleProgressSaved}
+        navigation={navigation}
+      />
+
+      {/* 진도 수정 모달 */}
+      <ProgressEditModal
+        visible={showProgressEditModal}
+        onClose={() => {
+          setShowProgressEditModal(false);
+          setSelectedBook(null);
+        }}
+        progress={selectedBook}
+        onSaved={() => {
+          setShowProgressEditModal(false);
+          setSelectedBook(null);
+          loadProgress();
+        }}
+        navigation={navigation}
       />
     </SafeAreaView>
   );

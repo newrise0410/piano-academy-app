@@ -514,7 +514,7 @@ export default function AttendanceScreen() {
                   <Ionicons name="checkmark-circle" size={28} color={TEACHER_COLORS.success.DEFAULT} />
                 )}
                 {student.status === 'absent' && (
-                  <View className="rounded-full px-2 py-1" style={{ backgroundColor: TEACHER_COLORS.red[500] }}>
+                  <View className="rounded-full px-2 py-1" style={{ backgroundColor: TEACHER_COLORS.danger[500] }}>
                     <Text className="text-xs font-bold text-white">결석</Text>
                   </View>
                 )}
@@ -550,7 +550,7 @@ export default function AttendanceScreen() {
                 <TouchableOpacity
                   className="flex-1 rounded-xl py-3 mx-1"
                   style={{
-                    backgroundColor: student.status === 'absent' ? TEACHER_COLORS.red[500] : TEACHER_COLORS.white,
+                    backgroundColor: student.status === 'absent' ? TEACHER_COLORS.danger[500] : TEACHER_COLORS.white,
                     borderWidth: student.status === 'absent' ? 0 : 1,
                     borderColor: TEACHER_COLORS.gray[200]
                   }}
